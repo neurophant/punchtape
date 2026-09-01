@@ -1,0 +1,236 @@
+# Submission surfaces: submit/check replies, warnings, and every
+# rejection reason. Values carry no trailing newline — the call site
+# reproduces it; substitution is {name}; quoting (%q) is done by the
+# code before substitution, the data carries no quote semantics.
+
+# Submission and preflight check replies.
+submit.accepted: "ACCEPTED: transaction {tx}{files}{tail}"
+submit.accepted.with-gates: "ACCEPTED: transaction {tx}; {gates}{files}{tail}"
+submit.try.green: "TRY: green — the row ran twice in clean run dirs, both runs matched every expectation; nothing entered the canon (stage, counters, journal unchanged)"
+submit.try.red: "TRY: red — {reason}; nothing entered the canon (stage, counters, journal unchanged)"
+submit.reject.try-not-checks: "try: a checks delta with exactly one row"
+submit.reject.try-one-row: "try: exactly one row (got {got}) — try one form at a time"
+submit.idempotent-recipe: |-
+
+  the replay applied nothing; the CURRENT recipe (data):
+  {recipe}
+  to replace the recipe, submit a DIFFERENT recipe (kind: conventions): the section is replaced whole by the last submission — resubmitting the same bytes changes nothing.
+submit.files.header: "FILES WRITTEN ({count}) — path digest; a later code/fix may reference the digest instead of resending the file:"
+submit.files.line: "  {path} {digest}"
+submit.rerun: "RERUN: no new bytes — nothing applied, gates re-run; {gates}{tail}"
+submit.check.ok: "CHECK OK: kind {kind}, key {key} — format and canon validation pass; nothing applied"
+submit.check.journaled: "CHECK OK: kind {kind}, key {key} — already journaled (idempotent repeat); nothing applied"
+submit.idempotent: "IDEMPOTENT REPLAY: transaction {tx}{note}{tail}"
+submit.next-slot: "\n\nNEXT SLOT:"
+submit.reply.gates-summary: "gates: {summary}"
+submit.hint-eg: " — e.g.: {hint}"
+submit.diag-eg: " — cause: {hint}"
+submit.fail: "FAIL: {err}."
+
+# The rejection reply skeleton: the error line plus the delta format.
+submit.reject.line: "ERROR: {entity}: {reason}."
+submit.reject.format: "\nFormat:"
+
+# Decode and the submission key.
+submit.reject.kind-stage: "kind {kind} is not submittable at stage {stage}"
+submit.reject.kind-stage-path: " after the verdict a changed wish enters as new check-table rows or a spec delta; a contradiction enters as a lint conflict finding (kind: lint, dimension: conflict)"
+submit.reject.unknown-kind: "unknown kind {kind}"
+submit.reject.unknown-kind-hint: "unknown kind {kind} — e.g.: {hint}"
+
+# The wish.
+submit.reject.intent-text-empty: "text: empty"
+
+# The behavior probe.
+submit.reject.probe-commands-empty: "commands: empty"
+submit.reject.probe-command-empty: "commands[{index}]: empty"
+submit.probe.diff-exit: "exit code differs between runs: {a} vs {b}"
+submit.probe.diff-stdout: "stdout differs between runs"
+submit.probe.diff-stderr: "stderr differs between runs"
+submit.probe.diff-files-count: "files differ between runs: {a} vs {b}"
+submit.probe.diff-file-one-run: "file {path} present in one run only"
+submit.probe.diff-file: "file {path} differs between runs"
+
+# The clarification batch.
+submit.reject.questions-exceed: "findings: {got} questions exceed the batch of {max} — keep the {max} that block the spec most (the rest ride a later checks delta; every finding may arrive as its own batch)"
+submit.reject.finding-id-order: "findings[{index}].id: expected {want} in order"
+submit.reject.finding-dimension: "{id}.dimension: expected achievable | ambiguous | conflict"
+submit.reject.finding-empty: "{id}.finding: empty"
+submit.reject.question-empty: "{id}.question: empty"
+submit.reject.options-count: "{id}.options: expected 2 or 3, got {got}"
+submit.reject.option-id-order: "{id}.options[{index}].id: expected {want} in order"
+submit.reject.option-label-empty: "{id}.{option}.label: empty (a bare null or ~ decodes to nothing — write the text, or quote it if the literal word is wanted)"
+submit.reject.option-scope-empty: "{id}.{option}.scope: empty — the option price is computed from it"
+submit.reject.defaults-count: "{id}.options: exactly one default is required, got {got}"
+
+# The clarification loop: lint and the human's answers.
+submit.reject.empty-delta: "empty delta"
+submit.reject.lint-stage-conflict-only: "{id}.dimension {dimension}: outside intake only conflict findings are accepted (stage {stage}) — goal questions belong to the wish intake, a contradiction may open at any moment"
+submit.reject.lint-no-intent: "no intent: lint runs on a pinned intent"
+submit.reject.lint-duplicate: "already submitted: one goal lint per intent"
+submit.reject.answer-not-found: "answers[{index}].question: {question} not found"
+submit.reject.answer-twice: "answers[{index}].question: {question} answered twice"
+submit.reject.answer-already-resolved: "answers[{index}].question: {question} is already resolved — the recorded choice stands; only unanswered questions are re-asked"
+submit.reject.answer-not-option: "answers[{index}].option: {option} not an option of {question}"
+submit.reject.clarify-no-lint: "no goal lint: nothing to answer"
+submit.reject.clarify-no-questions: "no questions: the goal lint was clean"
+submit.reject.clarify-already: "already answered: one batch per intent"
+
+# Explicit answers to a closed batch: a silence-default does not
+# survive the human's word, an already explicit choice is not
+# overwritten (the answer is named, not silently dropped).
+submit.answers.upgraded: "answers: {list} — explicit choice replaces the recorded silence-default"
+submit.answers.kept: "answers: {list} — already answered explicitly, the first recorded choice stands"
+
+# The spec.
+submit.reject.spec-operations-empty: "operations: empty"
+submit.reject.spec-implement-frozen: "on implement only add-scenario (growth, fresh checks billed) and update-scenario (repair of a pinned form) are allowed: the rest of the composition is frozen by started code"
+submit.reject.spec-op-empty: "empty spec operation"
+
+# Growth on implement.
+submit.reject.owners-cross-facets: "state files owned by {owners}: the frozen cut cannot take a scenario crossing facets"
+submit.reject.no-owner-facet: "no facet of the frozen cut owns its state files (and the cut has more than one card)"
+submit.reject.card-quarantined: "card {card} is quarantined: the facet cannot take new work"
+
+# Requirements.
+submit.reject.id-req: "id: expected REQ-<n>"
+submit.reject.id-taken: "id: already taken"
+submit.reject.formulation-empty: "formulation: empty"
+submit.reject.not-found: "not found"
+submit.reject.req-has-scenarios: "has scenarios: remove them first"
+submit.reject.deps-cycle: "dependencies: cycle through {id}"
+submit.reject.deps-not-found: "dependencies: {dep} not found"
+
+# Scenarios.
+submit.reject.id-scn: "id: expected SCN-<n>"
+submit.reject.requirement-not-found: "requirement {id}: not found"
+submit.reject.prose-steps: "prose: prose has no steps and no assertions"
+submit.reject.prose-empty: "prose: reason is empty"
+submit.reject.when-required: "when: surface call is required (or fill in prose)"
+submit.reject.pre-empty: "pre[{index}]: empty command"
+submit.reject.then-invalid: "then[{index}]: {err}"
+
+# Assertions.
+submit.reject.assert-prose: "prose: assertions are not pinned to prose"
+submit.reject.assert-pinned: "assertions already pinned"
+submit.reject.assertions-empty: "assertions: empty"
+submit.reject.assertion-invalid: "assertions[{index}]: {err}"
+
+# The cut into facets.
+submit.reject.split-cards-empty: "cards: empty"
+submit.reject.split-started: "implementation started ({card} is {status}, attempts {attempts}): the cut and its contracts are frozen until the cycle completes"
+submit.reject.id-crd: "card {id}: id: expected CRD-<n>"
+submit.reject.card-listed-twice: "card {id}: id: listed twice"
+submit.reject.facet-format: "card {id}: facet {facet}: expected lowercase words separated by dashes"
+submit.reject.facet-taken: "card {id}: facet {facet}: already taken by {other}"
+submit.reject.card-scenarios-empty: "card {id}: scenarios: empty"
+submit.reject.card-scenario-not-found: "card {id}: scenario {scenario}: not found"
+submit.reject.card-scenario-prose: "card {id}: scenario {scenario}: prose is not implemented by cards"
+submit.reject.scenario-listed-twice: "scenario {id}: listed by more than one card"
+submit.reject.card-files-empty: "card {id}: files: empty (a cut card owns its files)"
+submit.reject.card-file-path: "card {id}: file {file}: {err}"
+submit.reject.file-owned-by-both: "file {file}: owned by both {other} and {card}"
+submit.reject.scenario-not-covered: "scenario {id}: not covered by any card"
+submit.reject.id-ifc: "contract {id}: id: expected IFC-<n>"
+submit.reject.contract-listed-twice: "contract {id}: id: listed twice"
+submit.reject.contract-version-format: "contract {id}: version {version}: expected X.Y.Z"
+submit.reject.contract-surface-empty: "contract {id}: surface: empty"
+submit.reject.contract-surface-line: "contract {id}: surface: empty line"
+submit.reject.contract-side-unknown: "contract {id}: side {side}: not a declared facet"
+submit.reject.contract-side-twice: "contract {id}: side {side}: listed twice"
+submit.reject.contract-sides-few: "contract {id}: sides: a contract names at least two facets"
+submit.reject.contract-version-grow: "contract {id}: version {version} must grow above {old}"
+submit.reject.share-without-contract: "cards {a} and {b} share state file(s) {files} with no contract between their facets: parallel work outside a frozen contract is forbidden"
+
+# Code and repair.
+submit.reject.reply-to-gate: "reply-to: {gate} is not a gate name"
+submit.reject.card-not-found: "card {id}: not found"
+submit.reject.files-empty: "files: empty (need at least one entry or a delete)"
+submit.reject.path-invalid: "path {path}: {err}"
+submit.reject.delete-path-invalid: "delete {path}: {err}"
+submit.reject.digest-and-content: "file {file}: digest and content together — name exactly one"
+submit.reject.seed-digest-format: "seed {path}: digest must be exactly 64 lowercase hex chars — copy it verbatim from the FILES WRITTEN block (got: {digest})"
+submit.reject.seed-digest-unknown: "seed {path}: digest {digest}: no bytes with this digest in the canon"
+submit.reject.digest-format: "file {file}: digest must be exactly 64 lowercase hex chars — copy it verbatim from the FILES WRITTEN block, do not retype (got: {digest})"
+submit.reject.digest-unknown: "file {file}: digest {digest}: no file with this digest in the canon"
+submit.reject.path-owned: "path {path}: owned by {owner}"
+submit.reject.path-not-in-card: "path {path}: not in the card's files"
+
+# Fixtures.
+
+# Project paths.
+submit.reject.path-not-relative: "expected a relative path inside the project"
+submit.reject.instance-untouchable: "instance directory is untouchable"
+
+# Conventions (the passport): the declaration of the product's
+# environment recipes.
+
+# Deferred expectations amendments.
+submit.reject.amend-none: "no pending amendment to assert"
+submit.reject.amend-decision: "decision must be approve or reject"
+submit.reject.run-collision: "contradictory expectations — a seeded run cannot yield two exact values: {rows}"
+
+# Surgical expectation edits (update-assertions).
+submit.reject.assertion-ops-empty: "update-assertions: scenario and at least one op are required"
+submit.reject.assertion-not-found: "assertion op {num}: match equals no observation of {scenario} — copy the observation verbatim (compact or full form decode to the same assertion)"
+submit.reject.assertion-ambiguous: "assertion op {num}: match equals {count} observations of {scenario} — disambiguate by editing the neighbours first or use update-scenario"
+submit.reject.assertion-op-form: "assertion op {num}: exactly one form required — match+set, match+drop, match+capture, or add"
+
+# Capturing an expectation by measurement (capture): the machine prints
+# the bytes, not a hand.
+submit.reject.capture-condition: "assertion op {num} of {scenario}: capture sets exact expectations only — {observation} with condition {condition} is not exact; use match+set or change the condition"
+submit.reject.capture-no-when: "assertion op {num} of {scenario}: capture needs the scenario command — the scenario has none"
+submit.reject.capture-run: "assertion op {num} of {scenario}: capture could not run the delivered product — {error}"
+submit.reject.capture-file: "assertion op {num} of {scenario}: the measured run produced no file {path}"
+submit.reject.capture-observation: "assertion op {num} of {scenario}: observation {observation} cannot be captured"
+submit.reject.capture-unchanged: "assertion op {num} of {scenario}: the measured {observation} equals the current expectation — nothing to assert; deliver the behavior change first, let the check go red, then capture"
+
+# Publishing the assigned identifiers of curated records: addressable
+# from creation (kb — a content digest, not a sequence number).
+submit.reply.kb-id: "kb id: {id} — addressable as punchtape why {id}"
+submit.reply.dec-id: "decision id: {id} — addressable as punchtape why {id}"
+amend.change.row: "row {index} ({run}): {scenario} expectations change"
+amend.change.update: "{scenario}: fields {fields} change"
+amend.change.capture: "{scenario} {observation}: was \"{old}\" → machine measured \"{new}\""
+amend.change.remove: "{scenario} (its check already ran) is removed"
+amend.change.update-req: "{requirement}: the boundary formulation changes on a delivered product"
+amend.change.remove-req: "{requirement}: the boundary is removed from a delivered product"
+amend.change.cr-cards: "change request closes {n} card(s) — the cut opens again"
+amend.change.cr-contracts: "change request unfreezes {n} frozen contract(s)"
+amend.change.cr-stage: "the cycle rolls back from deliver to re-acceptance"
+
+# Completeness lint rule deviations: validation of a kind: waive delta.
+submit.reject.waive-empty: "waive: the delta is empty"
+submit.reject.waive-rule: "waive: rule {rule} is not waivable (only completeness rules accept a reasoned deviation)"
+submit.reject.waive-target: "waive: target is required (the REQ-id or the command family the deviation applies to)"
+submit.reject.waive-reason: "waive: a reason is required — a silent deviation is not accepted"
+# Instance knowledge: Decision Log, the forbidden zone, kb.
+submit.reject.decision-empty: "decision and rationale are both required"
+submit.reject.outofscope-empty: "what and why are both required"
+submit.reject.outofscope-taken: "{what} is already out of scope"
+submit.reject.outofscope-not-found: "{what} is not in the out-of-scope list"
+submit.reject.decision-one-op: "exactly one operation per submission (add-decision, update-decision, add-out-of-scope or remove-out-of-scope)"
+submit.reject.kb-empty: "do and source are both required (a knowledge entry without a source is not knowledge)"
+submit.reject.kb-when: "when: at least one trigger token is required"
+submit.reject.kb-supersedes: "supersedes {id}: no such kb entry"
+submit.reject.kb-not-found: "kb entry {id} not found"
+# The machine's composition question: two or more surfaces in the
+# table — one product or separate tasks.
+composite.finding: "the table drives several different surfaces: {names}"
+composite.question: "is this one product with several commands, or several independent tasks?"
+composite.one.label: "one product"
+composite.one.scope: "all surfaces belong to one tool; the wish is one task"
+composite.split.label: "separate tasks"
+composite.split.scope: "finish this instance with the first surface; start a new instance per extra surface"
+
+submit.writer-busy: "FAIL: another writer holds this instance ({err}); a single writer per instance is a machine guarantee — retry after it finishes"
+submit.idempotent-content: "IDEMPOTENT REPLAY: transaction {tx} (same content as key {key}; content idempotency) — nothing re-applied, cycles and counters unchanged{note}{tail}"
+submit.check.journaled-content: "CHECK OK: kind {kind}, content digest {digest} — already journaled (content idempotency); nothing would be applied"
+submit.reject.amend-open: "an open deferred edit waits for a human assertion (key {key}, {count} change(s)); resolve it first — kind: amend approve | reject — or combine your rows into one delta and submit it after the decision; conflict findings (kind: lint, dimension: conflict) are accepted at any moment"
+submit.reject.decision-update-empty: "update-decision: at least one of decision/rationale is required (an empty update changes nothing)"
+submit.reject.decision-not-found: "decision {id} not found"
+submit.reject.kb-update-empty: "update-kb: at least one of when/do/source is required (an empty update changes nothing)"
+
+submit.reject.feature-req-missing: "feature: requirement is required"
+submit.reject.feature-req-not-found: "feature: requirement {id} not found"
+submit.reject.feature-no-doc: "feature: {id} has no description to ratify"
+submit.reject.feature-empty: "feature: text or ratify is required"

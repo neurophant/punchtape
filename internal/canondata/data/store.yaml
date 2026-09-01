@@ -1,0 +1,22 @@
+# Canon storage surfaces: an honest refusal on an incompatible schema
+# version is printed to the human in full — it is a surface, not a
+# wrapper.
+store.schema-newer: "canon schema version {have} is newer than supported {want}: upgrade punchtape"
+# Store discipline: the writer lock, read-back, the write whitelist,
+# manual edit detection, recovery.
+store.writer.busy: "another writer holds this instance (.punchtape/cache/writer.lock): wait for the running verb to finish"
+store.effect.whitelist: "effect path {path}: instance writes are limited to state.yaml and the canon collections (requirements, scenarios, checks, cards, contracts)"
+store.effect.charset: "effect name {name}: expected lowercase letters, digits and dashes with a .yaml suffix"
+store.effect.readback: "read-back of {path} differs from the written bytes: storage is not honest, nothing was committed past this point"
+store.integrity.header: |-
+  instance integrity check failed: files below differ from what the machine
+  wrote (manual edit detected — the machine is the only writer; restore the
+  named files from your backup or start a new instance; the journal is intact)
+store.integrity.differs: "{path}: differs from the last machine-written content"
+store.integrity.unjournaled: "{path}: exists without a machine-written record"
+store.integrity.missing: "{path}: missing though the machine wrote it"
+# Manifest headers of instance files: the first line of every data file
+# names the writer verbs and the ban on manual edits; the cache header
+# declares a rebuildable service value.
+store.file-header: "# punchtape writer: {writers}; machine-only, hand edits are refused"
+store.cache-header: "# punchtape cache: rebuilt from the journal, not a source of truth; safe to delete"

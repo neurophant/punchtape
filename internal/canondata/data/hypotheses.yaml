@@ -1,0 +1,7 @@
+# The registry of canon change hypotheses. The canon is amended only by
+# releasing a new delivery version; every amendment lives here as a record
+# {id, change, hypothesis, metric, window, baseline, outcome}.
+# Rule: a canon amendment ships only as a new version with a hypothesis
+# record; a refuted hypothesis — the amendment is rolled back, the result
+# is journaled as the outcome value (refuted).
+hypotheses: []

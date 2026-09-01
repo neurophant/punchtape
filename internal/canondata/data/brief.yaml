@@ -1,0 +1,30 @@
+# Brief envelope surfaces: headings and output contracts of the three caller
+# forms, strict forms of the bare API.
+brief.ide.head: "# Executor Task"
+brief.ide.context-head: "## Context"
+brief.ide.reply-head: "## Reply to the previous submission"
+brief.ide.contract-head: "## Output contract"
+brief.ide.contract: |-
+  Write exactly one YAML document — a delta in the format of the EXAMPLE above —
+  to the file `.punchtape/caller/delta.yaml` (overwrite it). Only the delta,
+  no explanations, no code fences. If you know your token usage, end the file
+  with a comment line `# TOKENS <n>`.
+brief.ide.bounds-head: "## Bounds"
+brief.ide.bounds: |-
+  Change only what the ACTION asks for; machine zones (.punchtape) are
+  untouchable except the reply file; behavior is observed only through
+  the usage surface.
+brief.api.reply-format: 'one JSON object on stdout: {"delta": "<one YAML document — a delta in the format of the EXAMPLE inside the slot>", "tokens": <your token count or 0>}'
+brief.api.reply-example: '{"delta": "kind: intent\nsubmission-key: intent-001\ntext: >-\n  ...\n", "tokens": 1234}'
+brief.error.api-json: "api reply is not strict JSON"
+brief.cli.head: "EXECUTOR TASK"
+brief.cli.context-head: "[CONTEXT]"
+brief.cli.reply-head: "[REPLY TO THE PREVIOUS SUBMISSION]"
+brief.cli.contract-head: "[OUTPUT CONTRACT]"
+brief.cli.contract: |-
+  Return exactly one YAML document — a delta in the format of the EXAMPLE above.
+  Only the delta, no explanations, no code fences.
+brief.cli.bounds-head: "[BOUNDS]"
+brief.cli.bounds: |-
+  Change only what the ACTION asks for; machine zones (.punchtape)
+  are untouchable; behavior is observed only through the usage surface.

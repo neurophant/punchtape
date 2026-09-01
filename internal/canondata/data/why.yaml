@@ -1,0 +1,249 @@
+# The why verb surface: topics, slot price, stage meters, derived
+# variants, latency, and entity not-found.
+why.topics: "Topics: price — what the current slot costs; stage — meters of the current stage; derived — kinds and reds of the derived variants; latency — p95 of the verbs; passport — boundaries, conventions, freshness, inventory of the product; impact — file to boundaries: what an edit would touch; knowledge — decision log, out-of-scope, kb; amend — the open deferred edit verbatim (what a human is asked to assert); drift — acceptance drift of the instance (why the verdict is NOT-READY and what re-verifies it); acceptance — the acceptance moment: outcomes and the digest it signed; surface — the declared verification surface and its current digest; attention — points of human attention of this instance; verifications — who/when/what matched per boundary; diary — machine-observed pains with workarounds; retro — pains ranked for treatment; handoff — done/next/prompt computed for a fresh session; hypotheses — canon change registry; compatibility — what run evidence actually covers; red — every red check with its full reason (the slot cuts long red lists); coverage — completeness gaps the machine names (command families without an executable scenario) and active reasoned deviations; freeze — the composition freeze rule (the same text the slot prints); repair — replacing the expectations of a row; regenerate — the whole-facet code delta; rerun — the pure gate re-run; spec — the spec registry: features with statuses and scenario addresses (knowledge for the human, in living words); `spec <words>` — registry search: features and scenarios where all words meet (formulations, summaries, calls, expected texts); REQ-/fragment SCN-N — the scenario observations as data (ready match blocks; copy verbatim, never retype); REQ-/SCN-/IFC-/CRD-/TST-/DEC-/KB-<n> — the full card of an entity (a kind word before the id — card, scenario, … — is accepted)."
+# The spec registry and its search (the knowledge layer).
+why.spec.head: "SPEC REGISTRY — {features} feature(s), {scenarios} executable scenario(s), {prose} prose; human render: {render}; search: why spec <words>"
+why.spec.feature: "  {id} [{status}] {name} — scenarios: {scenarios}, verified: {green}"
+why.spec.scenario: "    {id} {line}"
+why.spec.search-head: "SPEC SEARCH \"{query}\" — {features} feature(s), {scenarios} scenario(s) where all words meet"
+why.spec.search-none: "SPEC SEARCH \"{query}\" — nothing matches; the registry holds {features} feature(s), {scenarios} executable scenario(s)"
+# Slot concepts as topics: the operator asks the machine about its
+# rules; freeze renders the slot key directly (see whyTopic), the rest
+# carry the same semantics as the matching slots and the self-doc.
+why.concept.repair: "REPAIR: replacing the expectations of a row — the same seeds+materials+run, new out/err/state; rows that prove nothing (never green, or green on a broken surface) repair freely: the machine re-runs and re-probes the replacement (a weak replacement stays red); changing a row that has proven green is a change request held for a human (kind: amend)."
+why.concept.regenerate: "REGENERATE: implementing the whole card facet from its scenarios in one code delta; the slot recommends it when the measured drift is high — the repair estimate exceeds regeneration."
+why.concept.rerun: "RERUN: a code/fix delta where every file arrives by digest and nothing differs from the project (no new byte) — nothing is applied, no counters move, gates run synchronously; the honest way to re-verify after the environment or a recipe recovered."
+
+# The held edit: verbatim what the human is asked to assert.
+why.amend.none: "AMEND: no pending deferred edit — nothing waits for a human assertion."
+why.amend.head: |-
+  AMEND — the open deferred edit, verbatim (submission "{key}"):
+  {raw}
+  changes:
+  {changes}
+  options: kind: amend, decision: approve | reject (silence keeps the already-run expectations)
+
+why.price.head: |-
+  PRICE OF THE CURRENT SLOT
+  {action}
+why.price.origin: "origin: example {example-bytes} bytes + context {context-bytes} bytes, rate 4 bytes/token (estimate, not a meter) → ~{example-tokens} + ~{context-tokens} tokens"
+why.price.floor: "reply floor: ~{floor} tokens (format skeleton of the expected delta; the payload adds on top)"
+why.price.overhead: "machine overhead: none in this slot — verbs and gates run off-context; their wall: why stage, why latency"
+why.price.ceiling: "ceiling: the whole facet on the first code submission; fix cycles carry the red slice only — that slice will not shrink further."
+why.price.raise: "how to raise it: atomic submissions — a smaller facet means a smaller context; the example is fixed by the format."
+why.stage.head: "STAGE: {stage}"
+why.stage.deltas: "deltas applied: {deltas}"
+why.stage.wall: "wall of applications: {wall} ms"
+why.stage.calls: "verb calls (this stage only): {calls}"
+why.stage.tokens: "tokens: {tokens}"
+why.stage.tokens-no-data: "tokens: no data (caller counter not reported)"
+why.derived.not-run: "DERIVED: not run before deliver."
+why.derived.unavailable: "DERIVED: unavailable."
+why.derived.none: "DERIVED: none (no surface)."
+why.derived.head: "DERIVED VARIANTS ({count}, max {budget} per scenario)"
+why.derived.kind: "{kind}: green {green}, red {red}"
+why.derived.red: "red {parent} {kind}: {reason}"
+why.latency-none: "LATENCY: no calls yet — nothing to measure."
+why.latency-head: "LATENCY (p95 of verb wall time, ms; calls — every stage, per verb)"
+why.latency-verb: "{name}: {p95} ms (calls {calls})"
+why.not-found: "FAIL: {id}: not found."
+why.fragment.usage: "FAIL: fragment needs a scenario id — why fragment SCN-N"
+why.fragment.head: |-
+  FRAGMENT {id} — observations as data, verbatim match blocks (do not retype; copy from here):
+
+# The product passport: boundaries, conventions, freshness (a computed view).
+why.passport.head: "PASSPORT: {count} boundaries; conventions: {conventions}"
+why.passport.conventions-empty: "none declared (empty start — recipes are taught once when needed)"
+why.passport.conventions-declared: "{parts}"
+why.passport.boundary: "  {id} [{status}, trust {weight} of {top}] domain: {domain} — scope {files} file(s), {fresh}"
+why.passport.verdict: "    verified against scope-hash {scope} (conventions {conv}), proof tx {tx}"
+why.passport.attribution: "    attribution: {note}"
+why.passport.fresh-fresh: "fresh"
+why.passport.fresh-drifted: "DRIFTED since the last proof (code or conventions changed)"
+why.passport.fresh-missing: "MISSING scope file — fail-safe, boundary is not fresh"
+why.passport.fresh-unchecked: "not verified yet"
+why.passport.inventory: "INVENTORY: {features} feature(s) bound to boundaries, {prose} prose scenario(s) (unmeasurable by machine reason), unassigned code files: {unassigned}"
+passport.note.whole-product: "whole-product facet shares all code files (no split)"
+why.diary.head: "DIARY — machine-observed pains, computed from the append-only ledger (duplicates = frequency = priority)"
+why.diary.item: "{id} — seen {count} time(s), last {last}"
+why.diary.item-what: "  what: {diagnosis}"
+why.diary.item-open: "  while open: {workaround}"
+why.diary.item-finding: "  no workaround exists — the finding itself is the record"
+why.diary.none: "no pains observed in this instance"
+# The file-to-boundaries reverse index: what an edit would touch — before the edit.
+why.impact.head: "IMPACT: {files} code file(s) known to the machine; edit one and these boundaries re-verify"
+why.impact.file: "  {file} -> {boundaries}"
+# The knowledge summary of the instance.
+why.knowledge.head: "KNOWLEDGE: decisions {decisions}, out-of-scope {outofscope}, kb {kb}"
+why.knowledge.decision: "  {id} [{at}]: {decision} — because: {rationale}"
+why.knowledge.outofscope: "  OUT OF SCOPE: {what} — {why}"
+why.knowledge.kb: "  {id}: when [{when}] do: {do} (source: {source})"
+why.knowledge.kb-superseded: "  {line} [SUPERSEDED]"
+# The verification journal: who/when/what matched.
+why.verifications.head: "VERIFICATIONS: {count} boundary(ies); proofs are machine gate transactions"
+why.verifications.row: "  {id} [{status}] verified against scope {scope}, conventions {conv} by tx {tx} at {at}"
+why.verifications.unverified: "  {id}: no proof yet (claimed only)"
+why.verifications.acceptance: "acceptance: {outcome} ({green}/{checks} checks green)"
+# Incremental filling and backfill in the passport inventory.
+why.passport.inventory-probes: "backfill: known behavior without a boundary: {probes} probe observation(s); passport ahead of code: {red} red check(s)"
+why.passport.inventory-detail: "detail minimum: {nodetail} of {boundaries} boundaries carry no behavior-class block yet"
+why.passport.backfill-priority: "  formalize first: {id} [{status}, {changes} file change(s) under it]"
+# The human attention summary.
+why.attention.head: "ATTENTION: question batches {questions}, closed batches {choices} (questions answered explicitly {answered}, closed by silence-default {defaults}), attention walls {ms} ms; human prose recorded: decisions {decisions}, kb {kb} (every manual act is a candidate for a norm — it is recorded immediately)"
+# The drift direction of a boundary: the treatment depends on which
+# side moved; the machine classifies by its own facts, the treatment is
+# named explicitly.
+why.passport.drift-code: "    direction: code moved since the verdict — treatment: machine re-proof (a fix delta re-verifies the changed instance)"
+why.passport.drift-spec: "    direction: passport ahead of code — red check(s) re-open the card, code catches up"
+# The machine handoff: done/next/ready prompt — computed from the
+# state, the ledger and the verdict, bypassing agent memory.
+why.handoff.head: "HANDOFF — computed from the instance state, ledger and verdict; agent memory is not a source"
+why.handoff.done: |-
+  DONE:
+    stage: {stage}
+    journal transactions: {deltas}
+    checks green: {green} of {total}
+    boundaries verified: {verified} of {boundaries}
+    verdict: {verdict}
+why.handoff.next: |-
+  NEXT:
+    {stage-action}
+    open question batch: {questions}
+    pending amendment: {pending}
+    drifted boundaries: {drift}
+why.handoff.prompt: |-
+  PROMPT (paste into a fresh session):
+    Continue the product work in this directory through punchtape.
+    The wish: {wish}
+    All state lives in .punchtape — never trust memory, start with: punchtape next
+    Loop: next shows the slot, submit applies a delta, until VERDICT; why <topic> explains any number.
+why.handoff.next.intake: "submit the wish: punchtape next \"<wish>\" pins it in the same transaction"
+why.handoff.next.spec: "review and complete the spec table (submit kind: spec or kind: checks)"
+why.handoff.next.ac-compile: "submit assertions to compile the checks (kind: checks)"
+why.handoff.next.implement: "submit code or a fix delta for the current card (the slot names it)"
+why.handoff.next.deliver: "read the verdict (punchtape renders it); change requests go through amend approval"
+why.handoff.none: "none"
+why.handoff.verdict-none: "not delivered yet"
+# The diary retro: pain priority by frequency, the treatment with its
+# reason as a decision delta; the cheapness is not invented.
+why.retro.head: "RETRO — pains ranked by frequency (duplicates = how often it bit); record the treatment of each as a decision delta (kind: decision), an entry without a recorded decision stays open"
+why.retro.item: "{id} — seen {count} time(s)"
+why.retro.item-what: "  what: {diagnosis}"
+why.retro.item-open: "  while open: {workaround}"
+why.retro.item-finding: "  no workaround exists — the finding itself is the record"
+why.retro.item-cost: "  fix cost: unknown until measured — not invented here"
+why.retro.none: "no pains observed in this instance — nothing to retro"
+why.retro.total: "process meters: {pains} pain kind(s), {observations} observation(s) in total"
+# The canon change hypothesis registry: every canon amendment ships as
+# a new delivery version with a testable hypothesis; refuted — rolled
+# back, the outcome is journaled.
+why.hypotheses.head: "HYPOTHESES — canon change registry of this delivery build (a canon edit ships only as a new delivery version, each with a testable hypothesis; refuted — rolled back)"
+why.hypotheses.item: "  {id}: change — {change}; hypothesis — {hypothesis}; metric {metric}, window {window}, baseline {baseline}; outcome: {outcome}"
+why.hypotheses.none: "no canon changes carried by hypothesis in this build"
+# The compatibility matrix: "verified/partially/not verified" only by
+# live run evidence; the current binary's environment is a measured
+# delivery fact, everything not run is honestly not measured.
+why.compatibility.head: "COMPATIBILITY — measured by run evidence only, silence is forbidden"
+why.compatibility.runtime: "  this build runs on: {os}/{arch} (measured — it is executing)"
+why.compatibility.notmeasured: "  everything else (other platforms, other callers): not measured — no run evidence yet; unknown stays unknown"
+
+
+# The full list of red checks (the tail the slot cuts).
+why.red.none: "RED: no red checks — every check of this instance is green."
+why.red.head: "RED — {count} red check(s), full list with reasons (the slot cuts long red lists to a budget line):"
+why.red.row: "  {id} {scn}: {reason}"
+why.drift.none: "DRIFT: no acceptance moment yet — nothing to drift from."
+why.drift.fresh: "DRIFT: the instance matches the acceptance digest {digest}."
+why.drift.drifted: "DRIFT: the surface moved since the acceptance moment ({old} -> {new}); the verdict is honestly NOT-READY until a fix re-verifies the changed instance."
+why.acceptance.none: "ACCEPTANCE: no acceptance moment recorded yet."
+why.acceptance.head: "ACCEPTANCE: outcome {outcome}, digest {digest}, green {green}, red {red}, total {total}; env probe: {env}."
+why.surface.direct: "SURFACE: direct submission mode (no build artifact declared; files at command[0] paths)."
+why.surface.artifact: "SURFACE: declared artifact {artifact} (file or tree)."
+why.surface.no-digest: "no checkable surface digest yet (no checks with a command)."
+why.surface.digest: "current surface digest: {digest} (surface + definitions of all checks)."
+why.coverage.none: "COVERAGE: no completeness gaps — every command family of the wish has an executable scenario."
+why.coverage.head: "COVERAGE: {n} completeness gap(s) — command families of the wish without a single executable scenario (the coverage gate holds the code stage until each family is covered or a gap is waived with a reason):"
+why.coverage.gap: "  - family `{family}` — no executable scenario runs these literal command tokens"
+why.coverage.waives-head: "active reasoned deviations (kind: waive): {n}"
+why.coverage.waive: "  - {rule} / {target}: {reason}"
+
+# --- Russian locale ---
+why.spec.head.ru: "РЕЕСТР СПЕК — фич: {features}, исполняемых сценариев: {scenarios}, прозы: {prose}; человеческий рендер: {render}; поиск: why spec <слова>"
+why.spec.feature.ru: "  {id} [{status}] {name} — сценариев: {scenarios}, проверено: {green}"
+why.spec.scenario.ru: "    {id} {line}"
+why.spec.search-head.ru: "ПОИСК ПО СПЕКЕ «{query}» — фич: {features}, сценариев: {scenarios} (сошлись все слова)"
+why.spec.search-none.ru: "ПОИСК ПО СПЕКЕ «{query}» — ничего не нашлось; в реестре фич: {features}, исполняемых сценариев: {scenarios}"
+why.handoff.head.ru: "ХЭНДОФФ — вычислен из состояния инстанса, леджера и вердикта; память агента не источник"
+why.handoff.done.ru: |-
+  СДЕЛАНО:
+    стадия: {stage}
+    транзакций журнала: {deltas}
+    зелёных проверок: {green} из {total}
+    сверенных границ: {verified} из {boundaries}
+    вердикт: {verdict}
+why.handoff.next.ru: |-
+  ДАЛЬШЕ:
+    {stage-action}
+    открытый батч вопросов: {questions}
+    отложенная правка на утверждении: {pending}
+    границы в дрейфе: {drift}
+why.handoff.prompt.ru: |-
+  ПРОМПТ (скопируй в новую сессию):
+    Продолжай работу над продуктом в этом каталоге через punchtape.
+    Пожелание: {wish}
+    Всё состояние — в .punchtape; памяти не верь, начни с: punchtape next
+    Цикл: next показывает слот, submit применяет дельту, до VERDICT; why <тема> объясняет любое число.
+why.handoff.next.intake.ru: "подай пожелание: punchtape next \"<пожелание>\" закрепляет его той же транзакцией"
+why.handoff.next.spec.ru: "ревьюй и дополни таблицу спеки (подача kind: spec или kind: checks)"
+why.handoff.next.ac-compile.ru: "подай утверждения для компиляции проверок (kind: checks)"
+why.handoff.next.implement.ru: "подай код или fix-дельту текущей карточки (слот называет её)"
+why.handoff.next.deliver.ru: "прочитай вердикт (рендерит машина); change request — через утверждение amend"
+why.handoff.none.ru: "нет"
+why.handoff.verdict-none.ru: "ещё не доставлялся"
+
+# --- Chinese locale ---
+why.handoff.done.zh: |-
+    完成：
+      阶段：{stage}
+      账本事务：{deltas}
+      检查通过：{green}/{total}
+      已验证边界：{verified}/{boundaries}
+      判定：{verdict}
+why.handoff.head.zh: |-
+    交接 —— 由实例状态、账本与判定计算得出；代理的记忆不是来源
+why.handoff.next.ac-compile.zh: |-
+    提交断言以编译检查（kind: checks）
+why.handoff.next.deliver.zh: |-
+    读取判定（由 punchtape 渲染）；变更请求需通过 amend 审批
+why.handoff.next.implement.zh: |-
+    为当前卡片提交代码或修复增量（槽位会指明是哪张卡片）
+why.handoff.next.intake.zh: |-
+    提交愿望：punchtape next "<愿望>" 会在同一事务中将其固定
+why.handoff.next.zh: |-
+    下一步：
+      {stage-action}
+      未决问题批次：{questions}
+      待审批修正：{pending}
+      已漂移边界：{drift}
+why.handoff.next.spec.zh: |-
+    审查并补全规格表（提交 kind: spec 或 kind: checks）
+why.handoff.none.zh: |-
+    无
+why.handoff.prompt.zh: |-
+    提示词（粘贴到新会话中）：
+      通过 punchtape 继续本目录中的产品工作。
+      愿望：{wish}
+      所有状态都在 .punchtape 中 —— 不要相信记忆，从这里开始：punchtape next
+      循环：next 显示槽位，submit 应用增量，直到 VERDICT；why <主题> 可解释任何数字。
+why.handoff.verdict-none.zh: |-
+    尚未交付
+why.spec.feature.zh: |4-
+      {id} [{status}] {name} —— 场景：{scenarios}，已验证：{green}
+why.spec.head.zh: |-
+    规格注册表 —— 特性 {features} 项，可执行场景 {scenarios} 个，文字描述 {prose} 篇；人类可读渲染：{render}；搜索：why spec <关键词>
+why.spec.scenario.zh: |4-
+        {id} {line}
+why.spec.search-head.zh: |-
+    规格搜索 “{query}” —— 特性 {features} 个，全部词语均命中的场景 {scenarios} 个
+why.spec.search-none.zh: |-
+    规格搜索 “{query}” —— 无匹配；注册表共有特性 {features} 个、可执行场景 {scenarios} 个

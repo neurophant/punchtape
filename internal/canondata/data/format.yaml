@@ -1,0 +1,197 @@
+# Delta format surfaces: decode errors, submission repair templates,
+# hints, and canonical skeletons of the correct shape per delta kind.
+format.error.unknown-kind: "kind: unknown delta kind {kind}"
+format.error.op-mapping: "operation: expected a mapping with exactly one key"
+format.error.op-one-key: "operation: expected exactly one key, got {count}"
+format.error.op-unknown: "operation: unknown operation {op}"
+format.error.op-empty: "operation: empty"
+format.error.escape: "literal escape at byte {at}: control characters must be real characters (YAML double quotes or a block scalar decode them), a literal backslash is \\x5C — \\n, \\t and any loose backslash in expectations are rejected"
+format.fix.tokens-trailer: "fixed: duplicate # TOKENS trailer — kept the last of {count}"
+format.fix.tab-indent: "fixed: tab indentation on line {line}"
+format.fix.closed-quote: "fixed: closed quote on line {line}"
+format.fix.quoted-scalar: "fixed: quoted a scalar containing ': '"
+format.fix.wrapped-map: "fixed: wrapped a single closed mapping into a list"
+format.fix.field-renamed: "fixed: field {from} -> {to} (line {line})"
+format.fix.flow-comma: "fixed: quoted a flow value torn by a comma (line {line})"
+format.match.mapping-values: "mapping values are not allowed in this context"
+format.match.cannot-start-token: "cannot start any token"
+format.match.mapping-values-short: "mapping values are not allowed"
+format.suggest.kind: "kind: {kind}"
+# Root-cause dialect diagnostics: one reason line per decode refusal.
+delta.error.run-argv-scalar: "run: an argv element must be a plain scalar"
+delta.error.run-form: "run: an element is one command — a string \"cmd args\" or an argv list [cmd, args]"
+delta.error.run-argv-empty: "run: an argv element is empty"
+format.diag.anchor: "yaml subset: anchors are not supported — inline the repeated values instead of referencing them"
+format.diag.flow-comma: "line {line}: an unquoted comma inside a flow value ({...}) splits it into separate entries — quote the value or use the block form"
+format.diag.flow-block: "line {line}: a block scalar (| or >) inside a flow mapping ({...}) is not supported — quote the text or write the entry in block form"
+format.diag.long-scalar: "a long quoted scalar broken by a real newline is not a one-line value — write long texts as a block scalar (|-)"
+format.skeleton.assert: |-
+    kind: assert
+    submission-key: <unique string>
+    scenario: SCN-<n>
+    assertions:             # compact lines or full form, as in spec
+      - out: <exact stdout text>
+      - observation: stdout  # stdout | stderr | exit-code | file
+        condition: equals    # equals | contains | json-equals | json-contains |
+                              # absent | fails
+        value: <expected text>
+        path: <file>          # only with observation: file
+format.skeleton.checks: |-
+    kind: checks
+    submission-key: <unique string>
+    rows:                       # one row = one check
+      - key: <stable repair id>   # optional; a never-green row is
+                                 # replaced under its key even with
+                                 # different seeds and run
+      - seeds:                  # optional; "<path> <content>" per line,
+          - <path> <content>   # or "<path> @<digest>" (bytes from the canon)
+        materials:              # optional; project files copied into the
+          - <path>              # run byte-for-byte (binary inputs)
+        run:                    # 1+ commands, ONE per element (a flat
+                                 # multi-element script is not a row);
+                                 # seeds never live here — only under
+                                 # seeds: above; all but the last must
+          - <command[0]> <args...>   # exit 0; two forms per element:
+          - [<command[0]>, <arg with a comma or quotes>]   # string | argv
+        out: <exact stdout of the last command>   # optional
+        err: <exact stderr of the last command>   # optional
+        rc: 0                   # exit code of the last command, 0 by default
+        state:                  # optional; "<path> <json>" structural,
+                                 # "<path> text <bytes>" exact bytes (escapes \n \t \r \\ \xNN), "<path> absent"
+          - <path> {"key":<value>}
+format.skeleton.intent: |-
+    kind: intent
+    submission-key: <unique string>
+    text: |
+      the wish in one paragraph, the human's own words
+format.skeleton.clarify: |-
+    kind: clarify
+    submission-key: <unique string>
+    answers:            # empty or missing — silence, all defaults
+      - question: Q1    # id from the lint batch
+        option: b       # option id from the lint batch
+format.skeleton.code: |-
+    kind: code
+    submission-key: <unique string>
+    card: CRD-<n>
+    files:
+      - path: <relative path>
+        content: <file text>   # exactly one of content | digest
+      - path: <relative path>
+        digest: <sha256 of a file content already in the canon>
+    delete: [<relative paths>]
+format.skeleton.default: |-
+    kind: <intent|lint|clarify|checks|spec|assert|split|code|fix|probe|conventions>
+    submission-key: <unique string>
+format.skeleton.fix: |-
+    kind: fix
+    submission-key: <unique string>
+    card: CRD-<n>
+    reply-to: <gate name>   # suite | types | lint | trace | review-diff |
+                            # coverage-probe | latency | cost
+    files:
+      - path: <relative path>
+        content: <file text>   # or digest: <sha256 from the canon>
+    delete: [<relative paths>]
+format.skeleton.probe: |-
+    kind: probe
+    submission-key: <unique string>
+    seed:                     # files with content before the run; may be empty
+      - {path: <state file>, content: <bytes>}
+    commands:                 # argv calls to formalize
+      - [<command>, <args...>]
+format.skeleton.conventions: |-
+    kind: conventions
+    submission-key: <unique string>
+    build:                   # recipe producing the surface artifact;
+      out: <path>           # optional: artifact path — a file or a
+      commands:             # directory; omitted → the file at each
+        - [<tool>, <args...>, "{out}"]  # command[0] path; every command
+                                        # exits 0, no shell ($ chars
+                                        # literal, ${...} never
+                                        # expands); {out} = artifact
+                                        # path; {name} = the
+                                        # alphabetically first
+                                        # command[0] of the rows —
+                                        # one name, not the artifact;
+                                        # minimal valid recipe:
+                                        # [[chmod, +x, "{out}"]]
+    types:                   # optional static gate commands (all exit 0)
+      commands:
+        - [<tool>, <args...>]
+    lint:                    # optional hygiene gate commands (all exit 0)
+      commands:
+        - [<tool>, <args...>]
+format.skeleton.spec: |-
+    kind: spec
+    submission-key: <unique string>
+    operations:             # add-requirement | add-scenario | update-requirement |
+                            # update-scenario | update-assertions | remove-requirement |
+                            # remove-scenario
+      - add-requirement:
+          id: REQ-<n>
+          formulation: <one atomic requirement>
+          dependencies: []
+      - add-scenario:
+          id: SCN-<n>
+          requirement: REQ-<n>
+          summary: <scenario name>
+          seed:                 # files with content before the run; by
+            - {path: <file>, content: <bytes>}   # bytes or by digest
+            - {path: <file>, digest: <64 hex from the canon>}
+          materials:              # project files copied byte-for-byte
+            - {from: <project-relative path>}
+          pre:                    # setup argv commands (each exits 0)
+            - [<command>, <args...>]
+          when:
+            surface: cli
+            command: [<surface>, <args...>]  # command[0] = invocation path
+            stdin: null       # or <text fed to stdin>
+            timeout-sec: 10
+          then:               # compact or full form; conditions: equals |
+            - out: <exact stdout>   # contains | json-equals | json-contains |
+            - err: <exact stderr>   # absent | fails; observations: stdout |
+            - rc: 0                 # stderr | exit-code | file (path: <file>)
+            - fails:                # non-zero exit, takes no value
+            - state-is: <file> <json>  # = file json-equals
+          # prose: <why this scenario is not executable — no steps at all>
+format.skeleton.split: |-
+    kind: split
+    submission-key: <unique string>
+    cards:
+      - id: CRD-<n>
+        facet: <module-name>     # lowercase words dash-separated
+        scenarios: [SCN-<n>, ...]
+        files: [<files this card owns>]
+    contracts: []   # required when two cards share a state file: IFC-<n>,
+                    # version <0.1.0>, sides [<facet>, <facet>],
+                    # surface [<the shared observable>]
+format.skeleton.amend: |-
+    kind: amend
+    submission-key: <unique string>
+    decision: approve    # approve | reject — the human's answer to
+                         # an open AMENDMENT NEEDS ASSERTION block
+format.skeleton.decision: |-
+    kind: decision
+    submission-key: <unique string>
+    add-decision:
+      decision: <what was decided>
+      rationale: <why it was decided this way>
+format.skeleton.kb: |-
+    kind: kb
+    submission-key: <unique string>
+    add:
+      when: [<trigger tokens: all must appear in the question context>]
+      do: <what to do when they do>
+      source: <where this knowledge comes from>
+
+
+format.skeleton.feature: |-
+  kind: feature
+  submission-key: feature-001
+  requirement: REQ-001       # an existing feature of this instance
+  text: |
+    what the feature does, in living words:
+    how it is called, what the user sees, boundaries and errors,
+    implementation details; machine facts only as references
+  # or ratify: true          # the operator ratifies the current text

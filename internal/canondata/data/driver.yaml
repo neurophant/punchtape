@@ -1,0 +1,25 @@
+# Autonomous mode surfaces: driver errors and progress, the
+# double-compile gate, executor routing.
+driver.fail: "FAIL: {err}"
+driver.fail.executor: "FAIL: executor {executor}: {err}"
+driver.executor-timeout: "executor call exceeded executor.timeout-s ({sec} s): the call was stopped (process group), the iteration is lost, the loop continues"
+driver.fail.executor-card: "FAIL: executor {executor} for {card}: {err}"
+driver.fail.ledger: "FAIL: ledger: {err}"
+driver.not-ready: "NOT-READY: iteration limit ({limit}) exhausted."
+driver.fail.no-instance: "FAIL: no instance in the working directory."
+driver.fail.stage: "FAIL: double compile runs on deliver (now: {stage})."
+driver.fail.seed: "FAIL: seed: {err}"
+driver.recompile.arm: "recompile arm: {dir} (independent implementation of the same spec)"
+driver.recompile.no-verdict: "recompile loop did not reach a verdict"
+driver.recompile.gate-red: "double-compile gate: RED — recompile did not reach a verdict"
+driver.recompile.gate-outcome: "double-compile gate: {outcome} — {reason}"
+driver.recompile.intent-text: |-
+  independent recompilation of the same spec (double-compile gate);
+  implement it from the slots, do not consult the original instance
+driver.recompile.instance-missing: "recompile instance not found"
+driver.recompile.suite-empty: "original suite is empty"
+driver.recompile.lost-scenarios: "recompile lost scenarios: {scenarios}"
+driver.recompile.outcomes-differ: "outcomes differ (not green in both): {scenarios}; a disagreement between two independent implementations is a defect of the BOUNDARY, not of the executor"
+driver.recompile.both-green: "both compilations green on the same suite ({count} scenarios)"
+driver.routing.default-empty: "routing {path}: default: empty (the fallback executor is required)"
+driver.routing.bad-kind: "routing {path}: kinds: {kind} is not a slot kind"

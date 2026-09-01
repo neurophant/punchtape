@@ -1,0 +1,6 @@
+# SPEC.md: headings of the machine spec render.
+specrender.title: "# Spec"
+specrender.wish: "## Wish (verbatim)"
+specrender.requirements: "## Requirements and checks"
+specrender.no-scenarios: "(no scenarios)"
+specrender.unmeasurable: "## Unmeasurable (prose)"

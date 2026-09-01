@@ -1,0 +1,59 @@
+# The verdict surface: field lines, release gates, and queues.
+verdict.head: "VERDICT: {status}"
+verdict.head-held: " (held: {count} deferred change(s) need a human assertion — the verdict below describes the state before them)"
+verdict.digest: "digest: {digest}"
+verdict.scenarios: "scenarios: total {total}, green {green}, red {red}, prose {prose}"
+verdict.traceability: "traceability: {green}/{executable} executable scenarios linked to green checks"
+verdict.checks: "checks: green {green}, red {red}, total {total}"
+verdict.stages: "stages: submissions accepted {submitted}, machine runs {runs}"
+verdict.bill: "bill: wall {wall}, verb calls {calls} (all stages), tokens {tokens}"
+verdict.origin: "origin: synthesized"
+verdict.next: "next:"
+verdict.next-task: "  1. new task — new instance (0 tokens)"
+verdict.next-review: "  2. review the taste queue — minutes of attention, not tokens"
+verdict.quarantine: "quarantine: {list}"
+verdict.taste-queue: "taste queue: {list}"
+verdict.list-none: "none"
+verdict.list-empty: "empty"
+verdict.quarantine-item: "{id}: attempts budget ({attempts}) exhausted"
+verdict.quarantine-blockers: "; last blockers: {blockers}"
+verdict.taste-item: "{id} — {summary} ({reason})"
+verdict.cost-none: "cost gate: PASS overhead n/a (task tokens: no data — caller counter not reported; ceremony tokens ~{ceremony})"
+verdict.cost: "cost gate: {mark} overhead {pct}% (ceremony tokens ~{ceremony} of task {task})"
+verdict.latency-none: "latency (info): no verb calls recorded"
+verdict.latency: "latency (info, not a release gate): {mark} {parts}"
+verdict.latency-part-submit: "{name} overhead p95 {p95} ms, worst {worst} ms (budget {base} machine-side, {mark})"
+verdict.latency-part-read: "{name} {p95} ms (budget {budget}, {mark})"
+verdict.latency-part-no-budget: "{name} {p95} ms (no budget)"
+verdict.latency-burst: "ok ({bursts} adjacent burst)"
+verdict.rent-none: "gate rent: none retired (every gate still pays rent)"
+verdict.rent: "gate rent: retired {parts}"
+verdict.rent-part: "{name} after {runs} green runs"
+verdict.attention-none: "attention: 0 min (no questions: goal lint clean)"
+verdict.attention-open: "attention: batch open (questions {questions} unanswered)"
+verdict.attention-closed: "attention: batch {wall} (questions {questions}, answered {answered}, defaults {defaults}), choice-to-verdict 0 min (0 input points)"
+verdict.attention-closed-points: "attention: batch {wall} (questions {questions}, answered {answered}, defaults {defaults}), choice-to-verdict: {points} assertion point(s) after the choice"
+verdict.double-compile-none: "double-compile gate: not run (no data)"
+verdict.double-compile: "double-compile gate: {mark} {reason}"
+verdict.converge: "converge: fix cycles {cycles}, worst card attempts {attempts} of {budget}, quarantines {quarantines}"
+verdict.no-data: "no data (caller counter not reported)"
+
+# The acceptance moment: the full check composition is finalized on
+# the instance state with a digest; drift against it — the verdict is
+# unverified.
+verdict.acceptance-pass: "acceptance: PASS on {digest} ({green}/{total} checks green)"
+verdict.acceptance-nosurface: "acceptance: PASS ({green}/{total} checks green; no surface signature was measurable at the acceptance moment — drift is not claimed against it)"
+verdict.acceptance-fail: "acceptance: FAIL ({red} red of {total} checks)"
+verdict.acceptance-none: "acceptance: not run"
+verdict.acceptance-drift: "acceptance: SURFACE DRIFTED since {old} (now {new}) — the numbers below describe the accepted surface, not the current one; re-verify before trusting them"
+# Env doctor before acceptance: a probe of the recipes' environment;
+# a missing tool honestly reddens the acceptance with a diagnosis hint.
+verdict.acceptance-env: "acceptance: FAIL — env doctor: {diag}"
+# The quarantine gap classification: passport/canon/code.
+verdict.quarantine-gap: "; gap: {gap}"
+
+# Completeness lint rule deviations: active waives with reasons —
+# the verdict's taste queue, there is no silence.
+verdict.waive-item: "{rule} on {target} — waived: {reason}"
+verdict.quarantine-ask: "a human decides: teach the missing recipe, change the requirements, or drop the card — the loop does not resume by itself (silence keeps it quarantined)"
+verdict.features-doc: "features: {count} without the author's description ({ids}) — the human spec is part of done: submit kind: feature (requirement, text) for each one; an honest gap is accepted by the human with a reason (kind: waive, rule feature.doc, target <id>)"

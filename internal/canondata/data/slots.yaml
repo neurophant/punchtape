@@ -1,0 +1,285 @@
+# The slot texts of the next verb — delivery canon data. Values carry no
+# trailing newline: the call site reproduces it (Fprintln or an explicit
+# "\n"), as in the source code. Substitutions are {name}.
+
+# --- intake stage ---
+
+slot.intake.state: "STATE: intent is not pinned yet"
+slot.intake.action.pin: "pin the intent: submit an intent delta with the human's wish as text"
+slot.intake.action.pinned: "the intent is pinned — call punchtape next: the machine moves this instance to the spec stage"
+slot.intake.context.empty: Canon is empty — this is the first submission of the instance.
+slot.intake.context.pinned: The wish is pinned; the spec table is the next stage.
+
+# --- spec stage ---
+
+# Structured intake: while a question batch is open, the slot carries a
+# structured entry — "what I understood" (the wish verbatim, nothing
+# added), clarifications as a batch with defaults, "what I can do", an
+# escalation (conflicts — a live choice, silence does not resolve by
+# default).
+slot.intake.understood: "WHAT I UNDERSTOOD (your wish, verbatim — nothing added):\n{text}"
+slot.intake.can-do: "WHAT I CAN DO: turn this wish into an executable check table (drafted for you, changed only through choices like this one), compile canon, checks and traceability from it, drive the code through machine gates to a verified verdict — no attention needed between your choice and the verdict."
+slot.spec.state: "STATE: requirements {reqs}, scenarios {scns}"
+slot.spec.state-intent: "; intent: {intent}"
+slot.spec.questions: "QUESTIONS FOR THE HUMAN (relay verbatim; answers ride your next checks delta as \"answers:\" [{question: {qid}, option: <letter>}]; silence applies the recommended default):\n{batch}"
+slot.spec.escalation: "ESCALATION (conflict — relay to the human directly; an explicit choice is required, silence applies NO default here; submit the answer as kind: checks with \"answers:\" [{question: {qid}, option: <letter>}]):\n{batch}"
+slot.spec.clarified: "CLARIFIED ({count} — the human's choices, honor them in the spec):"
+slot.spec.surface-contract: "SURFACE CONTRACT: every command line of a row is plain argv `<command[0]> <args...>` — command[0] resolves in order: a file already in the run dir (seed, material, earlier command's output) → the surface — with a recipe the declared artifact entry at its declared path (spell \"bin/serve\", not \"serve\"; `out: \".\"` puts the project files at the run-dir root; files outside the artifact do not reach the run dir; regular files only), without a recipe the project file at the command[0] path (your submitted file) → otherwise the name goes to the environment as-is); beside the surface, the seeded state files and the materials nothing else is present; long-running helpers, waits and orchestration live inside the row itself (shell one-liners); whatever a command leaves running is killed when the row ends; spell the whole user-facing call, e.g. `notes add A`"
+slot.spec.table: "TABLE: one row = one check. seeds — one line \"<path> <content>\" per state file before the run; materials — one project file path per line, copied into the run byte-for-byte (binary inputs); run — the command sequence in order, one command per element (a string \"cmd args\" or an argv list — no splitting; [tool, src, out] is THREE commands: one command with arguments is one element \"tool src out\" or the argv form [tool, src, out]): every command but the last must exit 0 (build the state by calling the tool), the last one is the asserted behavior; out/err — its exact stdout/stderr (omit to not assert, empty string to assert emptiness); rc — its exit code, 0 when omitted; state — assertions on state files: \"<path> <json>\", compared structurally (json-equals; compact JSON, no space after colons), \"<path> text <bytes>\" — exact bytes (the value tail is content: a trailing \\n from quotes or a block scalar is expected bytes, never trimmed), \"<path> absent\" — the file does not exist (escapes \\n \\t \\r \\\\ \\xNN decode in bytes; seeds take the same escapes; expectation values out/err take \\xNN only — a literal backslash is \\x5C, lone \\n \\t are rejected); volatile — bytes the wish declares unpredictable (random identifiers, timestamps): stream names (stdout/stderr) or state-file paths the machine must not compare byte-for-byte between runs (file presence stays checked; declare it on the row before code starts — later changes are a human assertion). A row with the same seeds, materials and run replaces its own earlier expectations — submit rows in parts, resubmit to fix; a row with `key:` replaces its never-green earlier versions under that key even with different seeds and run (keep the key while you iterate; a key held by a proven row goes through the change-request hold)."
+slot.spec.action: "submit a checks delta: one row per behavior — every command family of the wish needs at least one row (the coverage gate refuses uncovered families by name); ambiguities for the human ride the same delta as \"questions:\" and return in the reply; the machine compiles canon, checks, coverage, derivatives and tracing from the table itself; requirements here are per-family drafts — re-cut them into the wish's user-facing features in living words and give each its author's description (kind: feature) BEFORE the first code submission: once code is delivered, a formulation change is a held change request, not a free edit; the human spec is part of done"
+slot.spec.review-draft.action: "review the DRAFT table below (drafted by a cheaper executor from the wish): verify every row against the wish, fix expectations by resubmitting rows, drop wrong rows with a spec delta, then submit your checks delta — or accept the draft as-is with an accept-draft delta (rows: not needed); the draft never becomes the spec by itself"
+slot.spec.review-draft.example: |-
+  cat > delta.yaml <<'YAML'
+  kind: checks
+  submission-key: checks-{key}
+  accept-draft: true
+  YAML
+  punchtape submit delta.yaml
+
+# --- ac-compile stage ---
+
+slot.ac-compile.state: "STATE: scenarios {total} — executable {exec} ({pct}%), skeletons {skel} (awaiting binary {await}), prose {prose}"
+slot.ac-compile.traceability: "TRACEABILITY: checks {total}: green {green}, red {red}, unknown {unknown}"
+slot.ac-compile.uncovered.header: "UNCOVERED FAMILIES ({count}): the code stage opens only when every one has an executable scenario:"
+slot.ac-compile.action.pin-assert: "pin assertions to {scenario}: an observable outcome through the surface"
+slot.ac-compile.context.skeletons-remaining: "...skeletons remaining: {count} (one at a time)"
+slot.ac-compile.action.uncovered: "add executable scenarios for the uncovered families above (spec delta: add-scenario)"
+slot.ac-compile.context.coverage-gate: "Coverage gate: {count} command families of the wish have no executable scenario yet."
+slot.ac-compile.action.none: "no actions: no unfinished scenarios"
+slot.ac-compile.context.ready: All scenarios are ready.
+
+# --- implement stage ---
+
+slot.implement.state.cards: "STATE: cards {total} (active {active}, green {green}), working card {card} (facet: {facet}), {status}, scenarios in card {scenarios}, attempts {attempts}"
+slot.implement.state.card: "STATE: card {card} (facet: {facet}), {status}, scenarios in card {scenarios}, attempts {attempts}"
+slot.implement.surface-contract: "SURFACE CONTRACT: row commands are plain argv — command[0] resolves in order: a file already in the run dir → the surface — with a recipe the artifact entry at its declared path (`bin/serve`, not `serve`; `out: \".\"` = project files at the run-dir root; files outside the artifact stay out), without a recipe the project file at the command[0] path → otherwise PATH as-is); recipe placeholders: {out} = the declared artifact path, {name} = the alphabetically first command[0] of the check rows (one name — never the whole set; chmod the literal artifact path, and {name} is not it), shell ${...} never expands — plain commands have no shell ([sh, -c, \"...\"] for shell); a red recipe names its substitutions; long-running helpers and orchestration live inside the row (shell one-liners), killed when the row ends; teach the recipe once or submit the runnable surface files with your code"
+slot.implement.conventions-needed: "CONVENTIONS NEEDED ({names}): nothing sits at these invocation paths and no build recipe is declared — the surface shape is yours to choose, the machine runs whatever you declare:\n  a. teach a build recipe once (kind: conventions; `out` names the artifact — a file or a directory, any shape) — ~{price} tokens once, opens the static gates (types/lint) for every later run (recommended)\n  b. submit the runnable surface files at the named paths with your code — no recipe, no static gates"
+slot.implement.gate-reds.header: "GATE REDS ({count}):"
+slot.implement.red-list.header: "RED LIST ({count}):"
+slot.implement.pin-reds.header: "PROBE REDS ({count}): rows green on a broken surface — they do not exercise the path they declare:"
+slot.implement.with-blockers: " and close the gate reds above"
+slot.implement.action.regenerate: "submit a code delta for card {card}: regenerate the whole facet from its scenarios as the surface of the SURFACE CONTRACT{blockers} (measured drift: red {red} of {total}, attempts {attempts} of {budget} — repair estimate exceeds regeneration)"
+slot.implement.action.fix: "submit a fix delta for card {card}: close the red list{blockers} (reply-to: {reply})"
+slot.implement.context.fix-cycle: "...fix-cycle slice: {red} of {total} card scenarios (the red list); full cards on demand: why SCN-<n>"
+slot.implement.action.fix-static: "submit a fix delta for card {card}: close the gate reds above — behavior checks are green, the red is static (reply-to: {reply})"
+slot.implement.context.static-red: "All {count} behavior checks of the card are green; only the static gates above are red. Fix the named files — no re-implementation of scenarios is needed; full cards on demand: why SCN-<n>"
+slot.implement.action.pin-repair: "behavior checks are green — repair the {count} probe-red row(s) in the check table: same seeds+materials+run, expectations the path really produces (out/err/state, not rc alone); the repair is free, no human assertion, the machine re-probes the replacement"
+slot.implement.action.code: "submit a code delta for card {card}: implement the behavior of all its scenarios in the surface of the SURFACE CONTRACT — the machine checks are THE test suite of this project: write no suite of your own, the gates report the red"
+slot.implement.composition-freeze: "COMPOSITION FREEZE: this submission starts the code and freezes the spec composition — submit the whole table now; later only new rows (growth) and row replacement (repair) are accepted"
+
+# --- deliver stage ---
+
+slot.deliver.action: "no required actions: the verdict is below. Continuation of the SAME instance: a changed or added wish goes here as new check-table rows (or a spec delta) — the machine reopens this instance, recompiles and re-verifies against both the old and the new rows; a brand-new task means a new instance"
+slot.deliver.action.backfill: "the machine observed {count} command(s) through the surface; submit the proposed check-table rows below — curate the rows, keep the observed outcomes verbatim (non-deterministic commands cannot become rows and stay in the summary above)"
+slot.deliver.observed.header: "OBSERVED THROUGH THE SURFACE ({count}):"
+
+# --- cross-stage slot texts ---
+
+slot.error.no-per-card-slots: "stage {stage} has no per-card slots"
+slot.missing-links: "MISSING LINKS (red by default): {links}"
+slot.list.more: "  ...and {count} more (why red lists every red check with its full reason)"
+slot.impact: "IMPACT (last spec change): scenarios touched {touched}, checks regenerated {regenerated} (kept {kept}, removed {removed}), affected-facet slot ~{tokens} tokens — re-verification bills fresh checks only"
+slot.context.no-scenarios: No scenarios in this facet.
+slot.context.first-spec: "First spec submission. Requirements {reqs}, scenarios {scns}."
+slot.context.bookkeeping-only: "Requirements {reqs}, scenarios {scns}; the last submission changed only bookkeeping."
+slot.cut.proposal: "PROPOSED CUT: the spec divides into {count} independent facets by state files"
+slot.cut.split-hint: "A split delta accepts this cut (rename facets, list owned files; card ids grow from CRD-{seed}):"
+slot.cut.different-allowed: "A different cut is allowed; two cards sharing a state file must pin it with a contract naming both facets; each card owns its files exclusively."
+
+# --- delta examples and the question batch ---
+
+slot.example.not-repeated: "not repeated — this slot was served before in this instance; same delta format as the earlier visit, fresh submission-key: {key}"
+slot.example.intent: |-
+  cat > delta.yaml <<'YAML'
+  kind: intent
+  submission-key: intent-{key}
+  text: >-
+    <the human's wish in one paragraph>
+  YAML
+  punchtape submit delta.yaml
+slot.example.checks: |-
+  cat > delta.yaml <<'YAML'
+  kind: checks
+  submission-key: checks-{key}
+  rows:
+    - seeds:
+        - notes.json []
+      run:
+        - notes add A
+        - notes list
+      out: "1 A"
+      rc: 0
+    - run:
+        - notes add
+      rc: 1
+      err: "`notes add` requires one argument"
+      state:
+        - notes.json {"next_id":2,"notes":[{"id":1,"text":"A"}]}
+    - run:
+        - notes new
+      rc: 0
+      volatile: [stdout]
+  YAML
+  punchtape submit delta.yaml
+slot.example.assert: |-
+  cat > delta.yaml <<'YAML'
+  kind: assert
+  submission-key: assert-{key}-{scn}
+  scenario: {id}
+  assertions:
+    - observation: stdout
+      condition: contains
+      value: <expected text>
+  YAML
+  punchtape submit delta.yaml
+slot.example.fix: |-
+  cat > delta.yaml <<'YAML'
+  kind: fix
+  submission-key: fix-{key}
+  card: {card}
+  reply-to: {reply}
+  files:
+    - path: <file with the problem>
+      content: |-
+        <the full corrected text of the file>
+  YAML
+  punchtape submit delta.yaml
+slot.example.code: |-
+  cat > delta.yaml <<'YAML'
+  kind: code
+  submission-key: impl-{key}
+  card: {card}
+  files:
+    - path: <source file of the product>
+      content: |-
+        <the full text of the file>
+    - path: <unchanged file — reference, no resend>
+      digest: <digest from the FILES WRITTEN block of the reply>
+  YAML
+  punchtape submit delta.yaml
+slot.example.conventions: |-
+  cat > delta.yaml <<'YAML'
+  kind: conventions
+  submission-key: conv-{key}
+  build:
+    out: <path>           # optional: the surface artifact — a file
+                          # or a directory; omitted → the file at
+                          # each command[0] path
+    commands:             # plain commands, no shell; {out} = the
+                          # artifact path; {name} = the alphabetically
+                          # first command[0] of the check rows — ONE
+                          # name, not every row name and not the
+                          # artifact (chmod the literal path instead)
+      - [<tool>, <args...>, "{out}"]
+  YAML
+  punchtape submit delta.yaml
+slot.example.split.head: |-
+  kind: split
+  submission-key: split-001
+  cards:
+slot.example.split.card: |2-
+    - id: CRD-{id}
+      facet: facet-{n}
+      scenarios: [{ids}]
+      files: [<files of facet-{n}>]
+slot.example.split.tail: "contracts: []"
+slot.example.question.item: "{id}: {question}"
+slot.example.question.why: "  why: {finding}"
+slot.example.question.option: "  {id}. {label} — ~{price} tokens"
+slot.example.question.option-default: " (recommended default)"
+
+# A deferred expectations amendment: the assertion block lives in the
+# slot of every stage while the edit is open; silence (the next non-amend
+# submission) drops it with a conservative default. The slot carries a
+# named summary of the changes and the submission key; the verbatim
+# delta — on request via why amend (the block repeats in every reply —
+# shipping the full delta in every render would multiply bytes without
+# new information).
+slot.amend.block: |-
+  ASSERTION NEEDED ({count} pending change(s) — destructive or touching expectations of already-run checks):
+  {changes}
+  the pending delta in full (submission "{key}"): run punchtape why amend and relay it to the human verbatim before the decision — a blind assertion is not an assertion
+  options:
+    a) approve — apply the pending change: submit a delta "kind: amend, decision: approve"
+    b) reject — drop it, nothing is applied: submit "kind: amend, decision: reject" (recommended default; silence drops it)
+# Instance drift against the acceptance moment: the verdict is unverified,
+# the action is re-verification of the changed instance (a fix on deliver
+# is allowed for this).
+slot.deliver.action.drift: "the product changed outside the machine since acceptance: submit a fix delta for card {card} (reply-to: suite) — the machine re-runs the checks on the changed instance"
+
+# The freshness contour before work: the passport boundary drift is
+# named before work starts — silently building on stale is not allowed.
+slot.contour.drift: "CONTOUR: boundary freshness before work — RED: {ids} drifted (code or conventions changed outside the machine); a fix delta or a conventions delta re-proves them"
+slot.ac-compile.waive-hint: |-
+  options:
+    a) close it — submit a scenario row covering the family above (free)
+    b) waive it with a reason — submit "kind: waive, rule: {rule}, target: <family>, reason: <why this gap is accepted>"
+# A kb consult before the machine's question: active knowledge matching
+# the context is shown with its source; the action is the operator's.
+slot.conventions.kb-hint: "KB HINT ({id}): {do} (source: {source}) — review and teach the recipe with a conventions delta if it fits"
+# A large scope splits: above the threshold — an honest line.
+slot.cut.big-scope: "BIG SCOPE: {count} scenarios in one boundary (threshold {max}) — consider splitting the wish into boundaries; a cut needs shared state files to divide on"
+
+# The compaction trigger: the journal threshold as data; the line is a
+# recommendation to hand the session over, not a blocker: silence
+# continues.
+slot.session.handoff: "SESSION: journal holds {n} entries (threshold {threshold}) — recommend handing the session over; punchtape why handoff renders done/next/prompt; not a blocker: silence continues"
+
+# --- Russian locale ---
+slot.intake.understood.ru: |-
+  ЧТО ПОНЯЛ (пожелание дословно, без добавлений):
+  {text}
+slot.intake.can-do.ru: "ЧТО МОГУ: превратить это пожелание в исполняемую таблицу проверок (черновик пишу сам, меняется только вашими выборами), собрать из неё канон, проверки и трассируемость, провести код машинными гейтами до сверенного вердикта — между вашим выбором и вердиктом внимания не нужно."
+slot.spec.questions.ru: |-
+  ВОПРОСЫ ЧЕЛОВЕКУ (передайте дословно; ответ едет следующей checks-подачей в "answers:" [{question: {qid}, option: <буква>}]; молчание применяет рекомендованный дефолт):
+  {batch}
+slot.spec.escalation.ru: |-
+  ЭСКАЛАЦИЯ (конфликт — передайте человеку напрямую; нужен явный выбор, молчание дефолт НЕ применяет; ответ подайте kind: checks с "answers:" [{question: {qid}, option: <буква>}]):
+  {batch}
+slot.example.question.item.ru: "{id}: {question}"
+slot.example.question.why.ru: "  факт: {finding}"
+slot.example.question.option.ru: "  {id}. {label} — ~{price} токенов"
+slot.example.question.option-default.ru: " (рекомендованный дефолт)"
+slot.implement.conventions-needed.ru: |-
+  НУЖНЫ КОНВЕНЦИИ ({names}): по этим путям запуска ничего нет и рецепт сборки не объявлен — форму поверхности выбираете вы, машина исполнит любое объявление:
+    a. обучить рецепт сборки один раз (kind: conventions; `out` называет артефакт — файл или каталог, любая форма) — ~{price} токенов один раз, открывает статические гейты (types/lint) для всех последующих прогонов (рекомендуется)
+    b. подать исполняемые файлы поверхности по названным путям вместе с кодом — без рецепта, без статических гейтов
+slot.amend.block.ru: |-
+  ТРЕБУЕТСЯ УТВЕРЖДЕНИЕ ({count} отложенных правок — деструктивных или меняющих ожидания уже прогнанных проверок):
+  {changes}
+  отложенная дельта целиком (подача «{key}»): выполните punchtape why amend и передайте её человеку дословно до решения — слепое утверждение не утверждение
+  варианты:
+    a) approve — применить отложенную правку: подача "kind: amend, decision: approve"
+    b) reject — снять, ничего не применяется: подача "kind: amend, decision: reject" (рекомендованный дефолт; молчание снимает)
+
+# --- Chinese locale ---
+slot.amend.block.zh: |-
+    需要确认（{count} 项待定变更 —— 破坏性，或触及已运行检查的预期）：
+    {changes}
+    待定增量全文（提交项 "{key}"）：先运行 punchtape why amend，并在决策前将其逐字转达给人类 —— 盲目的确认不算确认
+    选项：
+      a) approve —— 应用待定变更：提交增量 "kind: amend, decision: approve"
+      b) reject —— 放弃它，不应用任何内容：提交 "kind: amend, decision: reject"（推荐默认；沉默即放弃）
+slot.example.question.item.zh: |-
+    {id}: {question}
+slot.example.question.option-default.zh: |4-
+     （推荐默认）
+slot.example.question.option.zh: |4-
+      {id}. {label} —— 约 {price} 个 token
+slot.example.question.why.zh: |4-
+      原因：{finding}
+slot.implement.conventions-needed.zh: |-
+    需要约定（{names}）：这些调用路径下空无一物，也未声明构建配方 —— 表面形态由你选择，机器按你的声明执行：
+      a. 一次性教会一条构建配方（kind: conventions; `out` 指定产物 —— 文件或目录，形态不限）—— 一次性约 {price} 个 token，为之后每次运行开启静态门禁 (types/lint)（推荐）
+      b. 将可运行的表面文件连同你的代码提交到上述路径 —— 无配方，无静态门禁
+slot.intake.can-do.zh: |-
+    我能做什么：把这个愿望变成一张可执行的检查表（草稿由我代拟，仅通过像本次这样的选择来修改），从中汇编正典、检查与可追溯性，驱动代码通过机器门禁直至得出经验证的判定 —— 从你的选择到判定之间，无需任何注意力。
+slot.intake.understood.zh: |-
+    已理解（愿望原样，无添加）：
+    {text}
+slot.spec.escalation.zh: |-
+    升级（冲突 —— 直接转达给人类；必须做出明确选择，沉默在此绝不应用任何默认；将答案作为 kind: checks 提交，附带 "answers:" [{question: {qid}, option: <字母>}]）：
+    {batch}
+slot.spec.questions.zh: |-
+    需要人类回答的问题（逐字转达；答案以 "answers:" [{question: {qid}, option: <字母>}] 的形式随你的下一次 checks 增量提交；沉默则采用推荐默认）：
+    {batch}

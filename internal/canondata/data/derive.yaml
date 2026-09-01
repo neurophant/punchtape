@@ -1,0 +1,14 @@
+# Automatic suite expansion: red reasons, derived kinds, and verdict
+# lines; the cap on derived scenarios is the derive.budget threshold in
+# limits.
+derive.reason.exit: "exit {code}"
+derive.kind.empty-state: empty-state
+derive.kind.restart-rerun: restart-rerun
+derive.kind.zero-arg: zero-arg:{num}
+derive.kind.neg-arg: neg-arg:{num}
+derive.kind.edge-minus: edge-arg:{num}:minus
+derive.kind.edge-plus: edge-arg:{num}:plus
+derive.line.not-run: "derived: not run before deliver"
+derive.line.unavailable: "derived: unavailable"
+derive.line.none: "derived: none (no surface)"
+derive.line.verdict: "derived: {total} variants (max {budget} per scenario), green {green}, red {red} — marked, not spec scenarios (why derived: kinds and reds)"

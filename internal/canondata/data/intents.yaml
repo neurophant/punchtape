@@ -1,0 +1,38 @@
+# Intent router for everyday phrases: a data table, extended without code
+# (by a new delivery version). A row fires when all its keywords are
+# among the phrase tokens (case-insensitive, punctuation stripped). The
+# default is the wish (the "wish -> verdict" loop); matches into
+# different goals — a menu with a default recommendation, the machine
+# does not resolve the ambiguity. The mechanics are language-independent;
+# the delivery rows are English everyday phrases (the machine protocol is
+# English; the dialogue language is a separate feature). Registry content
+# rows are checked by the loader's structural validation (verb, topic),
+# they require no by-name reference from code.
+- id: continue-next
+  keys: [continue]
+  verb: next
+- id: go-on
+  keys: [go, on]
+  verb: next
+- id: what-next
+  keys: [what, next]
+  verb: next
+- id: status-stage
+  keys: [status]
+  verb: why
+  topic: stage
+- id: ask-price
+  keys: [price]
+  verb: why
+  topic: price
+- id: ask-cost
+  keys: [cost]
+  verb: why
+  topic: price
+- id: ask-latency
+  keys: [latency]
+  verb: why
+  topic: latency
+- id: ask-why
+  keys: [why]
+  verb: why

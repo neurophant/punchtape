@@ -1,0 +1,21 @@
+# The trust ladder of a boundary: statuses in order with weights — as
+# data; only the machine sets and demotes. Above "reliable" there is no
+# status: "canon" is the immutable part of the delivery. Transitions
+# are named by a machine proof; there are no transitions above
+# "verified" — no such proofs exist (validity and convergence are
+# unprovable), the machine does not guess. Identifiers and proofs are
+# literals in the code.
+ladder:
+  - id: claimed
+    weight: 1
+  - id: verified
+    weight: 2
+  - id: valid
+    weight: 3
+  - id: reliable
+    weight: 4
+transitions:
+  - proof: green-run
+    to: verified
+  - proof: drift
+    to: claimed

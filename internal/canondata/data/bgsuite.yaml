@@ -1,0 +1,2 @@
+# Background replay of the full suite: the reply summary line.
+bgsuite.summary-line: "background suite replay: {total} checks, {green} green, {red} red (digest {digest}, wall {wall}ms machine)"

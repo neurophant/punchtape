@@ -1,0 +1,160 @@
+# SUMMARY.md — a human-readable one-page verdict summary: four mandatory
+# blocks — made/checked/remaining/price; the machine protocol stays
+# English. The render is computed from the state, the ledger and the
+# canon, written at verdict freeze next to SPEC.md.
+summary.title: "# Summary"
+summary.made.head: "## Made"
+summary.made.composition: "- composition: {reqs} requirements, {scenarios} scenarios ({prose} prose), {cards} cards"
+summary.made.flow: "- flow: {submitted} submissions accepted, {runs} machine runs"
+summary.made.verdict: "- verdict: {status}"
+summary.checked.head: "## Checked"
+summary.checked.checks: "- checks: {green} green, {red} red of {total}"
+summary.checked.trace: "- traceability: {green} of {executable} executable scenarios linked to green checks"
+summary.checked.acceptance: "- acceptance: {line}"
+summary.remaining.head: "## Remaining"
+summary.remaining.none: "- nothing remains: no taste queue, no quarantine"
+summary.remaining.taste: "- taste queue: {items}"
+summary.remaining.quarantine: "- quarantine: {items}"
+summary.derived.not-run: "not run"
+summary.derived.none: "none"
+summary.acceptance.not-run: "not run"
+summary.acceptance.pass: "PASS on {digest} ({green}/{total})"
+summary.acceptance.fail: "FAIL on {digest} ({green}/{total} green)"
+summary.acceptance.env: "environment broke the probe: {diag}"
+summary.acceptance.drift: "SURFACE DRIFTED since the acceptance ({old} → {new})"
+summary.remaining.pending: "- pending amendment: {count} change(s) await the human"
+summary.checked.derived: "- derived: {line}"
+summary.remaining.more: "{count} in total — the verdict lists every item"
+summary.price.head: "## Price"
+summary.stage.intake: "intake"
+summary.stage.spec: "spec"
+summary.stage.ac-compile: "acceptance compile"
+summary.stage.implement: "code"
+summary.stage.review: "review"
+summary.stage.deliver: "delivery"
+
+# The wish in the summary — in full (truncating to the first line cut the
+# thought); platform tokens not reported — those lines stay silent, no
+# "no data" listing.
+summary.made.wish-head: "The wish (verbatim):"
+summary.made.wish-none: "- wish: not pinned yet"
+summary.derived.line: "{total} variants (budget {budget} per scenario): {green} green, {red} red — informational probes of the same checks, not the spec"
+summary.price.stage: "- {stage}: {wall}, tokens {tokens}"
+summary.price.stage-notokens: "- {stage}: {wall}"
+summary.price.total: "- total: {wall}, tokens {tokens}, verb calls {calls}"
+summary.price.total-notokens: "- total: {wall}, verb calls {calls}"
+
+# --- Russian locale ---
+summary.title.ru: "# Сводка"
+summary.made.head.ru: "## Сделано"
+summary.made.composition.ru: "- состав: требований {reqs}, сценариев {scenarios} (прозы {prose}), карточек {cards}"
+summary.made.flow.ru: "- поток: подач принято {submitted}, машинных прогонов {runs}"
+summary.made.verdict.ru: "- вердикт: {status}"
+summary.checked.head.ru: "## Проверено"
+summary.checked.checks.ru: "- проверки: зелёных {green}, красных {red} из {total}"
+summary.checked.trace.ru: "- трассировка: зелёные проверки покрывают {green} из {executable} исполняемых сценариев"
+summary.checked.acceptance.ru: "- приёмка: {line}"
+summary.remaining.head.ru: "## Осталось"
+summary.remaining.none.ru: "- остатка нет: ни вкусовой очереди, ни карантина"
+summary.remaining.taste.ru: "- вкусовая очередь: {items}"
+summary.remaining.quarantine.ru: "- карантин: {items}"
+summary.derived.not-run.ru: "не проводились"
+summary.derived.none.ru: "нет"
+summary.acceptance.not-run.ru: "не проводилась"
+summary.acceptance.pass.ru: "ПРОЙДЕНА на {digest} ({green}/{total})"
+summary.acceptance.fail.ru: "ПРОВАЛЕНА на {digest} (зелёных {green} из {total})"
+summary.acceptance.env.ru: "среда сломала пробу: {diag}"
+summary.acceptance.drift.ru: "ПОВЕРХНОСТЬ ДРЕЙФОВАЛА с приёмочного момента ({old} → {new})"
+summary.remaining.pending.ru: "- отложенная правка: {count} изменений ждут человека"
+summary.checked.derived.ru: "- производные: {line}"
+summary.remaining.more.ru: "всего {count} — вердикт перечисляет каждый пункт"
+summary.price.head.ru: "## Цена"
+summary.stage.intake.ru: "вход"
+summary.stage.spec.ru: "спека"
+summary.stage.ac-compile.ru: "компиляция приёмки"
+summary.stage.implement.ru: "код"
+summary.stage.review.ru: "ревью"
+summary.stage.deliver.ru: "доставка"
+summary.made.wish-head.ru: "Пожелание (дословно):"
+summary.made.wish-none.ru: "- пожелание: ещё не закреплено"
+summary.derived.line.ru: "вариантов {total} (бюджет {budget} на сценарий): зелёных {green}, красных {red} — информационные пробы тех же проверок, не спека"
+summary.price.stage.ru: "- {stage}: {wall}, токены {tokens}"
+summary.price.stage-notokens.ru: "- {stage}: {wall}"
+summary.price.total.ru: "- итого: {wall}, токены {tokens}, вызовов глаголов {calls}"
+summary.price.total-notokens.ru: "- итого: {wall}, вызовов глаголов {calls}"
+
+# --- Chinese locale ---
+summary.acceptance.drift.zh: |-
+    自验收以来表面已漂移（{old} → {new}）
+summary.acceptance.env.zh: |-
+    环境导致探针失效：{diag}
+summary.acceptance.fail.zh: |-
+    在 {digest} 上 FAIL（绿 {green}/{total}）
+summary.acceptance.not-run.zh: |-
+    未运行
+summary.acceptance.pass.zh: |-
+    在 {digest} 上 PASS（{green}/{total}）
+summary.checked.acceptance.zh: |-
+    - 验收：{line}
+summary.checked.checks.zh: |-
+    - 检查：绿 {green}，红 {red}，共 {total}
+summary.checked.derived.zh: |-
+    - 派生：{line}
+summary.checked.head.zh: |-
+    ## 已检查
+summary.checked.trace.zh: |-
+    - 追溯：{executable} 个可执行场景中有 {green} 个关联到绿色检查
+summary.derived.line.zh: |-
+    {total} 个变体（每场景预算 {budget}）：绿 {green}、红 {red}——对同一批检查的信息性探针，并非规格
+summary.derived.none.zh: |-
+    无
+summary.derived.not-run.zh: |-
+    未运行
+summary.made.composition.zh: |-
+    - 组成：{reqs} 项需求、{scenarios} 个场景（文字 {prose}）、{cards} 张卡片
+summary.made.flow.zh: |-
+    - 流程：受理提交 {submitted} 次，机器运行 {runs} 次
+summary.made.head.zh: |-
+    ## 产出
+summary.made.verdict.zh: |-
+    - 判定：{status}
+summary.made.wish-head.zh: |-
+    愿望（原文）：
+summary.made.wish-none.zh: |-
+    - 愿望：尚未固定
+summary.price.head.zh: |-
+    ## 代价
+summary.price.stage-notokens.zh: |-
+    - {stage}：{wall}
+summary.price.stage.zh: |-
+    - {stage}：{wall}，token {tokens}
+summary.price.total-notokens.zh: |-
+    - 总计：{wall}，动词调用 {calls} 次
+summary.price.total.zh: |-
+    - 总计：{wall}，token {tokens}，动词调用 {calls} 次
+summary.remaining.head.zh: |-
+    ## 剩余
+summary.remaining.more.zh: |-
+    共 {count} 项——判定列出了每一项
+summary.remaining.none.zh: |-
+    - 无剩余：无品味队列，无隔离区
+summary.remaining.pending.zh: |-
+    - 待定修订：{count} 处变更等待人工处理
+summary.remaining.quarantine.zh: |-
+    - 隔离区：{items}
+summary.remaining.taste.zh: |-
+    - 品味队列：{items}
+summary.stage.ac-compile.zh: |-
+    验收编译
+summary.stage.deliver.zh: |-
+    交付
+summary.stage.implement.zh: |-
+    编码
+summary.stage.intake.zh: |-
+    接收
+summary.stage.review.zh: |-
+    评审
+summary.stage.spec.zh: |-
+    规格
+summary.title.zh: |-
+    # 总结

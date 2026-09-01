@@ -1,0 +1,23 @@
+# The machine's numeric thresholds as delivery data; code reads them only
+# via canondata.Limit and keeps no constants of its own (mirror check).
+slot.list-budget: 10          # cap on lines of one slot list
+card.attempts-budget: 3       # behavior repair budget of a card
+questions.batch-max: 3        # cap on a question batch to the human
+gate.rent-runs: 3             # green runs to drop a gate by rent
+derive.budget: 8              # cap on derived scenarios per scenario
+latency.base-ms: 300          # submit overhead budget (wall minus runs)
+latency.slot-ms: 100          # per-slot addend of the budget in a submission reply
+latency.read.next-ms: 500     # next read budget
+latency.read.why-ms: 300      # why read budget
+cost.overhead-pct: 10         # cap on ceremony overhead, %
+probe.capture-timeout-s: 10   # probe command run timeout, seconds
+conventions.build-timeout-s: 300  # timeout of one build recipe command, s
+conventions.gate-timeout-s: 120   # timeout of one static gate command, s
+digest-cache-max: 4096      # cap on digest cache entries; above it — recompute
+detail.split-threshold: 8      # scenarios in a bound above the threshold — the scope is large, it splits
+language.cyrillic-share: 30 # % of Cyrillic letters in the wish → detected language ru
+language.han-share: 30      # % of Han characters in the wish → detected language zh (checked first)
+compact.journal-entries: 40   # journal transactions — the session handoff recommendation
+snapshot.bytes-max: 33554432  # cap on total bytes of the run directory snapshot, bytes
+executor.timeout-s: 900       # timeout of one autonomous-mode executor call, s
+repair.quote-value-max: 80  # cap on value length for unclosed-quote repair, chars

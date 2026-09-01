@@ -1,0 +1,35 @@
+# Check table: row acceptance errors, the machine requirement formulation
+# for a family, and the submission render as a table.
+checktable.error.rows-empty: "rows: empty"
+checktable.error.no-intent: "no intent: pin the wish first"
+checktable.error.seeds: "{what}[{num}]: expected \"<path> <content>\" or \"<path> @<digest>\""
+checktable.error.seed-digest: "seed {path}: digest {digest}: no bytes with this digest in the canon"
+checktable.error.state: "state[{num}]: expected \"<path> <json>|<path> text <bytes>|<path> absent\""
+checktable.error.setup-expected-fail: "run[{run}] setup `{command}`: the same command on the same seeded state is expected to fail in row {row} — setup must exit 0; seed the state or build it with a succeeding call"
+checktable.error.run-required: "run: at least one command is required"
+checktable.error.run-empty: "run[{num}]: empty command"
+checktable.error.material: "materials[{num}]: expected a project-relative file path"
+checktable.note.materials-identity: "rows[{rows}]: added {news} — same seeds and commands as {olds}, different materials: materials are part of the row identity, these are additions, not replacements; the old rows stay in the canon (drop the unneeded ones with remove-scenario)"
+checktable.note.run-elements: "rows[{row}]: run has {count} one-word elements — each run element is a whole command, this reads as {count} separate commands; one command with arguments is ONE element (\"tool arg1 arg2\" or the argv form [tool, arg1, arg2])"
+checktable.note.seed-quotes: "{what}: seed {path} carries wrapping single quotes — the quotes are content bytes here (the YAML level has already consumed its own quoting); if the bare text was meant, resubmit the seed without the wrapping quotes"
+checktable.note.key-replaced: "rows[{row}]: replaced {scn} by key {key} — the row has never gone green, its repair is free (the key makes the repair identity survive changes of seeds and run)"
+checktable.note.key-held: "rows[{row}]: key {key} is held by proven {scn} — this row lands as a NEW row; changes to a proven row go through the change-request hold"
+checktable.req-formulation: command `{family}` — behavior pinned by check-table rows
+checktable.req-anchor: — behavior pinned by check-table rows
+checktable.render.heredoc: cat > delta.yaml <<'YAML'
+checktable.render.submit: |-
+  YAML
+  punchtape submit delta.yaml
+checktable.collision.run: "run [{when}]: {reason}"
+checktable.collision.self: "{target}: two different exact expectations in one row — the same run cannot yield both, fix the row"
+checktable.collision.cross: "two rows with this same seeded run disagree on {target}"
+
+# --- Russian locale ---
+checktable.req-formulation.ru: команда `{family}` — поведение закреплено строками таблицы проверок
+checktable.req-anchor.ru: — поведение закреплено строками таблицы проверок
+
+# --- Chinese locale ---
+checktable.req-anchor.zh: |-
+    — 行为由检查表行固定
+checktable.req-formulation.zh: |-
+    命令 `{family}` — 行为由检查表行固定

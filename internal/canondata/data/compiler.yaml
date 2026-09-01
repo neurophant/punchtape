@@ -1,0 +1,5 @@
+# Spec compiler surfaces: scenario degrees with reasons and operation
+# parameter errors at compile time.
+compiler.degree.no-when: "when: no surface call"
+compiler.degree.then-empty: "then is empty: pin assertions with an assert delta"
+compiler.error.scenario-id: "scenario id {id} is not SCN-<n>"

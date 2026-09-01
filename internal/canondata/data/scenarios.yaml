@@ -1,0 +1,23 @@
+# The "wish -> verdict" loop process — a state machine as data. A stage
+# carries human choice points (choices) and one exit (exit): gate — a
+# named machine check, goto — the stage to transition to, entry — a
+# machine action on entering the target stage. A runner executes it;
+# forks are the human's choice from outside: an open point holds the
+# stage, the runner does not decide. Gate/hold/entry names are literals
+# in the runner code (the mirror checker catches dead names).
+process: wish-to-verdict
+stages:
+  - id: intake
+    exit: {gate: intent-accepted, goto: spec}
+  - id: spec
+    choices: [open-questions, draft-review]
+    exit: {gate: spec-complete, goto: ac-compile}
+  - id: ac-compile
+    exit: {gate: scenarios-executable, goto: implement, entry: whole-product-card}
+  - id: implement
+    choices: [pending-amend]
+    exit: {gate: cards-closed, goto: review}
+  - id: review
+    exit: {gate: always, goto: deliver}
+  - id: deliver
+    exit: {gate: cards-reopened, goto: implement}

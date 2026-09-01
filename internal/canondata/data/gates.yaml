@@ -1,0 +1,12 @@
+# The machine transaction surface of gates: the behavior probe, surface
+# build, and red connectivity lines.
+gates.probed: "probed: {kept} observation(s) kept — {deterministic} deterministic, {not} not, {failed} failed"
+gates.conventions-reproof: "conventions changed — green evidence collected under the old recipe is devalued: the cards reopen and re-prove; the verdict returns after the re-run (the gates line above reports the submission gates, not the verdict)"
+gates.convergence-red: "convergence red: {reds}"
+gates.surface-build: "surface build: {err}"
+gates.build: "build {name}: {err}"
+gates.suite-not-run: "suite not run ({cause}) — surface unproven, outcome not measured"
+gates.not-run-cause-types: "types gate red"
+gates.not-run-cause-build: "surface build failed"
+gates.missing-links: "missing links: {links}"
+gates.probe-red: "{id} {scn}: green on a broken surface — does not exercise the path; repair of this row is free (replace/update/remove, no amend)"

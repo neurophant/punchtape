@@ -1,0 +1,47 @@
+# The machine pain catalog: the diagnosis and workaround of every pain
+# are delivery canon data (a structural file, like limits); detection
+# is mechanical (internal/engine/diary.go), the facts live in the
+# instance ledger, the diary is a computed view (there are no second
+# sources of truth). The workaround is required: an empty workaround is
+# rendered by the finding itself. Entries are machine facts and pains,
+# not KPIs and not agent verdicts. A pain identifier must appear as a
+# literal in the detection code — the mirror checker catches dead
+# catalog entries.
+- id: rejected-delta
+  diagnosis: >-
+    a submitted delta was rejected — the reply named the reason in one
+    line and carried the format skeleton
+  workaround: >-
+    fix the named field and submit again under a fresh submission-key;
+    the skeleton in the reply is the exact shape to copy
+- id: idempotent-resubmit
+  diagnosis: >-
+    a submission key was reused — the machine returned the recorded
+    answer, the new work under that key was not applied
+  workaround: >-
+    reusing a key is right only to recover a lost answer; a new
+    submission always takes a fresh key — the slot example carries one
+- id: red-loop
+  diagnosis: >-
+    the same red reason survived across new submissions — the fixes
+    changed something other than the defect
+  workaround: >-
+    follow the regenerate action the slot proposes on repeated reds;
+    if the red names a wrong expectation, the row change needs human
+    assertion (kind: amend)
+- id: quarantine
+  diagnosis: >-
+    a card exhausted its behavior-repair budget and sits in quarantine
+    with a classified gap
+  workaround: >-
+    read the gap in the verdict (canon/environment/code): teach the
+    missing recipe, change the requirements, or drop the card — the
+    loop does not resume by itself
+- id: amend-needed
+  diagnosis: >-
+    a post-code submission tried to change expectations of an
+    already-run check — the machine held it for human assertion
+  workaround: >-
+    curate rows before the code starts; after the code a changed row
+    applies only through kind: amend — silence keeps the already-run
+    expectations

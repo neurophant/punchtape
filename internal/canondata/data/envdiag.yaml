@@ -1,0 +1,20 @@
+# Environment diagnoses: diagnosis and hint texts are delivery data;
+# execution error classification and probes are deterministic mechanics.
+# The diagnosed line = "diagnosis; FIX: hint". Environment is only the
+# class "the machine could not execute": command not installed, no
+# permission, timeout, artifact did not appear, no surface. A non-zero
+# tool exit with output is not environment: the tool output itself is
+# the diagnosis, the catalog does not duplicate it. Identifiers are
+# literals in the classification code (the mirror checker).
+- id: exec-not-found
+  diagnosis: "the command is not installed in the environment: {command}"
+  fix: "install the tool into the environment or fix the recipe path — recipes run without a shell"
+- id: exec-permission
+  diagnosis: "no permission to execute: {command}"
+  fix: "check the execute bit and ownership of the file the command points to"
+- id: command-timeout
+  diagnosis: "timed out after {sec}s: {command}"
+  fix: "the command must finish within its timeout — hang is a defect of the recipe or the product"
+- id: artifact-missing
+  diagnosis: "recipe finished: no artifact appeared at {out}"
+  fix: "the build commands must produce the declared artifact — fix the recipe (kind: conventions)"

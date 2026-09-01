@@ -1,0 +1,97 @@
+# Artifact lint rules: structure and completeness as data. Every rule
+# {id, section, message, waivable}: the message is rendered from the
+# single source (the registry), the validator code references the rule
+# by identifier. Enforceability (validators) and machine stop-conditions
+# are not waivable (waivable: false); completeness is an honest matter of
+# taste: deviation only with a reason (kind: waive).
+# Identifiers are literals in the code (the mirror checker).
+- id: assertion.observation-unknown
+  section: assertion
+  message: "observation: {observation} is not one of (stdout, stderr, exit-code, file)"
+- id: assertion.condition-text
+  section: assertion
+  message: "observation {observation}: condition {condition} is not allowed (contains, equals, absent, json-equals, json-contains)"
+- id: assertion.condition-exit
+  section: assertion
+  message: "observation exit-code: only conditions equals|fails are allowed, got {condition}"
+- id: assertion.condition-file
+  section: assertion
+  message: "observation file: condition {condition} is not allowed (exists, not-exists, contains, equals, absent, json-equals, json-contains, bytes-equals)"
+- id: assertion.path-required
+  section: assertion
+  message: "observation file: condition {condition} requires path"
+- id: assertion.absent-value
+  section: assertion
+  message: "condition absent: takes no value (stdout/stderr: stream is empty; file: file does not exist)"
+- id: assertion.fails-value
+  section: assertion
+  message: "condition fails: takes no value (means a non-zero exit code)"
+- id: assertion.json-invalid
+  section: assertion
+  message: "condition {condition}: value must be valid JSON ({err})"
+- id: when.required
+  section: when
+  message: "when: a surface call is required"
+- id: when.surface
+  section: when
+  message: "surface: {surface} is not supported (v1: cli only)"
+- id: when.command
+  section: when
+  message: "command: empty"
+- id: when.timeout
+  section: when
+  message: "timeout-sec: must be positive"
+- id: when.volatile
+  section: when
+  message: "volatile: only stdout, stderr, or a relative state-file path can be declared ({value})"
+- id: bg.command
+  section: bg
+  message: "bg: empty command"
+- id: conventions.empty
+  section: conventions
+  message: "at least one of build/types/lint is required"
+- id: conventions.commands-empty
+  section: conventions
+  message: "{section}.commands: at least one command is required"
+- id: conventions.command-empty
+  section: conventions
+  message: "{section}.commands[{index}]: empty command or empty argument"
+- id: conventions.out
+  section: conventions
+  message: "build must name its artifact: place {out} in a command (where the artifact appears) or set build.out"
+- id: conventions.out-path
+  section: conventions
+  message: "{section}.out: {out} — expected a relative path inside the project"
+- id: conventions.placeholder
+  section: conventions
+  message: "{section}.commands[{index}]: unknown placeholder {ph} (only {out} and {name}) — braces are placeholders here, not shell syntax: ${VAR} never expands because plain commands run without a shell — give a literal value, or expand it inside [sh, -c, \"...\"]"
+- id: spec.req-scenario
+  section: spec
+  message: "no scenarios: a requirement without a scenario is not accepted (a requirement must carry an executable check)"
+- id: coverage.family
+  section: coverage
+  message: "command family {family} of the wish has no executable scenario"
+  waivable: true
+- id: feature.doc
+  section: feature
+  message: "feature {requirement}: no author's description yet — the human spec is part of done (kind: feature: requirement + text)"
+  waivable: true
+- id: assertion.path-relative
+  section: assertion
+  message: "file path {path} must be relative and inside the project (no leading /, no .., no ~, no drive letters)"
+- id: fixture.path-relative
+  section: fixture
+  message: "seed {fixture}/{action}: path {path} must be relative and inside the project (no leading /, no .., no ~, no drive letters)"
+- id: detail.class-missing
+  section: detail
+  message: "{requirement}.detail: class {class} is required (scenarios or an explicit no with a reason)"
+- id: detail.class-both
+  section: detail
+  message: "{requirement}.detail.{class}: scenarios and an explicit no at once — pick one"
+- id: detail.class-empty
+  section: detail
+  message: "{requirement}.detail.{class}: scenarios or an explicit no with a reason is required"
+- id: detail.class-scenario
+  section: detail
+  message: "{requirement}.detail.{class}: scenario {scenario} does not belong to this requirement"
+

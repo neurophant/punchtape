@@ -1,0 +1,4 @@
+<ul>
+{% for e in entries %}<li>{{ e.address }}: {{ e.title }} ({{ e.created_at }}) {{ e.short_html }}{% for t in e.tags %} [{{ t }}]{% endfor %}</li>
+{% endfor %}
+</ul>

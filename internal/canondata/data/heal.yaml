@@ -1,0 +1,6 @@
+# The healing phrase library: a predictable agent failure — machine
+# detection + a standard reply from data. The identifier appears as a
+# literal in the detection code — the mirror checker catches dead
+# entries.
+- id: idempotent-resubmit
+  advice: "this submission key was already used: the work is done, nothing re-applied — take the fresh key from the slot example"

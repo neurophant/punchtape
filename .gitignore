@@ -1,0 +1,28 @@
+# build artifact (repository root only)
+/punchtape
+
+# the one-command install distribution (make dist)
+/dist/
+
+# the punchtape instance service directory, wherever a command ran
+**/.punchtape/
+
+# heavy run artifacts never enter commits: task worlds, stagings,
+# container exports, coverage profiles — text evidence only
+*.gcno
+*.gcda
+*.profraw
+*.profdata
+*.test
+*.out
+node_modules/
+
+# OS and editor noise
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# python bytecode (campaigns/tools)
+__pycache__/
+*.pyc

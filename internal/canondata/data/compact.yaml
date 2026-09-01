@@ -1,0 +1,4 @@
+# Contextual slot diff: the anchor line of an unchanged block.
+compact.anchor: "{name}: unchanged since your last slot (digest {digest}; full: punchtape next --full)"
+# Item anchor: a run of unchanged elements of a changed list block.
+compact.item-anchor: "  ... {count} unchanged since your last slot ({name}; full: punchtape next --full)"

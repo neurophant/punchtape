@@ -1,0 +1,13 @@
+# Canon validation surfaces: strict decoding of scenarios, assertion of
+# observations, admissibility of observation+condition pairs.
+canonvalid.error.unbalanced-quote: "unbalanced quote in command"
+canonvalid.error.when-empty: "when: empty command"
+canonvalid.error.unknown-field: "unknown field {field} (fields: {fields})"
+canonvalid.error.out-scalar: "out: expected a scalar"
+canonvalid.error.err-scalar: "err: expected a scalar"
+canonvalid.error.rc-scalar: "rc: expected a scalar"
+canonvalid.error.fails-value: "fails: takes no value (means a non-zero exit code)"
+canonvalid.error.state-is-scalar: 'state-is: expected "<path> <json>" as a scalar'
+canonvalid.error.state-is-format: 'state-is: expected "<path> <json>"'
+canonvalid.error.value-scalar: "value: expected a scalar, got {type} (json-equals / json-contains take JSON as a string)"
+canonvalid.error.trust-status: "status {status} is not on the trust ladder (claimed/verified/valid/reliable)"

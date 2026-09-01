@@ -1,0 +1,3 @@
+<ul>
+{{range .entries}}<li>{{.address}}: {{.title}} ({{.created_at}}) {{.short_html}}{{range .tags}} [{{.}}]{{end}}</li>{{end}}
+</ul>

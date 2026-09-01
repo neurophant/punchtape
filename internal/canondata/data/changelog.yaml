@@ -1,0 +1,88 @@
+# CHANGELOG.md — the machine render of "what changed and why" from the
+# machine journal: one line per applied change; the journal is the single
+# truth, the render is a derivative. Written at verdict freeze next to
+# SPEC.md.
+changelog.title: "# Changelog"
+changelog.head: "Every applied change of this instance, machine-journaled; the why of each is its kind."
+changelog.entry: "- {time} — {what} ({key}): {effects}"
+changelog.effects: "{touched} files touched, {removed} removed"
+changelog.effects.none: "state only"
+changelog.kind.intent: "wish pinned"
+changelog.kind.spec: "spec changed"
+changelog.kind.checks: "check table changed"
+changelog.kind.code: "code submitted"
+changelog.kind.fix: "code fixed"
+changelog.kind.conventions: "environment recipe learned"
+changelog.kind.amend: "human assertion applied"
+changelog.kind.decision: "decision recorded"
+changelog.kind.split: "cards split"
+changelog.kind.assert: "assertions pinned"
+changelog.kind.waive: "gap waived"
+changelog.kind.kb: "knowledge recorded"
+changelog.kind.run: "machine verification run"
+verdict.changelog: "changelog: {count} changes → .punchtape/CHANGELOG.md"
+
+# A held submission: recorded but not applied — awaits a human assertion
+# (kind: amend); the render does not present it as an accomplished fact.
+changelog.held: " (held for human assertion — not applied yet)"
+
+# --- Russian locale ---
+changelog.title.ru: "# Журнал изменений"
+changelog.head.ru: "Каждое применённое изменение инстанса из машинного журнала; «почему» каждого — его вид."
+changelog.entry.ru: "- {time} — {what} ({key}): {effects}"
+changelog.effects.ru: "файлов затронуто {touched}, удалено {removed}"
+changelog.effects.none.ru: "только состояние"
+changelog.kind.intent.ru: "пожелание закреплено"
+changelog.kind.spec.ru: "спека изменена"
+changelog.kind.checks.ru: "таблица проверок изменена"
+changelog.kind.code.ru: "код подан"
+changelog.kind.fix.ru: "код исправлен"
+changelog.kind.conventions.ru: "рецепт среды изучен"
+changelog.kind.amend.ru: "утверждение человека применено"
+changelog.kind.decision.ru: "решение записано"
+changelog.kind.split.ru: "грани разделены"
+changelog.kind.assert.ru: "утверждения приколоты"
+changelog.kind.waive.ru: "зазор принят"
+changelog.kind.kb.ru: "знание записано"
+changelog.kind.run.ru: "машинный прогон проверки"
+changelog.held.ru: " (удержано: правка ждёт утверждения человеком — ещё не применена)"
+
+# --- Chinese locale ---
+changelog.effects.none.zh: |-
+    仅状态
+changelog.effects.zh: |-
+    触及 {touched} 个文件，移除 {removed} 个
+changelog.entry.zh: |-
+    - {time} — {what} ({key}): {effects}
+changelog.head.zh: |-
+    本实例已应用的每一项变更，均由机器记入日志；每一项的缘由即其种类。
+changelog.held.zh: |-4
+     （暂缓等待人工断言——尚未应用）
+changelog.kind.amend.zh: |-
+    人工断言已应用
+changelog.kind.assert.zh: |-
+    断言已固定
+changelog.kind.checks.zh: |-
+    检查表已变更
+changelog.kind.code.zh: |-
+    代码已提交
+changelog.kind.conventions.zh: |-
+    环境配方已学习
+changelog.kind.decision.zh: |-
+    决策已记录
+changelog.kind.fix.zh: |-
+    代码已修复
+changelog.kind.intent.zh: |-
+    愿望已固定
+changelog.kind.kb.zh: |-
+    知识已记录
+changelog.kind.run.zh: |-
+    机器验证运行
+changelog.kind.spec.zh: |-
+    规格已变更
+changelog.kind.split.zh: |-
+    卡片已拆分
+changelog.kind.waive.zh: |-
+    缺口已豁免
+changelog.title.zh: |-
+    # 变更日志

@@ -1,0 +1,3 @@
+<h1>{{ data.title }}</h1>
+<p>{{ data.note }}</p>
+{% for r in records %}{% if r.meta.title %}<b>{{ r.meta.title }}</b>{% endif %}<div>{{ r.html }}</div>{% endfor %}

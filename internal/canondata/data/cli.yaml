@@ -1,0 +1,64 @@
+# CLI surfaces: idle help and verb errors.
+cli.usage: |-
+  punchtape — spec -> code with machine guarantees.
+
+  Verbs: punchtape next ["<wish>"] | punchtape submit <file|-> | punchtape why <topic>
+  Start here: punchtape next "<the human's wish>" — in a fresh directory it
+  creates the instance, writes AGENTS.md beside it, pins the wish as the
+  intent and answers with the spec slot right away (a bare next pins
+  nothing yet and shows the intent slot).
+
+  Agent loop: run "punchtape next" in the project directory, do exactly
+  what the one slot asks (it carries a working example), save your answer
+  to a file and submit it with "punchtape submit <file>". An accepted
+  submit answers with the next slot right away (after "NEXT SLOT:") —
+  keep working from it without calling next again; a rejection is one
+  line naming the reason — fix the answer and submit again. Repeat
+  submit until the reply prints the verdict (a line starting with
+  VERDICT): show it to the human and stop — before it do not stop, after
+  it do not continue. A delta file may end with a "# TOKENS <n>"
+  trailer line — the caller counter for that submission, booked as its
+  price ("# TOKENS n/a" — the calling side honestly has no counter; no
+  trailer and n/a are equivalent and silent: the price is honestly
+  "no data", never zero).
+
+  Exit codes (the stop contract): 0 ok; 1 submission rejected (one line
+  reason); 2 machine failure; 3 choice required — the reply carries an
+  open question batch for the human or an open AMENDMENT NEEDS ASSERTION
+  block (changes to expectations of already-run checks; relay it
+  verbatim or proceed: silence applies the recommended defaults — for an
+  amendment, silence keeps the expectations that already ran); 4
+  escalation — an open conflict question or a QUARANTINE verdict
+  requires an explicit human choice, silence does not resolve it; the
+  loop holds until the answer arrives.
+
+  Never edit anything inside .punchtape and never write project files by
+  hand: the machine is the only writer; everything goes through submit.
+cli.next.contract-inject: "THE WORKING CONTRACT — AGENTS.md in full (the same file sits in the work root; read it now, work by it):\n"
+cli.fail.workdir: "FAIL: working directory: {err}.\n"
+cli.fail: "FAIL: {err}.\n"
+cli.fail.reading: "FAIL: reading {source}: {err}.\n"
+cli.error.submit-no-file: "ERROR: submit: name the delta file or use - for the stream.\n"
+cli.error.stdin-empty: "stdin: no bytes arrived — the pipe did not reach the machine (attach it, or write the delta to a file and submit the file)"
+cli.error.no-verb: "ERROR: {verb}: no such verb. Verbs: next, submit, why."
+cli.error.no-instance: "ERROR: no instance: run next in the working directory first.\n"
+cli.error.driver-usage: |-
+  ERROR: driver run [--shape cli|ide|api] <executor-command> [limit] |
+  driver fanout [--shape cli|ide|api] <routing-file> [limit] |
+  driver recompile [--shape cli|ide|api] <executor-command> [limit].
+cli.error.shape-missing: "--shape: name the caller shape"
+cli.error.shape-unknown: "--shape {shape}: expected cli | ide | api"
+
+# Intent router for everyday phrases: ambiguity — a menu with a default
+# recommendation (the wish); the machine does not resolve the ambiguity;
+# repeat the call with an explicit verb or a plain wish phrase.
+cli.intent.menu: |-
+  AMBIGUOUS PHRASE — it matches several intents:
+  {options}
+  recommendation: treat it as a wish (the default) — repeat the call with the plain wish text
+cli.intent.option: "  {label}"
+
+# Intent router goal labels: menu texts are canon data.
+cli.intent.label.next: "continue the loop — repeat the call without the phrase (plain `next`)"
+cli.intent.label.why: "read the machine's answer — `why {topic}`"
+cli.intent.label.wish: "treat the phrase as a product wish (the default)"
