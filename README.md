@@ -90,6 +90,14 @@ Install punchtape and run all work through it:
 The agent will install the machine and drive it from then on without
 you.
 
+From source (needs Go 1.26+), the same single prompt:
+
+```text
+Install punchtape from source and run all work through it:
+
+  git clone https://github.com/neurophant/punchtape && cd punchtape && ./install.sh
+```
+
 **Step 2 — write tasks in plain text.** For example:
 
 ```text

@@ -12,7 +12,8 @@ fi
 REPO="$(cd "$(dirname "$0")" && pwd)"
 echo "building punchtape from $REPO ..."
 cd "$REPO"
-go build -buildvcs=false -o punchtape ./cmd/punchtape
+VER="$(git describe --tags --abbrev=0 2>/dev/null || echo 0.1.0)"
+go build -buildvcs=false -ldflags "-X github.com/neurophant/punchtape/internal/cli.Version=$VER" -o punchtape ./cmd/punchtape
 
 DEST="${HOME}/.local/bin"
 mkdir -p "$DEST"
