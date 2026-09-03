@@ -1,9 +1,0 @@
-<article>
-<h1>{{ title }}</h1>
-<p>{{ created_at }}</p>
-<p>{{ address }}</p>
-<div>{{ full_html }}</div>
-<div>{{ short_html }}</div>
-{% for image in images %}<img src="{{ image.url }}" alt="{{ image.name }}">{% endfor %}
-<ul>{% for tag in tags %}<li>{{ tag }}</li>{% endfor %}</ul>
-</article>

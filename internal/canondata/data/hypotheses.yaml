@@ -4,4 +4,191 @@
 # Rule: a canon amendment ships only as a new version with a hypothesis
 # record; a refuted hypothesis — the amendment is rolled back, the result
 # is journaled as the outcome value (refuted).
-hypotheses: []
+hypotheses:
+  - id: repair-binding-kept
+    change: >-
+      a check-table row repair resolves row identity first — an authorial-key
+      replacement of a never-green row inherits the row ID and the scenario's
+      requirement binding during an asserted amend replay; the binding is no
+      longer re-derived from the command spelling
+    hypothesis: >-
+      post-code row repairs (a changed run, a sh wrapper, a direct artifact
+      call) keep proven scenarios on their re-cut features; the phantom-family
+      defect class disappears from the field
+    metric: >-
+      defect class gone from the field: zero rows re-bound off their
+      requirements after post-code row repairs (ledger and spec registry of
+      every cell show no binding moves without an authorial re-cut)
+    window: field waves 2+ of this delivery (every sense, every stack)
+    baseline: >-
+      pre-fix control run: all 30 bindings of one cell slid onto three
+      phantom command families after post-code repairs while eleven re-cut
+      features held none (one control cell's ledger, two more cells'
+      observations); wave 1 of this delivery on the fixed build already at
+      zero occurrences
+    outcome: open
+  - id: amend-atomic-staging
+    change: >-
+      a partitioned spec delta whose free part alone would leave the spec IR
+      invalid stages as ONE amendment (the hold says so; the approve applies
+      the whole delta atomically) — the three guards no longer close on each
+      other, and submit --check stays available while the hold stands open
+    hypothesis: >-
+      composition repairs that span held and free parts always have a legal
+      path; the amend-channel deadlock defect class disappears from the field
+    metric: >-
+      defect class gone from the field: zero instances of a staged delta
+      refused on the very invariant its held part resolves (or the reverse),
+      zero deadlocked holds across all cells' ledgers
+    window: field waves 2+ of this delivery (every sense, every stack)
+    baseline: >-
+      pre-fix control run: one cell deadlocked — the approved stage answered
+      "REQ-001: no scenarios" while the amend-open, invariant and detail
+      guards each refused the other two exits (the cell's ledger); wave 1 of
+      this delivery on the fixed build already at zero occurrences
+    outcome: open
+  - id: verdict-units-split
+    change: >-
+      the verdict's scenarios line carries scenario-unit counts only and the
+      prose count moved to its own feature-unit line beside a traceability
+      line in a third unit — one count, one unit, one line
+    hypothesis: >-
+      verdict readers no longer conflate scenarios with described
+      requirements; the mixed-unit misreading defect class disappears from
+      the field
+    metric: >-
+      defect class gone from the field: zero operator or executor questions
+      caused by verdict unit mixing across all cells' operator logs and
+      question batches
+    window: field waves 2+ of this delivery (every sense, every stack)
+    baseline: >-
+      pre-fix control run: the line read "total 30 … prose 8" (scenarios
+      beside described requirements) — flagged independently by two
+      operators; wave 1 of this delivery on the fixed build already at zero
+      occurrences
+    outcome: open
+  - id: text-surfaces-valid-text
+    change: >-
+      every text surface of the machine that renders an expectation value
+      or measured bytes escapes non-text input through one rune-aware
+      escaper (control bytes and bytes that do not decode as valid UTF-8
+      become the \xNN literal form; printable unicode passes verbatim,
+      the human surfaces escape the backslash as well) — the spec and
+      feature renders, red reasons, run evidence and the why ACTUAL block
+      stay valid text by construction over any byte input
+    hypothesis: >-
+      the non-UTF-8 render defect class disappears from the field: no
+      machine-written file of any cell loses text validity over binary
+      expectations, while checks stay byte-exact
+    metric: >-
+      zero non-UTF-8 files among the machine renders of any cell (spec,
+      features, journal, ledger, replies); red reasons over binary pins
+      read as \xNN forms; byte-exact checks unchanged (green pins stay
+      green)
+    window: field waves after this release (the validation wave and beyond)
+    baseline: >-
+      one cell of the pre-release field run on the 0.2.0 build:
+      SPEC/REQ renders non-UTF-8 over a !!binary pin (checks green);
+      reason excerpts of the same build embedded raw \r bytes invisibly
+      (the translit probe baseline carried the split-line defect)
+    outcome: open
+  - id: journal-torn-tail
+    change: >-
+      the machine journals (journal.yamll, ledger.yamll) load by
+      document frames: a record is healthy only when it is exactly a
+      machine-written one (complete line, strict fields, byte-exact
+      decode-marshal round trip); a torn tail — a write cut mid-record —
+      is inert at read time (every committed record loads, the machine
+      keeps working) and heals on the next write (the torn bytes are
+      quarantined to a .torn sidecar with a named diagnosis, the file
+      is rebuilt from the intact records, then the new record appends)
+    hypothesis: >-
+      the mid-write journal tear defect class disappears from the
+      field: no cell ever goes blind or swallows a half-record over a
+      cut write; a torn tail never replays as a transaction
+    metric: >-
+      zero blind/half-swallowed journal loads across cells (a torn
+      tail loads the committed history and works); every heal names
+      its diagnosis in the sidecar; a committed record torn by
+      external damage still refuses honestly
+    window: field waves after this release (the validation wave and beyond)
+    baseline: >-
+      one pre-release field incident: a journal write cut on ENOSPC
+      blinded the machine, the hand restored the separator manually;
+      on the rc build a simulated cut tail was either refused
+      (mid-scalar) or silently swallowed and replayed as a garbage
+      transaction (line-boundary cut, demonstrated on a scratch
+      instance)
+    outcome: open
+  - id: agents-ref-combined
+    change: >-
+      an instance opened in a work root that already carries the
+      repository's own AGENTS.md combines the file instead of leaving
+      it apart: the machine contract head first with a declared total
+      precedence, a tail boundary, then the repository's rules byte
+      for byte below; re-inits regenerate the head (canon changes)
+      and preserve the tail verbatim
+    hypothesis: >-
+      the incomplete-initialization and lost-repo-rules defect
+      classes disappear: every instance dir shows exactly one
+      AGENTS.md carrying both contracts with the machine's first,
+      and no repository rule is ever overwritten by the machine
+    metric: >-
+      zero cells or bootstrap worktrees where the machine contract
+      is absent from the work root or a repository rule was
+      overwritten; combined files keep their tail byte-exact across
+      re-inits and canon head changes
+    window: the bootstrap phase and field waves after this release
+    baseline: >-
+      the pre-fix behavior (verified in code and on a scratch dir):
+      a foreign AGENTS.md was left untouched — the machine contract
+      never landed as a file, two contracts competed with no
+      declared precedence
+    outcome: open
+  - id: lint-rejection-skeleton
+    change: >-
+      the rejection reply of a finding-kind delta renders the
+      canonical skeleton of its kind again: the registry entry the
+      skeleton switch selects is restored, so a rejected finding
+      submission is answered with the one-line reason plus the
+      teach-the-form skeleton instead of a process crash on a
+      missing canon text
+    hypothesis: >-
+      the missing-canon-key crash class disappears: no rejection
+      path of any delta kind ever fails on an absent registry text;
+      the mirror reconciliation check (every literal canon
+      identifier the code references exists in the delivery
+      registries) runs with the release gates and holds the class
+    metric: >-
+      zero process crashes on canon text lookup across probes and
+      field cells; the mirror check green on every candidate tree
+    window: this delivery's remaining candidates and the field waves after release
+    baseline: >-
+      the pre-fix candidate crashed live on a scratch instance: a
+      well-formed finding submission on a fresh instance answered
+      with a stack trace instead of a rejection line (the registry
+      entry had been dropped by an intermediate rebuild while the
+      code call remained)
+    outcome: open
+  - id: registry-battery-free
+    change: >-
+      the registry of canon change hypotheses carries no battery
+      vocabulary: baseline lines describe field evidence without
+      naming task senses or runs of the battery — the same discipline
+      the registry was already cleaned to once; the gate's
+      battery-reference layer now covers hyphenated run names by
+      pattern, so the class is held mechanically, not by vigilance
+    hypothesis: >-
+      the agnostic gate stays green on every candidate tree of this
+      delivery, all seven layers; no future canon edit lands with a
+      red gate recorded as passing
+    metric: >-
+      gate green on every candidate tree; the class found by the
+      release-audit verification run (a recorded gate pass over a
+      red tree) does not recur
+    window: this delivery's remaining candidates and the field waves after release
+    baseline: >-
+      the gate was red on one layer since the first fix of the
+      batch: a baseline line named a task sense inside its field-run
+      description, while the batch records said passing
+    outcome: open

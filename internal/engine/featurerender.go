@@ -295,26 +295,11 @@ func renderDetailBlock(lang, class string, dc *canon.DetailClass, byID map[strin
 // printable unicode passes as is, only control characters are escaped
 // (newline, tab, carriage return, other controls, backslash).
 // Byte strictness is the machine render's business; this is reading.
+// The loop lives in yamlio (one escaping discipline shared by every
+// text surface of the machine; undecodable bytes escape here too —
+// living words are still valid text over any byte input).
 func humanEscape(s string) string {
-	var sb strings.Builder
-	for i := 0; i < len(s); i++ {
-		b := s[i]
-		switch {
-		case b >= 0x20 && b != 0x7F && b != '\\':
-			sb.WriteByte(b)
-		case b == '\\':
-			sb.WriteString("\\\\")
-		case b == '\n':
-			sb.WriteString("\\n")
-		case b == '\t':
-			sb.WriteString("\\t")
-		case b == '\r':
-			sb.WriteString("\\r")
-		default:
-			fmt.Fprintf(&sb, "\\x%02X", b)
-		}
-	}
-	return sb.String()
+	return yamlio.EscapeHuman(s)
 }
 
 // humanCommand — a call for human reading: an argument that is empty or

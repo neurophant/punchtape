@@ -75,21 +75,22 @@ The machine is a heat pump against it, and the effect is measurable:
    unmeasurable uncertainty — a "guarantee paid for in watts".
 3. **Part of the entropy is not erased but relocated**: irreducible
    ambiguities of briefs are pumped out of the code into an explicit,
-   auditable form — question → default → decision log; the entropy
-   lies signed where it cannot go off.
+   auditable form — question → default → decision log; the entropy is
+   relocated into signed, auditable form where it cannot silently
+   disappear.
 4. **Order is stockpiled**: canon + a green verdict are a battery of
    order; regression re-runs are paid for in advance, edits are free
    in the sense of checking. The first delivery is expensive (pumping
    out), the following ones nearly free (battery discharge).
 5. **Measured confirmation**: the judges of the three-hand run — 383
-   red rows = freedom of interpretation per one input; the canon
-   squeezed it down: 50/50 machine verdicts against 22% strict byte
-   convergence for solo.
+   red rows = freedom of interpretation for one and the same
+   input; the canon squeezed it down: 50/50 machine verdicts against
+   22% strict byte convergence for solo.
 
 The same effect in three senses: **physical** — the pump, Landauer,
 the battery of order; **cybernetic** — a closed loop and inversion of
 ownership (the agent is a peripheral of the external state machine;
-vibe coding is an open loop: write it and pray); **psychological** —
+vibe coding is an open loop: write and pray); **psychological** —
 an immovable support: the human writes the wish and does not twitch,
 the verdict is signed with a digest — trust without faith.
 
@@ -182,7 +183,7 @@ flowchart TB
         SP[(specs/ + renders)]
         CA[(cache/)]
     end
-    A -->|"submit <file#124;->"| CLI
+    A -->|"submit <file&#124;->"| CLI
     A -->|"next / why"| CLI
     CLI --> ENG
     ENG --> CMP
@@ -281,7 +282,7 @@ canonical skeleton on a format error, + a hint when the fix is
 unique). Return codes are the stopping contract: 0 ok; 1 rejected;
 2 failure; 3 choice point (a question batch is open: hand it to the
 human or stay silent — silence applies the defaults); 4 escalation
-(an open conflict — only an explicit living choice).
+(an open conflict — only an explicit, live human choice).
 
 ## 5. Code packages
 
@@ -356,7 +357,7 @@ human or stay silent — silence applies the defaults); 4 escalation
 ## 6. Features — the full registry and how each one works
 
 The registry is docs/SCENARIOS.md, section 3 (118 features; registry
-row codes in brackets). Here is the design of each feature with a
+row codes in brackets). The design of each feature follows, with a
 diagram. Groups as in the registry.
 
 ### Verbs (5)
@@ -514,8 +515,8 @@ flowchart LR
     K[DEC + out-of-scope + kb] --> S[summary of the instance's knowledge]
 ```
 
-**verifications (w-verif)** — by whom/by whom/by what each boundary
-was verified (by the machine, by an anchor transaction).
+**verifications (w-verif)** — what and when verified each boundary
+(verdicts, digests, anchor transactions).
 
 ```mermaid
 flowchart LR
@@ -1044,11 +1045,6 @@ flowchart LR
     M[match: exactly one observation] --> S[set | drop | capture | add]
 ```
 
-```mermaid
-flowchart LR
-    A[scenario assertions] --> M[match+set/drop/capture/add]
-```
-
 **detail block (sp-detail)** — a filled boundary block must be
 complete: invariants, edge cases, the failure matrix, concurrency —
 each covered by scenarios or an explicit "no" with a reason.
@@ -1099,7 +1095,7 @@ flowchart LR
 **Double run suite (c-suite)** — every check in its own clean
 temporary directory, twice; observations must match byte-for-byte;
 declared volatility (`volatile`: stream names, state file paths) is
-not reconciled, file presence is strictly always. The pair is
+not reconciled, the file's presence is always checked. The pair is
 strictly serial with a hard barrier: the first run's process group
 is dead — waited, not just signalled — before the second begins, so
 what the first run held (a port, a lock) is released.
@@ -1164,7 +1160,7 @@ flowchart LR
 does not eat the attempts budget: classification by source, "not
 behavior" is marked. The "suite not run" mark belongs here too — a
 run that did not happen because the surface was untrustworthy (a red
-types, a build failure).
+types gate, a build failure).
 
 ```mermaid
 flowchart LR
@@ -1184,7 +1180,7 @@ flowchart LR
 ```
 
 **volatile (c-volatile)** — declaring unpredictable bytes is part of
-when; adding it after code requires human approval.
+the row's `when` block; adding it after code requires human approval.
 
 ```mermaid
 flowchart LR
@@ -1239,7 +1235,7 @@ flowchart LR
 
 **latency (gt-latency)** — p95 of verb wall times, INFO: the
 duration of honest check work is a property of the task; a failure
-is sustained non-adjacent spikes.
+means sustained non-adjacent spikes.
 
 ```mermaid
 flowchart LR
@@ -1437,8 +1433,8 @@ flowchart LR
 ```
 
 **SPEC.md (r-spec)** — a machine render of the canon: the wish,
-requirements, GWT scenarios; control bytes of values as escapes, the
-file stays text.
+requirements, given-when-then (GWT) scenarios; control bytes of
+values as escapes, the file stays text.
 
 ```mermaid
 flowchart LR
@@ -1496,11 +1492,11 @@ recommended defaults; a conflict is never resolved by silence.
 ```mermaid
 flowchart LR
     S[silence] --> D[recommended defaults]
-    K[conflict] -->|never| E[escalation: only a living choice]
+    K[conflict] -->|never| E[escalation: only an explicit, live human choice]
 ```
 
 **Escalation (a-esc)** — code 4: an open conflict of requirements or
-quarantine; only an explicit living human choice.
+quarantine; only an explicit, live human choice.
 
 ```mermaid
 flowchart LR

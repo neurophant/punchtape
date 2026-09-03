@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -90,14 +91,23 @@ func (e *Engine) renderSummaryText() (string, error) {
 		}
 	}
 
-	// Counters for the "done" block: the flow of submissions and runs from the journal.
+	// Counters for the "done" block: the flow of submissions and runs
+	// from the journal; submissions count DISTINCT keys (the verdict
+	// line's definition — replays and amend approvals are one).
 	submitted, runs := 0, 0
+	seenKeys := map[string]bool{}
 	for _, en := range e.Journal.All() {
 		if en.DeltaKind == deltaKindRun {
 			runs++
-		} else {
-			submitted++
+			continue
 		}
+		if en.SubmissionKey != "" {
+			if seenKeys[en.SubmissionKey] {
+				continue
+			}
+			seenKeys[en.SubmissionKey] = true
+		}
+		submitted++
 	}
 	wish := canondata.TFor(lang, "why.handoff.none")
 	if state.Intent != nil {
@@ -197,6 +207,11 @@ func (e *Engine) renderSummaryText() (string, error) {
 	fmt.Fprintf(&sb, "%s\n\n", canondata.TFor(lang, "summary.checked.acceptance", canondata.M{
 		"line": e.summaryAcceptanceLine(lang),
 	}))
+	if unpinned := unpinnedCLISurface(chk); len(unpinned) > 0 {
+		fmt.Fprintf(&sb, "%s\n\n", canondata.TFor(lang, "summary.checked.unpinned", canondata.M{
+			"names": strings.Join(unpinned, ", "),
+		}))
+	}
 
 	sb.WriteString(canondata.TFor(lang, "summary.remaining.head"))
 	sb.WriteString("\n")
@@ -295,6 +310,63 @@ func (e *Engine) summaryDerivedLine(state canon.State, lang string) string {
 		"total": strconv.Itoa(total), "green": strconv.Itoa(green), "red": strconv.Itoa(red),
 		"budget": strconv.Itoa(canondata.Limit("derive.budget")),
 	})
+}
+
+// unpinnedCLISurface — option-like names the machine OBSERVED in run
+// output (a check's reason carries the divergent excerpts: usage
+// dumps, error texts) that no row's argv pins. The gates check the
+// table, not the table's completeness — this line makes the gap
+// visible BEFORE the human reads the verdict (the battery's own
+// lesson: rows green under their own table can miss a surface an
+// independent check set would catch). Honest limits: the scan sees
+// only what the machine's excerpts preserved — a warning, never a
+// gate; empty is "nothing observed unpinned", not "everything
+// pinned".
+func unpinnedCLISurface(chk []canon.Check) []string {
+	pinned := map[string]bool{}
+	for _, c := range chk {
+		argvs := c.When.Command
+		for _, pre := range c.Pre {
+			argvs = append(append([]string{}, argvs...), pre...)
+		}
+		for _, tok := range argvs {
+			if isOptionLike(tok) {
+				pinned[tok] = true
+			}
+		}
+	}
+	seen := map[string]bool{}
+	observe := func(text string) {
+		for _, tok := range strings.Fields(text) {
+			tok = strings.Trim(tok, "`\"'[](),;:")
+			if isOptionLike(tok) && !pinned[tok] {
+				seen[tok] = true
+			}
+		}
+	}
+	for _, c := range chk {
+		observe(c.Reason)
+		for _, a := range c.Then {
+			observe(a.Value)
+		}
+	}
+	out := make([]string, 0, len(seen))
+	for tok := range seen {
+		out = append(out, tok)
+	}
+	sort.Strings(out)
+	if len(out) > summaryMore+3 {
+		out = append(out[:summaryMore+3], "…")
+	}
+	return out
+}
+
+// isOptionLike — a flag-shaped token: --name, letters/digits/hyphens
+// only. Agnostic by construction: shape, not a dictionary.
+func isOptionLike(tok string) bool {
+	body := strings.TrimPrefix(tok, "--")
+	return len(body) > 0 && body != tok &&
+		strings.Trim(body, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-") == ""
 }
 
 // summaryAcceptanceLine — the acceptance moment in the language of the wish:

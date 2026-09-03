@@ -48,7 +48,6 @@ features.out.file.equals: "the file {path} reads: {value}"
 features.out.file.json-equals: "the file {path} now reads: {value}"
 features.out.file.json-contains: "the file {path} holds a record containing: {value}"
 features.out.file.bytes-equals: "the file {path} is exactly: {value}"
-# Environment steps in living words (the fixture catalog is closed).
 
 # The spec registry (index.md) — the table of contents of the spec directory.
 features.index.title: "Spec registry"
@@ -111,7 +110,7 @@ features.index.origin.ru: "Происхождение — пожелание"
 features.index.address.ru: "Файл"
 features.index.doc.ru: "Описание"
 features.doc.none.ru: "описания нет"
-features.doc.awaiting.ru: "ждёт ратификации оператора"
+features.doc.awaiting.ru: "ждёт проверки оператора"
 features.doc.ratified.ru: "ратифицировано оператором"
 features.doc.head.ru: "Что делает — словами автора"
 

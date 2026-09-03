@@ -83,6 +83,21 @@ func rehearsalStopped(workdir string) bool {
 // changes the truth) and the canonical definitions of all checks. A
 // change in any term invalidates the previous report.
 func surfaceDigest(e *Engine, all []canon.Check) (string, bool) {
+	d, _, _, ok := surfaceSignature(e, all)
+	return d, ok
+}
+
+// surfaceSignature — the surface digest plus its exact terms: the
+// signed files and the command names that resolved to none. A row
+// may drive the product THROUGH an interpreter or a system tool:
+// its argv[0] names no project file. The first PROJECT-FILE element
+// of that same argv then signs the surface (the product file the
+// row drives); a name whose argv names no project file signs
+// nothing — recorded in skipped, never silently dropped, and the
+// signature stands on the files that were found. (A non-file
+// argv[0] used to void the whole signature: acceptance passed
+// with an empty file set while the submit reply carried a digest.)
+func surfaceSignature(e *Engine, all []canon.Check) (digest string, files, skipped []string, ok bool) {
 	names := map[string]bool{}
 	for _, c := range all {
 		if c.When != nil && len(c.When.Command) > 0 {
@@ -90,23 +105,67 @@ func surfaceDigest(e *Engine, all []canon.Check) (string, bool) {
 		}
 	}
 	if len(names) == 0 {
-		return "", false
+		return "", nil, nil, false
 	}
-	digest := ""
+	parts := map[string]string{}
 	if artifact := e.surfaceArtifact(); artifact != "" {
-		d, ok := e.pathDigest(artifact)
-		if !ok {
-			return "", false // no surface — nothing to rehearse
+		d, okA := e.pathDigest(artifact)
+		if !okA {
+			return "", nil, nil, false // no surface — nothing to rehearse
 		}
-		digest += artifact + "\x00" + d + "\x00"
+		parts[artifact] = artifact + "\x00" + d + "\x00"
+		files = append(files, artifact)
 	} else {
-		for _, name := range sortedKeys(names) {
-			d, ok := e.digestOf(name)
-			if !ok {
-				return "", false // no surface — nothing to rehearse
-			}
-			digest += name + "\x00" + d + "\x00"
+		isFile := func(name string) bool {
+			_, okN := e.digestOf(name)
+			return okN
 		}
+		for _, name := range sortedKeys(names) {
+			file := ""
+			if isFile(name) {
+				file = name
+			} else {
+				// argv scan: the first project-file element of a row
+				// driving its product through this name
+			scan:
+				for _, c := range all {
+					if c.When == nil || len(c.When.Command) == 0 || c.When.Command[0] != name {
+						continue
+					}
+					for _, tok := range c.When.Command[1:] {
+						if isFile(tok) {
+							file = tok
+							break scan
+						}
+					}
+				}
+			}
+			if file == "" {
+				skipped = append(skipped, name)
+				continue
+			}
+			d, okD := e.digestOf(file)
+			if !okD {
+				skipped = append(skipped, name)
+				continue
+			}
+			parts[file] = file + "\x00" + d + "\x00"
+			files = append(files, file)
+		}
+		if len(files) == 0 {
+			// nothing product-backed to sign — an honest absent, the
+			// skipped list says why
+			return "", nil, skipped, false
+		}
+	}
+	digest = ""
+	partKeys := make([]string, 0, len(parts))
+	for k := range parts {
+		partKeys = append(partKeys, k)
+	}
+	sort.Strings(partKeys)
+	for _, file := range partKeys {
+		digest += parts[file]
 	}
 	digest += "conventions\x00" + e.Store.ConventionsDigest() + "\x00"
 	sorted := make([]canon.Check, len(all))
@@ -115,11 +174,11 @@ func surfaceDigest(e *Engine, all []canon.Check) (string, bool) {
 	for _, c := range sorted {
 		data, err := yamlio.Marshal(c)
 		if err != nil {
-			return "", false
+			return "", nil, nil, false
 		}
 		digest += c.ID + "\x00" + yamlio.Digest(data) + "\x00"
 	}
-	return yamlio.Digest([]byte(digest)), true
+	return yamlio.Digest([]byte(digest)), files, skipped, true
 }
 
 // backfillCheckProven — legacy normalization applied wherever raw
@@ -280,7 +339,7 @@ func RunBackgroundSuite(workdir string) error {
 		if rehearsalStopped(workdir) {
 			return nil
 		}
-		res := checks.Run(e.Workdir, e.surfaceArtifact(), c, checks.Normal)
+		res := e.runCheck(c, checks.Normal)
 		out := canon.CheckRed
 		reason := res.Reason
 		if res.Green {

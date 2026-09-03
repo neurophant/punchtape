@@ -5,10 +5,13 @@
 /dist/
 
 # the punchtape instance service directory, wherever a command ran
-**/.punchtape/
+**/.punchtape/cache/
+**/.punchtape/derived/
 
 # heavy run artifacts never enter commits: task worlds, stagings,
-# container exports, coverage profiles — text evidence only
+# container exports, coverage profiles — text evidence only.
+# Binary products and tool caches inside exported cells are rebuildable
+# from the frozen image and their sha256 lives in evidence.json.
 *.gcno
 *.gcda
 *.profraw
@@ -16,6 +19,44 @@
 *.test
 *.out
 node_modules/
+
+# raw platform rollout logs and per-call snapshot artifacts: heavy
+# and redundant for proof — the committed ledger plus the platform
+# session DB are the provable metric source (owner's remote hygiene
+# rule; the history was cleaned of these classes once,
+# before the v0.2.0 tag; the raw-rollout.jsonl name joined the class
+# at the second pre-tag cleaning — it had slipped past the name list
+# of the first one)
+**/evidence/**/raw/
+**/evidence/**/raw-ops/
+**/evidence/**/raw-judge/
+**/evidence/**/raw-rollout.jsonl
+**/model-io-*.jsonl
+**/*.r[0-9].jsonl
+**/*.r[0-9][0-9].jsonl
+**/evidence/**/task/**/bin/
+**/evidence/**/task/**/.gocache/
+**/evidence/**/task/**/coverage-build/
+**/evidence/**/task/**/target/
+**/evidence/**/task/**/scratch/
+**/evidence/**/task/**/quire-dist/
+**/evidence/**/task/**/surface/release/
+**/evidence/**/task/**/app/bin/
+**/evidence/**/task/conduit
+**/evidence/**/task/pressmark
+**/evidence/**/task/quire
+**/evidence/**/task/errand
+**/evidence/**/task/errandctl
+**/evidence/**/task/solo-product/bin/
+**/evidence/**/task/solo-product/coverage-build/
+**/evidence/**/task/solo-product/build/
+
+# the owner's private working area (never enters commits)
+/private/
+
+# agent tool work areas (session-local, never enters commits)
+.kilo/
+.zcode/
 
 # OS and editor noise
 .DS_Store

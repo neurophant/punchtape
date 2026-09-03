@@ -242,6 +242,16 @@ func compactStreamCond(v string) (string, string) {
 	return "equals", v
 }
 
+// rowTimeoutOr — the row's declared ceiling or the delivery default
+// (limits.yaml check.timeout-default-s); the code keeps no constant
+// of its own (the limits mirror rule).
+func rowTimeoutOr(declared *int) int {
+	if declared != nil && *declared > 0 {
+		return *declared
+	}
+	return canondata.Limit("check.timeout-default-s")
+}
+
 // rowExpectations — the last command's expectations of a row into
 // typed assertions: exit code (default 0), exact stdout/stderr,
 // structural assertions about state files.
@@ -339,6 +349,21 @@ func (b *builder) applyChecks(ck *delta.Checks) error {
 	}
 	if b.state.Intent == nil {
 		return rejection("checks", canondata.T("checktable.error.no-intent"))
+	}
+	// The seed channel's quoting trap is caught at intake, from the
+	// raw submission text (post-decode the evidence is gone): a
+	// double-quoted seed value with byte-changing escapes silently
+	// reseeds different bytes. A refusal with a recipe, not an
+	// eternal md5 fight.
+	if b.rawInput != "" {
+		if line, trap := delta.SeedQuoteEscape(b.rawInput); trap {
+			return rejection("seeds", canondata.T("checktable.error.seed-quote-escape",
+				canondata.M{"line": fmt.Sprintf("%d", line)}))
+		}
+		if line, trap := delta.ExpectationQuoteEscape(b.rawInput); trap {
+			return rejection("expectations", canondata.T("checktable.error.expectation-quote-escape",
+				canondata.M{"line": fmt.Sprintf("%d", line)}))
+		}
 	}
 	// Once code has started, the expectations of already-run checks are
 	// changed only by human assertion — but row by row, not by the
@@ -611,48 +636,32 @@ func (b *builder) applyChecks(ck *delta.Checks) error {
 			When: &canon.When{
 				Surface:    "cli",
 				Command:    when,
-				TimeoutSec: 10,
+				TimeoutSec: rowTimeoutOr(row.TimeoutSec),
 				Volatile:   row.Volatile,
 			},
 			Then:    then,
 			Summary: fmt.Sprintf("%s → %s", strings.Join(when, " "), short),
 		}
 
-		// The row's family and requirement.
-		family := familyOf(when, fams)
-		reqID := ""
-		for _, r := range b.reqs {
-			if r.Formulation == reqFormulationOf(b.state.Language, family) {
-				reqID = r.ID
-				break
-			}
-		}
-		if reqID == "" {
-			next := b.state.Counters["REQ"]
-			if next < 1 {
-				next = 1
-			}
-			reqID = fmt.Sprintf("REQ-%03d", next)
-			b.state.Counters["REQ"] = next + 1
-			if err := b.putReq(canon.Requirement{
-				ID: reqID, Status: canon.ReqAccepted,
-				Dependencies: []string{}, Formulation: reqFormulationOf(b.state.Language, family),
-			}); err != nil {
-				return err
-			}
-		}
-		sc.Requirement = reqID
-
-		// Row-by-row repair: the same seed, materials, and the same
-		// sequence — the same row, the expectations are replaced; a
-		// never-green row is replaced under its authorial key even
-		// with different seeds and run — the repair of a broken row
-		// must not orphan the broken original; otherwise a new row.
+		// Row identity FIRST, the requirement after: a row replacing an
+		// existing one — the same seed, materials, and the same
+		// sequence, or its authorial key on a never-green row — KEEPS
+		// the scenario's requirement binding. The binding is the
+		// executor's re-cut (update-scenario is the rebinding channel);
+		// re-deriving it from the command spelling on repair re-drafted
+		// per-family placeholders and silently moved rows — proven ones
+		// included — off the re-cut features, leaving the real
+		// requirements without a single scenario.
 		if id, ok := existing[rowKey(seed, materials, pre, when)]; ok {
 			sc.ID = id
 		} else if row.Key != "" {
 			if id, ok := byKey[row.Key]; ok {
-				if !b.rowProtected(b.scns[id]) {
+				// An asserted amend replay replaces the row in place:
+				// the human assertion HAS resolved the protection this
+				// hold was staged for — inheriting the ID keeps the
+				// scenario (and its requirement binding) instead of
+				// spawning a twin on a fresh family draft.
+				if !b.rowProtected(b.scns[id]) || b.assertedAmend {
 					sc.ID = id
 					delete(byKey, row.Key)
 					b.rowNotes = append(b.rowNotes, canondata.T("checktable.note.key-replaced",
@@ -666,6 +675,40 @@ func (b *builder) applyChecks(ck *delta.Checks) error {
 						canondata.M{"row": fmt.Sprintf("%d", i+1), "scn": id, "key": row.Key}))
 				}
 			}
+		}
+		if sc.ID != "" {
+			if req, ok := b.reqs[b.scns[sc.ID].Requirement]; ok && req.ID != "" {
+				sc.Requirement = req.ID
+			}
+		}
+		// A genuinely NEW row scaffolds onto the per-family draft: the
+		// table's authoring window (the canon's re-cut contract); the
+		// re-cut into living words is the executor's, the machine only
+		// gives every row a requirement to hang on.
+		if sc.Requirement == "" {
+			family := familyOf(when, fams)
+			reqID := ""
+			for _, r := range b.reqs {
+				if r.Formulation == reqFormulationOf(b.state.Language, family) {
+					reqID = r.ID
+					break
+				}
+			}
+			if reqID == "" {
+				next := b.state.Counters["REQ"]
+				if next < 1 {
+					next = 1
+				}
+				reqID = fmt.Sprintf("REQ-%03d", next)
+				b.state.Counters["REQ"] = next + 1
+				if err := b.putReq(canon.Requirement{
+					ID: reqID, Status: canon.ReqAccepted,
+					Dependencies: []string{}, Formulation: reqFormulationOf(b.state.Language, family),
+				}); err != nil {
+					return err
+				}
+			}
+			sc.Requirement = reqID
 		}
 		if sc.ID == "" {
 			next := b.state.Counters["SCN"]
@@ -725,7 +768,12 @@ func (b *builder) applyChecks(ck *delta.Checks) error {
 			b.touch(id)
 		}
 	}
-	if err := checkDependencies(b.reqs); err != nil {
+	// The spec IR holds after EVERY channel that touches bindings, the
+	// table channel included: a requirement left without scenarios is
+	// a poisoned state — its only repair routes (rebind, detail
+	// rewrite) are themselves refused against it. The machine may not
+	// write such a state, whatever path led here.
+	if err := b.checkSpecIR(); err != nil {
 		return err
 	}
 

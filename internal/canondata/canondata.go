@@ -92,6 +92,7 @@ type EnvDiagEntry struct {
 	ID        string `yaml:"id"`
 	Diagnosis string `yaml:"diagnosis"`
 	Fix       string `yaml:"fix"`
+	FixNoCode string `yaml:"fix-no-code,omitempty"`
 }
 
 // HealEntry — a healing phrase: a predictable agent failure,
@@ -226,6 +227,15 @@ func LintMessage(id string, params ...M) string {
 // the FIX hint in one piece — so an environment failure carries
 // both the cause and the action.
 func EnvDiag(id string, params ...M) string {
+	return EnvDiagAt(id, false, params...)
+}
+
+// EnvDiagAt — the diagnosed line with the advice routed by the
+// delivered-code state: before any code exists, "install the tool"
+// misleads (there is nothing to install against); the no-code advice
+// says deliver the code. Entries without a no-code form keep their
+// single fix line.
+func EnvDiagAt(id string, noCode bool, params ...M) string {
 	var e EnvDiagEntry
 	for _, c := range envDiagList {
 		if c.ID == id {
@@ -237,8 +247,11 @@ func EnvDiag(id string, params ...M) string {
 		panic(fmt.Sprintf("canondata: unknown env diagnosis %q", id))
 	}
 	diag := substitute(e.Diagnosis, params...)
-	fix := substitute(e.Fix, params...)
-	return diag + "; FIX: " + fix
+	fix := e.Fix
+	if noCode && e.FixNoCode != "" {
+		fix = e.FixNoCode
+	}
+	return diag + "; FIX: " + substitute(fix, params...)
 }
 
 // Intents — the intent table rows in data order.

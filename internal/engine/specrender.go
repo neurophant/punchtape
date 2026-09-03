@@ -132,30 +132,14 @@ func (e *Engine) renderSpecText() (string, error) {
 	return sb.String(), nil
 }
 
-// escapeControls — control bytes become escapes, everything else
-// (including the backslash) is printed as is: the spec render stays a
-// text file over binary expectations without losing the verbatim
-// quality of ordinary values.
+// escapeControls — control bytes and undecodable bytes become
+// escapes, everything else (including the backslash) is printed as
+// is: the spec render stays a text file over binary expectations
+// without losing the verbatim quality of ordinary values. The loop
+// lives in yamlio (one escaping discipline shared by every
+// byte-strict surface of the machine).
 func escapeControls(s string) string {
-	var sb strings.Builder
-	for i := 0; i < len(s); i++ {
-		b := s[i]
-		if b >= 0x20 && b != 0x7F {
-			sb.WriteByte(b)
-			continue
-		}
-		switch b {
-		case '\n':
-			sb.WriteString("\\n")
-		case '\t':
-			sb.WriteString("\\t")
-		case '\r':
-			sb.WriteString("\\r")
-		default:
-			fmt.Fprintf(&sb, "\\x%02X", b)
-		}
-	}
-	return sb.String()
+	return yamlio.EscapeControls(s)
 }
 
 // renderThenLines — expectations line by line: compact form, multiline

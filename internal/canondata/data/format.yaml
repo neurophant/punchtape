@@ -56,6 +56,9 @@ format.skeleton.checks: |-
         out: <exact stdout of the last command>   # optional
         err: <exact stderr of the last command>   # optional
         rc: 0                   # exit code of the last command, 0 by default
+        timeout-sec: 15         # optional; the row's own ceiling for
+                                 # long-running shapes (default 10, from
+                                 # limits.yaml)
         state:                  # optional; "<path> <json>" structural,
                                  # "<path> text <bytes>" exact bytes (escapes \n \t \r \\ \xNN), "<path> absent"
           - <path> {"key":<value>}
@@ -70,6 +73,19 @@ format.skeleton.clarify: |-
     answers:            # empty or missing — silence, all defaults
       - question: Q1    # id from the lint batch
         option: b       # option id from the lint batch
+format.skeleton.lint: |-
+    kind: lint
+    submission-key: <unique string>
+    findings:            # empty list — the wish is clear, no questions
+      - id: Q1           # stable id, echoed back in answers
+        dimension: ambiguous   # achievable | ambiguous | conflict
+        finding: <what the wish leaves open or contradictory, one line>
+        question: <the question a human answers>
+        options:          # 2-3 options, exactly one default: true
+          - id: a
+            label: <option a in living words>
+            scope: <what this option touches>
+            default: true
 format.skeleton.code: |-
     kind: code
     submission-key: <unique string>
@@ -189,9 +205,14 @@ format.skeleton.kb: |-
 format.skeleton.feature: |-
   kind: feature
   submission-key: feature-001
-  requirement: REQ-001       # an existing feature of this instance
-  text: |
-    what the feature does, in living words:
-    how it is called, what the user sees, boundaries and errors,
-    implementation details; machine facts only as references
-  # or ratify: true          # the operator ratifies the current text
+  entries:                      # ALL feature texts in ONE submission
+    - requirement: REQ-001      # an existing feature of this instance
+      text: |
+        what the feature does, in living words:
+        how it is called, what the user sees, boundaries and errors,
+        implementation details; machine facts only as references
+    - requirement: REQ-002
+      text: |
+        ...
+  # or ratify: true on an entry — the operator ratifies the current text
+  # a single requirement:+text: form also works for one feature

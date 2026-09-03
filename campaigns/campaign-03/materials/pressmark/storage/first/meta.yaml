@@ -1,0 +1,10 @@
+moment: "2026-08-25 10:15:30"
+title: "first"
+full-text: full.md
+short-text: short.md
+pictures:
+  - red.png
+  - blue.png
+tags:
+  - alpha
+  - beta

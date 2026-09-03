@@ -117,8 +117,19 @@ type gateOutcome struct {
 
 // gateTx — the machine run transaction.
 type gateTx struct {
-	parent string        // parent transaction (the submission that caused the runs)
-	gates  []gateOutcome // gate outcomes
+	parent string          // parent transaction (the submission that caused the runs)
+	gates  []gateOutcome   // gate outcomes
+	ran    map[string]bool // check ids this transaction actually ran
+}
+
+// ranMark — record a check id as run in this transaction (the scope
+// marker's witness: a red check NOT in the set is standing, not
+// this submission's verdict).
+func (g *gateTx) ranMark(id string) {
+	if g.ran == nil {
+		g.ran = map[string]bool{}
+	}
+	g.ran[id] = true
 }
 
 func (g *gateTx) outcome(name string, green bool, reason string) {
@@ -281,7 +292,7 @@ func (e *Engine) runAfterSubmit(kind, cardID, parentTx string, freshChecks []str
 
 // runCheckOut — a check run in normal mode.
 func runCheckNormal(e *Engine, check canon.Check) checks.Result {
-	return checks.Run(e.Workdir, e.surfaceArtifact(), check, checks.Normal)
+	return e.runCheck(check, checks.Normal)
 }
 
 // gatesForCode — the full gate set after code/fix: types/lint by
@@ -395,10 +406,12 @@ func (e *Engine) gatesForCode(cardID, parentTx string, chargeReds map[string]boo
 		}
 		var res checks.Result
 		started := time.Now()
+		// replayed or live — either way THIS transaction ran the check
+		g.ranMark(check.ID)
 		if replay != nil {
-			g, r, env, hit := replay.bgReplayOutcome(check)
+			green, reason, env, hit := replay.bgReplayOutcome(check)
 			if hit {
-				res = checks.Result{CheckID: check.ID, Green: g, Reason: r, Env: env}
+				res = checks.Result{CheckID: check.ID, Green: green, Reason: reason, Env: env}
 			} else {
 				res = runCheckNormal(e, check)
 			}
@@ -457,7 +470,7 @@ func (e *Engine) gatesForCode(cardID, parentTx string, chargeReds map[string]boo
 	if !gateRetired(b.state, "coverage-probe") {
 		for _, check := range greenChecks {
 			started := time.Now()
-			res := checks.Run(e.Workdir, e.surfaceArtifact(), check, checks.ProbeBrokenSurface)
+			res := e.runCheck(check, checks.ProbeBrokenSurface)
 			e.lastSubmitRunsMs += time.Since(started).Milliseconds()
 			if res.Green {
 				check.Pin = canon.PinRed
@@ -526,7 +539,7 @@ func (e *Engine) gatesForCode(cardID, parentTx string, chargeReds map[string]boo
 	// neighbor's edit that broke someone else's behavior reddens the
 	// card owning the scenario. One card — nothing to converge, no
 	// ceremony.
-	summary := summarizeGates(g)
+	summary := summarizeGates(g, b)
 	if replay != nil {
 		summary += "; " + replay.bgSummaryLine()
 		le := ledger.NewEntry("gate", mustState(e).Stage)
@@ -587,7 +600,7 @@ func (e *Engine) convergenceRun(b *builder, skipCard string) []string {
 			}
 			ran++
 			started := time.Now()
-			res := checks.Run(e.Workdir, e.surfaceArtifact(), check, checks.Normal)
+			res := e.runCheck(check, checks.Normal)
 			e.lastSubmitRunsMs += time.Since(started).Milliseconds()
 			if res.Green {
 				continue
@@ -631,10 +644,23 @@ func (e *Engine) convergenceRun(b *builder, skipCard string) []string {
 // summarizeGates — a one-line summary of the run transaction:
 // name=outcome in fixed order. This line is the gates' entire trace
 // in the agent's context; the details live in the ledger.
-func summarizeGates(g *gateTx) string {
+func summarizeGates(g *gateTx, b *builder) string {
 	byName := map[string]gateOutcome{}
 	for _, o := range g.gates {
 		byName[o.name] = o
+	}
+	// The scope marker: the suite verdict names THIS transaction's
+	// runs; red checks the transaction never touched are standing
+	// reds, and the headline must not read as "all green" while they
+	// stand (the reply said suite=green next to an untouched
+	// red).
+	standing := 0
+	if b != nil {
+		for id, c := range b.checks {
+			if c.Outcome == canon.CheckRed && !g.ran[id] {
+				standing++
+			}
+		}
 	}
 	order := []string{"types", "lint", "suite", "coverage-probe", "trace", "review-diff"}
 	parts := make([]string, 0, len(order))
@@ -643,11 +669,16 @@ func summarizeGates(g *gateTx) string {
 		if !ok {
 			continue
 		}
+		verdict := "red"
 		if o.green {
-			parts = append(parts, name+"=green")
-		} else {
-			parts = append(parts, name+"=red")
+			verdict = "green"
 		}
+		if name == "suite" && standing > 0 {
+			verdict += canondata.T("submit.reply.gates-scope", canondata.M{
+				"count": fmt.Sprintf("%d", standing),
+			})
+		}
+		parts = append(parts, name+"="+verdict)
 	}
 	return strings.Join(parts, " ")
 }
@@ -670,8 +701,9 @@ func (e *Engine) gatesForFreshChecks(ids []string, parentTx string) (string, err
 		if !ok {
 			continue
 		}
+		g.ranMark(id)
 		started := time.Now()
-		res := checks.Run(e.Workdir, e.surfaceArtifact(), check, checks.Normal)
+		res := e.runCheck(check, checks.Normal)
 		e.lastSubmitRunsMs += time.Since(started).Milliseconds()
 		if res.Green {
 			check.Outcome, check.Reason = canon.CheckGreen, ""
@@ -700,7 +732,7 @@ func (e *Engine) gatesForFreshChecks(ids []string, parentTx string) (string, err
 				continue
 			}
 			started := time.Now()
-			res := checks.Run(e.Workdir, e.surfaceArtifact(), check, checks.ProbeBrokenSurface)
+			res := e.runCheck(check, checks.ProbeBrokenSurface)
 			e.lastSubmitRunsMs += time.Since(started).Milliseconds()
 			if res.Green {
 				check.Pin = canon.PinRed
@@ -797,7 +829,7 @@ func (e *Engine) gatesForFreshChecks(ids []string, parentTx string) (string, err
 	if err := e.commitGates(b, g, parentTx); err != nil {
 		return "", err
 	}
-	return summarizeGates(g), nil
+	return summarizeGates(g, b), nil
 }
 
 // cardWithRedChecks — the first card with a red check: a red outcome
@@ -929,6 +961,17 @@ func (e *Engine) buildSurfaces(b *builder, card canon.Card) error {
 // conventions (file or directory, a path in the project); an empty
 // string — no artifact declared: the surface is submitted directly, a
 // file named after the command.
+// runCheck — a gate/probe run with the env advice routed by the
+// delivered-code state: at zero code "install the tool" misleads
+// (nothing is delivered to install against); the advice says
+// deliver the code.
+func (e *Engine) runCheck(check canon.Check, mode checks.Mode) checks.Result {
+	if e.codeStarted() {
+		return checks.Run(e.Workdir, e.surfaceArtifact(), check, mode)
+	}
+	return checks.RunNoCode(e.Workdir, e.surfaceArtifact(), check, mode)
+}
+
 func (e *Engine) surfaceArtifact() string {
 	conv, err := e.Store.Conventions()
 	if err != nil || conv == nil || conv.Build == nil {
@@ -1246,7 +1289,7 @@ func (e *Engine) acceptanceNote(b *builder) {
 			red++
 		}
 	}
-	digest, surfaceOK := surfaceDigest(e, all)
+	digest, files, skipped, surfaceOK := surfaceSignature(e, all)
 	le := ledger.NewEntry("gate", b.state.Stage)
 	le.Details = map[string]string{
 		"name": "suite", "scope": "acceptance",
@@ -1261,6 +1304,18 @@ func (e *Engine) acceptanceNote(b *builder) {
 	// is a measurement gap, never a side to compare against.
 	if !surfaceOK {
 		le.Details["surface"] = "absent"
+	}
+	// The signature's exact terms ride along: the files it stands on
+	// and the command names that signed nothing
+	// (interpreter/system-tool rows whose argv named no project
+	// file) — the acceptance fact carries its own measurement gap.
+	if len(skipped) > 0 {
+		sort.Strings(skipped)
+		le.Details["surface-skipped"] = strings.Join(skipped, ",")
+	}
+	if len(files) > 0 {
+		sort.Strings(files)
+		le.Details["surface-files"] = strings.Join(files, ",")
 	}
 	// Env doctor before acceptance: a probe of the recipes'
 	// environment. A missing tool reddens acceptance with a FIX hint —

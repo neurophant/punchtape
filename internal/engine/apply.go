@@ -124,8 +124,12 @@ func (e *Engine) submitCore(raw []byte, withSlot bool) (string, int) {
 	body, fixes := delta.RepairFormat(string(raw))
 	body, tokens, _, _ := brief.SplitTokenReport(body)
 	reply, code := e.submit([]byte(body), withSlot)
+	// Repair notes append, never prepend: the reply's head is the
+	// outcome line (a rejection's reason, an acceptance's verdict
+	// path) — a note printed above it buries the cause under its own
+	// repairs.
 	if len(fixes) > 0 {
-		reply = strings.Join(fixes, "\n") + "\n" + reply
+		reply = reply + "\n" + strings.Join(fixes, "\n")
 	}
 	outcome := "accepted"
 	switch code {
@@ -471,6 +475,14 @@ func (e *Engine) Try(raw []byte) (string, int) {
 	if d.Kind != delta.KindChecks || d.Checks == nil {
 		return reject("delta", canondata.T("submit.reject.try-not-checks"), d.Kind), Rejected
 	}
+	if line, trap := delta.SeedQuoteEscape(string(raw)); trap {
+		return reject("seeds", canondata.T("checktable.error.seed-quote-escape",
+			canondata.M{"line": fmt.Sprintf("%d", line)}), d.Kind), Rejected
+	}
+	if line, trap := delta.ExpectationQuoteEscape(string(raw)); trap {
+		return reject("expectations", canondata.T("checktable.error.expectation-quote-escape",
+			canondata.M{"line": fmt.Sprintf("%d", line)}), d.Kind), Rejected
+	}
 	ck := d.Checks
 	if len(ck.Rows) != 1 {
 		return reject("delta", canondata.T("submit.reject.try-one-row", canondata.M{
@@ -502,11 +514,11 @@ func (e *Engine) Try(raw []byte) (string, int) {
 	}
 	check := canon.Check{
 		ID: "TRY", Seed: seed, Materials: materials, Pre: pre,
-		When:         &canon.When{Surface: "cli", Command: when, TimeoutSec: 10, Volatile: row.Volatile},
+		When:         &canon.When{Surface: "cli", Command: when, TimeoutSec: rowTimeoutOr(row.TimeoutSec), Volatile: row.Volatile},
 		SurfaceNames: sortedKeys(names),
 		Then:         then,
 	}
-	res := checks.Run(e.Workdir, e.surfaceArtifact(), check, checks.Normal)
+	res := e.runCheck(check, checks.Normal)
 	outcome := "red"
 	if res.Green {
 		outcome = "green"
@@ -565,6 +577,7 @@ func (e *Engine) Check(raw []byte) (string, int) {
 		return reject("delta", stageRejectReason(d.Kind, state.Stage), d.Kind), Rejected
 	}
 	b := newBuilder(e, state)
+	b.rawInput = string(raw)
 	if err := b.applyDelta(d); err != nil {
 		if isRejection(err) {
 			r := err.(*rejectErr)
@@ -574,7 +587,7 @@ func (e *Engine) Check(raw []byte) (string, int) {
 	}
 	head := canondata.T("submit.check.ok", canondata.M{"kind": d.Kind, "key": d.SubmissionKey})
 	if len(fixes) > 0 {
-		head = strings.Join(fixes, "\n") + "\n" + head
+		head = head + "\n" + strings.Join(fixes, "\n")
 	}
 	return head, Accepted
 }
@@ -1660,6 +1673,19 @@ func (b *builder) applySpec(sp *delta.Spec) error {
 	if sp == nil || len(sp.Operations) == 0 {
 		return rejection("spec", canondata.T("submit.reject.spec-operations-empty"))
 	}
+	// The seed channel's quoting trap (see applyChecks): the scenario
+	// map form of a seed carries the same double-quote hazard — the
+	// refusal fires from the raw text on this path too.
+	if b.rawInput != "" {
+		if line, trap := delta.SeedQuoteEscape(b.rawInput); trap {
+			return rejection("seeds", canondata.T("checktable.error.seed-quote-escape",
+				canondata.M{"line": fmt.Sprintf("%d", line)}))
+		}
+		if line, trap := delta.ExpectationQuoteEscape(b.rawInput); trap {
+			return rejection("expectations", canondata.T("checktable.error.expectation-quote-escape",
+				canondata.M{"line": fmt.Sprintf("%d", line)}))
+		}
+	}
 	// Referential integrity of operations is checked at intake, not
 	// at apply: holding a nonexistent ID in a hold is pointless (the
 	// "not found" error used to surface only at approve, the hand paid
@@ -1687,6 +1713,18 @@ func (b *builder) applySpec(sp *delta.Spec) error {
 				b.stageChangeRequest(delta.KindSpec, b.deltaKey, "", changes)
 				return nil
 			}
+			if !b.freeOpsKeepSpecIR(free) {
+				// The free operations applied alone would leave the
+				// spec IR invalid — the parts are one amendment, not
+				// two submissions: the whole delta stages, the
+				// approve applies it atomically. Splitting here
+				// wedged the composition repair: the free part was
+				// refused by the very invariant the held part
+				// resolves.
+				changes = append(changes, canondata.T("amend.change.atomic"))
+				b.stageChangeRequest(delta.KindSpec, b.deltaKey, "", changes)
+				return nil
+			}
 			data, err := yamlio.Marshal(delta.Spec{
 				Kind: delta.KindSpec, SubmissionKey: b.deltaKey, Operations: held,
 			})
@@ -1711,6 +1749,14 @@ func (b *builder) applySpec(sp *delta.Spec) error {
 				return nil
 			}
 			held, free := splitSpecOps(sp.Operations, heldIdx)
+			if !b.freeOpsKeepSpecIR(free) {
+				// Same atomicity as on deliver: the free operations
+				// alone would leave the spec IR invalid — one delta,
+				// one amendment, one approve.
+				changes = append(changes, canondata.T("amend.change.atomic"))
+				b.stageAmend(delta.KindSpec, b.deltaKey, "", changes, nil)
+				return nil
+			}
 			data, err := yamlio.Marshal(delta.Spec{
 				Kind: delta.KindSpec, SubmissionKey: b.deltaKey, Operations: held,
 			})
@@ -1731,7 +1777,14 @@ func (b *builder) applySpec(sp *delta.Spec) error {
 	// held edit) bypasses the freeze: the freeze protects the proven
 	// from the hand, and the operator's assertion is exactly the
 	// assertion the freeze demands.
-	if b.state.Stage == canon.StageImplement && !b.assertedAmend {
+	// The freeze starts with the FIRST ACCEPTED CODE submission, not
+	// with the stage: the stage jumps to implement when the checks
+	// table turns executable — before any code exists (the rows run
+	// red against nothing). Until code is delivered the composition
+	// may be re-cut freely, exactly as AGENTS.md promises ("re-cut
+	// and name them in living words BEFORE the first code
+	// submission"); a stage-keyed guard contradicted that contract.
+	if b.state.Stage == canon.StageImplement && b.e.codeStarted() && !b.assertedAmend {
 		for _, op := range sp.Operations {
 			if op.UpdateScenario == nil && op.AddScenario == nil && op.UpdateAssertions == nil &&
 				!(op.RemoveScenario != nil && b.scnNeverGreen(op.RemoveScenario.ID)) &&
@@ -1767,22 +1820,7 @@ func (b *builder) applySpec(sp *delta.Spec) error {
 	// Invariant: a requirement without a scenario is not accepted —
 	// spec IR validity, not a matter of taste: not subject to
 	// rejection.
-	scnsByReq := map[string]int{}
-	scenarioReq := map[string]string{}
-	for _, sc := range b.scns {
-		scnsByReq[sc.Requirement]++
-		scenarioReq[sc.ID] = sc.Requirement
-	}
-	for _, id := range sortedIDs(b.reqs) {
-		if scnsByReq[id] == 0 {
-			return rejection(id, canondata.LintMessage("spec.req-scenario"))
-		}
-		// detail minimum: a filled block must be complete.
-		if err := canon.ValidateDetail(b.reqs[id].Detail, id, scenarioReq); err != nil {
-			return rejection(id, err.Error())
-		}
-	}
-	if err := checkDependencies(b.reqs); err != nil {
+	if err := b.checkSpecIR(); err != nil {
 		return err
 	}
 	// Growth on implement: new scenarios land in a card by state-file
@@ -1938,6 +1976,74 @@ func (b *builder) opUpdateReq(op *delta.UpdateRequirement) error {
 func (b *builder) opRemoveReq(op *delta.RemoveRequirement) error {
 	if _, ok := b.reqs[op.ID]; !ok {
 		return rejection(op.ID, canondata.T("submit.reject.not-found"))
+	}
+	// Before the first accepted code submission (the pre-code
+	// window) a machine-drafted placeholder requirement goes in ONE
+	// operation, together with its never-green scenarios — the
+	// row-first-then-requirement ordering forced placeholder cleanup
+	// through the waive/amend channel, paying a human round for
+	// machine noise. A requirement with a green row is not a draft:
+	// its removal keeps the change-request channel, exactly as after
+	// code.
+	if !b.e.codeStarted() {
+		var proven []string
+		for _, id := range sortedIDs(b.scns) {
+			if b.scns[id].Requirement != op.ID {
+				continue
+			}
+			if b.scnNeverGreen(id) {
+				delete(b.scns, id)
+				b.effects = append(b.effects, journal.Effect{
+					Path: canonFile("scenarios", id), Delete: true,
+				})
+				b.touch(id)
+				continue
+			}
+			proven = append(proven, id)
+		}
+		if len(proven) == 0 {
+			delete(b.reqs, op.ID)
+			b.effects = append(b.effects, journal.Effect{
+				Path: canonFile("requirements", op.ID), Delete: true,
+			})
+			b.touch(op.ID)
+			return nil
+		}
+		return rejection(op.ID, canondata.T("submit.reject.req-has-proven-scenarios",
+			canondata.M{"scns": strings.Join(proven, ", ")}))
+	}
+	// Post-code removal of a placeholder (every scenario never
+	// green) was STAGED as a deferred edit by the pre-apply hold;
+	// this is its asserted replay — the requirement goes in one
+	// operation with its never-green scenarios, exactly as pre-code.
+	// A proven row keeps the refusal: nothing green is weakened
+	// without the change-request channel.
+	if b.assertedAmend {
+		var proven []string
+		for _, id := range sortedIDs(b.scns) {
+			if b.scns[id].Requirement != op.ID {
+				continue
+			}
+			if b.scnNeverGreen(id) {
+				delete(b.scns, id)
+				b.effects = append(b.effects, journal.Effect{
+					Path: canonFile("scenarios", id), Delete: true,
+				})
+				b.touch(id)
+				continue
+			}
+			proven = append(proven, id)
+		}
+		if len(proven) > 0 {
+			return rejection(op.ID, canondata.T("submit.reject.req-has-proven-scenarios",
+				canondata.M{"scns": strings.Join(proven, ", ")}))
+		}
+		delete(b.reqs, op.ID)
+		b.effects = append(b.effects, journal.Effect{
+			Path: canonFile("requirements", op.ID), Delete: true,
+		})
+		b.touch(op.ID)
+		return nil
 	}
 	for _, sc := range b.scns {
 		if sc.Requirement == op.ID {

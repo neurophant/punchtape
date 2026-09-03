@@ -1,6 +1,6 @@
 # Check surfaces: reasons for a red run, divergences between two clean
 # runs, and observation capture errors.
-check.fail.not-transient: "not transient: {diff} — the same sequence from the same seed differs between two clean runs; unpredictable bytes the wish itself causes: declare volatile on the row BEFORE its first run, or normalize inside the row (rewrite them in place, sort events, write logs outside the run dir)"
+check.fail.not-transient: "not transient: {diff} — the same sequence from the same seed differs between two clean runs; unpredictable bytes the wish itself causes: declare volatile on the row BEFORE its first run, or normalize inside the row when the bytes carry no meaning; PROPOSAL (copy-ready, you submit it — pre-first-green free, post-code on proven rows it stages for a human assertion): {proposal}"
 check.fail.run-dir: "run dir: {err}"
 check.fail.run-lock: "run lock: {err}"
 check.fail.snapshot-budget: "snapshot: {path} exceeds the {max}-byte budget of the run-dir snapshot"
@@ -33,3 +33,5 @@ check.fail.seed: "seed {path}: {err}"
 check.fail.material: "material {from}: {err}"
 check.fail.start: "command `{command}` did not start: {err}"
 check.fail.wait: "command `{command}` failed to be reaped: {err}"
+
+check.assert.terminator-proposal: "; PROPOSAL (copy-ready update-assertions with the MEASURED value — you submit it; the red stays red until your own submission): {op}"

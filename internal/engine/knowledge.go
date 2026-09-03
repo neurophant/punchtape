@@ -24,28 +24,74 @@ import (
 // spec: requirement prose or ratification by the operator. The
 // requirement must exist; new text removes the former ratification;
 // ratification without text is also an operation (the existing prose
-// is affirmed). Knowledge, not behavior: it opens no cycle and does
+// is affirmed). One submission may carry the texts of several or all
+// features (entries:) — validated as a whole, applied as one
+// transaction. Knowledge, not behavior: it opens no cycle and does
 // not touch checks.
 func (b *builder) applyFeature(d *delta.Feature) error {
 	if d == nil {
 		return rejection("feature", canondata.T("submit.reject.empty-delta"))
 	}
-	if strings.TrimSpace(d.Requirement) == "" {
+	if len(d.Entries) > 0 {
+		if strings.TrimSpace(d.Requirement) != "" || strings.TrimSpace(d.Text) != "" || d.Ratify {
+			return rejection("feature", canondata.T("submit.reject.feature-two-forms"))
+		}
+		return b.applyFeatureBatch(d.Entries)
+	}
+	return b.applyFeatureOne(d.Requirement, d.Text, d.Ratify)
+}
+
+// applyFeatureBatch — the entries form: the whole human spec in one
+// submission. Every entry is validated before any is applied — a
+// batch is one transaction, a partial write is not a batch.
+func (b *builder) applyFeatureBatch(entries []delta.FeatureEntry) error {
+	seen := make(map[string]bool, len(entries))
+	for _, en := range entries {
+		if strings.TrimSpace(en.Requirement) == "" {
+			return rejection("feature", canondata.T("submit.reject.feature-req-missing"))
+		}
+		if seen[en.Requirement] {
+			return rejection("feature", canondata.T("submit.reject.feature-dup", canondata.M{
+				"id": en.Requirement,
+			}))
+		}
+		seen[en.Requirement] = true
+		if _, ok := b.reqs[en.Requirement]; !ok {
+			return rejection("feature", canondata.T("submit.reject.feature-req-not-found", canondata.M{
+				"id": en.Requirement,
+			}))
+		}
+		if strings.TrimSpace(en.Text) == "" && !en.Ratify {
+			return rejection("feature", canondata.T("submit.reject.feature-empty"))
+		}
+	}
+	for _, en := range entries {
+		if err := b.applyFeatureOne(en.Requirement, en.Text, en.Ratify); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// applyFeatureOne — the single-feature core: prose or ratification
+// for one existing requirement.
+func (b *builder) applyFeatureOne(requirement, text string, ratify bool) error {
+	if strings.TrimSpace(requirement) == "" {
 		return rejection("feature", canondata.T("submit.reject.feature-req-missing"))
 	}
-	req, ok := b.reqs[d.Requirement]
+	req, ok := b.reqs[requirement]
 	if !ok {
 		return rejection("feature", canondata.T("submit.reject.feature-req-not-found", canondata.M{
-			"id": d.Requirement,
+			"id": requirement,
 		}))
 	}
 	switch {
-	case strings.TrimSpace(d.Text) != "":
-		req.SpecDoc = &canon.FeatureDoc{Text: strings.TrimSpace(d.Text)}
-	case d.Ratify:
+	case strings.TrimSpace(text) != "":
+		req.SpecDoc = &canon.FeatureDoc{Text: strings.TrimSpace(text)}
+	case ratify:
 		if req.SpecDoc == nil {
 			return rejection("feature", canondata.T("submit.reject.feature-no-doc", canondata.M{
-				"id": d.Requirement,
+				"id": requirement,
 			}))
 		}
 		req.SpecDoc.Ratified = true

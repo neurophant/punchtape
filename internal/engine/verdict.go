@@ -274,14 +274,27 @@ func (e *Engine) renderVerdictFresh() (*Verdict, error) {
 		status = VerdictNotReady
 	}
 
-	// Stage counts: submissions and runs from the journal.
+	// Stage counts: submissions and runs from the journal. The
+	// submission number counts DISTINCT submission keys — the
+	// machine's own idempotency invariant (applied-once): a key
+	// replay and a held-then-approved amend are one submission, not
+	// two; a definition rendered next to the number cannot silently
+	// disagree with the hand's own count. Legacy records without a
+	// key are counted each (conservative, like content digests).
 	submitted, runs := 0, 0
+	seenKeys := map[string]bool{}
 	for _, en := range e.Journal.All() {
 		if en.DeltaKind == deltaKindRun {
 			runs++
-		} else {
-			submitted++
+			continue
 		}
+		if en.SubmissionKey != "" {
+			if seenKeys[en.SubmissionKey] {
+				continue
+			}
+			seenKeys[en.SubmissionKey] = true
+		}
+		submitted++
 	}
 
 	var wallMs, calls, tokens int64
@@ -318,7 +331,10 @@ func (e *Engine) renderVerdictFresh() (*Verdict, error) {
 		"", // the digest is inserted after the fields are assembled
 		canondata.T("verdict.scenarios", canondata.M{
 			"total": strconv.Itoa(len(scns)), "green": strconv.Itoa(greenScn),
-			"red": strconv.Itoa(redChk), "prose": strconv.Itoa(described),
+			"red": strconv.Itoa(redChk),
+		}),
+		canondata.T("verdict.features", canondata.M{
+			"features": strconv.Itoa(described + len(noDoc)), "prose": strconv.Itoa(described),
 		}),
 		canondata.T("verdict.traceability", canondata.M{
 			"green": strconv.Itoa(greenScn), "executable": strconv.Itoa(executable),

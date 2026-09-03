@@ -3,6 +3,8 @@
 checktable.error.rows-empty: "rows: empty"
 checktable.error.no-intent: "no intent: pin the wish first"
 checktable.error.seeds: "{what}[{num}]: expected \"<path> <content>\" or \"<path> @<digest>\""
+checktable.error.seed-quote-escape: "seeds line {line}: a double-quoted seed value carries \\xNN escapes — the YAML layer decodes them as Unicode text (two UTF-8 bytes each for values above 0x7F), so the seeded bytes silently change; write the seed line unquoted or in single quotes (the escapes then reach the seed's own literal layer, one raw byte each) or carry exact bytes by digest (\"<path> @<64hex>\")"
+checktable.error.expectation-quote-escape: "line {line}: a double-quoted expectation value (out/err/state text/assertion value) carries \\xNN escapes — the YAML layer decodes them as Unicode text (two UTF-8 bytes each for values above 0x7F), so the pinned bytes silently change; write the value in single quotes (the escapes then reach the expectation's own literal layer, one raw byte each) or use the real character"
 checktable.error.seed-digest: "seed {path}: digest {digest}: no bytes with this digest in the canon"
 checktable.error.state: "state[{num}]: expected \"<path> <json>|<path> text <bytes>|<path> absent\""
 checktable.error.setup-expected-fail: "run[{run}] setup `{command}`: the same command on the same seeded state is expected to fail in row {row} — setup must exit 0; seed the state or build it with a succeeding call"

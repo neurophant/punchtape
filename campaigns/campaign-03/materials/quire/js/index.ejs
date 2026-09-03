@@ -1,0 +1,5 @@
+<h1><%= locals.data.site %></h1>
+<p>by <%= locals.data.author %></p>
+<ul>
+<% locals.entries.forEach(function (e) { %><li title="<%= e.title %>" kind="<%= e.kind %>"><%- e.body_html %></li>
+<% }) %></ul>

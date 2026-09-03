@@ -2,8 +2,8 @@
 
 *an external, transactional state machine — the agent works for it.*
 
-**Not a state machine — the agent's app. The agent — the app of a state
-machine.**
+**Not a state machine inside the agent's app — the agent's app inside
+the state machine.**
 
 You speak in plain human words — the agent works — the machine
 guarantees: the wish becomes a verifiable spec, the spec becomes
@@ -44,16 +44,21 @@ punchtape closes all four — not with promises, with mechanics.
 
 - **A verdict, not an opinion.** Readiness is computed by the machine:
   every scenario is tied to a check, every check has run twice, a probe
-  catches empty checks. In the field — **50 of 50 system runs**
-  (25 tasks × two model classes) closed with the machine's "verified
-  twice" against **22%** strict convergence of
-  solo agents without the machine (same model, same tasks).
+catches empty checks. In the field — **75 of 75 cells** across two
+waves (five task families × five stacks × three hand classes)
+passed the blind double-run acceptance, and **20 of 20** machine
+  cells in the release validation wave closed at `VERDICT: READY` —
+  against **22%** strict convergence of solo agents without the
+  machine (same model, same tasks).
 - **Edits without fear.** Any change automatically re-runs the whole
   checks table again — the price of re-verification is ≈ zero. The
   first delivery is expensive; every next one is nearly free.
 - **Ambiguity surfaces before code.** Every machine question is a place
-  where the wish was silent. In the field, 74 such points were closed
-  by recorded defaults — a living human was never needed.
+  where the wish was silent. In the field they are rare — a question
+  batch fired in 4 of 25 cells at the top model (about one per six
+  tasks) and in 5 of 20 at the cheap one (closed in 16–59 s); in the
+  release validation an operator decision was needed in 7 of 20
+  cells and cost $0.60 in total (the input-rate upper estimate).
 - **Code is expendable.** The product can be regenerated from the
   spec by another executor in another language: the double-compilation
   gate opens a twin instance from the same canon spec and requires
@@ -69,10 +74,11 @@ punchtape closes all four — not with promises, with mechanics.
 - **Knowledge as files, not chat.** After the verdict the machine
   writes human-readable specs: one file per feature, in living words,
   plus a registry with search. Documentation stops being debt.
-- **Quality does not depend on the model's price.** Measured: a cheap
-  model inside the machine delivers the same verdict (25/25), for twice
-  the time and **roughly eight times less money**. Expensive does not
-  mean reliable; the machine means reliable.
+- **Quality does not depend on the model's price.** Measured: the
+  cheap model inside the machine delivers the same verdict — 20/20
+  in the field wave, 10/10 in the release validation — for 1.6–2×
+  the time and 3.7–7.6× less money. Expensive does not mean
+  reliable; the machine does.
 
 ## How to use it
 
@@ -154,33 +160,41 @@ punchtape submit feature.yaml         # the feature description, in living words
 ACCEPTED: transaction ed5a550c6013
 VERDICT: READY
 digest: b682767ce515b044
-scenarios: total 4, green 4, red 0, prose 1 — traceability: 4/4
-checks: green 4, red 0 — derived: 12 variants, green 12
+scenarios: total 4, green 4, red 0
+features: 2 total, 2 carry the author's prose
+traceability: 4/4 executable scenarios linked to green checks
+checks: green 4, red 0, total 4
+derived: 8 variants (max 8 per scenario), green 2, red 6 — marked, not spec scenarios
+attention: 0 min (no questions: goal lint clean)
+converge: fix cycles 1, worst card attempts 0 of 3, quarantines 0
 acceptance: PASS on 779f45c45988 (4/4 checks green)
-attention: 0 min (no questions) — converge: fix cycles 1, quarantines 0
 ```
 
 The machine works right in your project directory and creates its
-service directory `.punchtape/` there — the instance it owns: canon,
-journal, ledger; hands stay out.
+service directory `.punchtape/` there — the instance it owns:
+canon, journal, ledger; the executor agents stay out of it.
 
 ## Economics — measured, not promised
 
-25 identical tasks, each done three ways: a top model through the
-machine, a cheap model through the machine, and a solo agent without
-the machine; a fourth AI judge compared the products against byte-exact
-tables. The full study — `docs/RESEARCH.md`; the numbers —
-`docs/METRICS.md`.
+Five task families × five stacks, each task done three ways: a top
+model through the machine, a cheap model through the machine, and a
+solo agent without the machine; a blind measurer ran every product's
+suite twice in clean directories, and an AI judge compared the
+products cross-hand. The original study — `docs/RESEARCH.md`.
 
-- A typical task: **≈ $0.5–5 and roughly 15 minutes** at the top
-  model (twice the time at the cheap one), with no human between the
-  wish and the verdict.
-- A batch of 25 tasks: ≈ $15 slow (the cheap model) or ≈ $120 fast (the
-  top model) — **the quality is the same**.
-- Solo without the machine looks cheaper (~$80), but: 22% convergence
-  with someone else's contract, invisible defects, and finishing to
-  verifiable quality costs another ≈ $204–240 and 4–7.5 hours of a
-  living human.
+- A typical task, full path (the hand plus its verifying operator):
+  **solo ≈ $6.07, top model + machine ≈ $1.18, cheap model +
+  machine ≈ $0.32** — the same blind-measured quality; the top
+  path runs roughly 15–20 minutes, the cheap one about one and a
+  half to two times longer.
+- A batch of 25 such tasks: ≈ $29 at the top model, ≈ $8 at the
+  cheap one — against ≈ $152 for the solo path, and that solo price
+  already includes the checking operator.
+- The machine path also holds the line where solo does not: in the
+  release validation wave every machine cell closed at
+  `VERDICT: READY` (top $1.30, cheap $0.17 per cell), and the
+  live three-language smoke (ru/en/zh) reached READY with zero
+  question batches at $0.66 the whole smoke.
 - There is no free option: the price is either in the machine (the
   tokens of double runs) or in invisible defects and your own time.
 
@@ -233,7 +247,4 @@ change of model, and replay reads only the journal.
 - `docs/SCENARIOS.md` — what the field has verified, and what not yet.
 - `docs/SAMPLES.md` — the field task bank and the difficulty
   calibration.
-- `docs/METRICS.md` — the summary of numbers from every run.
-- `docs/PROBLEMS.md` — the open problem registry: everything the
-  field has surfaced and not yet fixed, with fix directions.
 - `campaigns/` — how the field measurements were staged.

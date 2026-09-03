@@ -17,7 +17,10 @@ ref.agents.text: |-
     answers with the next slot after "NEXT SLOT:" — keep going
     without calling next; a rejection is one line — fix and submit
     again. Submit until the reply prints a VERDICT line; show it to
-    the human and stop.
+    the human and stop. Uncertain about the form — submit --check
+    <file|-> runs the same validation with NO state change (a
+    rejection costs nothing; a schema error caught here never
+    reached the loop).
   - why <topic|ID> — price, stage, latency, coverage, spec (the spec
     registry of this instance; `spec <words>` searches features,
     scenarios and expected texts — all words must meet), or an entity
@@ -50,7 +53,7 @@ ref.agents.text: |-
           out: "1 A"          # exact stdout of the last command;
                               # "(contains) X" — substring, not bytes
                               # (unpredictable bytes around the pinned
-                              # fragment: test-runner timings, random ids)
+                              # fragment: harness timings, random ids)
           rc: 0               # its exit code (0 when omitted)
           state:              # "<path> <json>" structural; "<path> text
             - notes.json {...} # <bytes>" exact; "<path> absent"; escapes
@@ -109,12 +112,10 @@ ref.agents.text: |-
   declares unpredictable ride "volatile"; a build tool writing its
   working directory into the run dir belongs outside it (the surface
   decides), or declared volatile.
-  Run-dir determinism recipes (ephemeral bytes — request ids,
-  timestamps in logs): normalize inside the row (rewrite
-  the bytes in place, sort the events, write logs outside the run
-  dir) when the bytes carry no meaning; declare the file volatile
-  (on the row, before its first run) when the wish itself says the
-  exact bytes are unpredictable.
+  Run-dir determinism recipes (ephemeral bytes — random identifiers,
+  timestamps): normalize inside the row when the bytes carry no
+  meaning; declare the file volatile (on the row, before its first
+  run) when the wish itself says the exact bytes are unpredictable.
   Declaring volatile on a row whose check has already run (after code
   started) is an assertion like any expectation change: the machine
   holds it for a human (kind: amend).
@@ -129,7 +130,7 @@ ref.agents.text: |-
   2. a surface entry: with a recipe (kind: conventions) the declared
      artifact — regular files only, symlinks are not transferred —
      materialized at its declared path, and command[0] spells the
-     entry by that path (`bin/serve`, not `serve`; `out: "."` puts
+     entry by that path (`bin/tool`, not `tool`; `out: "."` puts
      the project files at the run-dir root; files OUTSIDE the
      artifact do not reach the run dir — put runnable inputs inside
      the artifact); without a recipe, a project file at the
@@ -150,6 +151,11 @@ ref.agents.text: |-
   Every command of the row runs under its own timeout; the machine
   observes only stdout/stderr/exit-code/files.
 
+  A check-table row declares its own ceiling with `timeout-sec: <n>`
+  when its shape needs more than the delivery default (10 s,
+  limits.yaml check.timeout-default-s) — long-running helpers must
+  still finish and exit inside the row.
+
   Seeds are plain one-line strings `<path> <content>` (one file per
   line) — escapes \n \t \r \\ \xNN decode in seed and text-bytes
   contents, in check-table seed lines AND in scenario seed maps
@@ -164,7 +170,7 @@ ref.agents.text: |-
   full text, so later rows reference the same seed without
   retransmitting it. update-scenario replaces exactly the fields you
   name; unnamed fields stay — clear an unwanted `pre` with `pre: []`. materials are project-root-relative file
-  paths (`materials/about.md`, not `about.md`), copied into the run
+  paths (`materials/sample.bin`, not `sample.bin`), copied into the run
   byte-for-byte under the same path (binary inputs never travel
   through your hands).
 
@@ -178,6 +184,21 @@ ref.agents.text: |-
   - file (path required): conditions exists, not-exists, contains,
     equals, absent (the file does not exist), json-equals,
     json-contains, bytes-equals.
+
+  EOL tolerance, one rule: text comparisons on FILES (file contains,
+  file equals) normalize CRLF→LF on both sides before comparing
+  (cross-OS stability); EVERYTHING ELSE is byte-strict — streams
+  (stdout/stderr), and file bytes-equals (the compact
+  `state: <path> text <bytes>` compiles to it). Pick the channel
+  knowing its semantics: a CRLF-vs-LF divergence is green through
+  file equals, red through bytes-equals and through any stream pin.
+
+  Byte literals go in SINGLE-quoted YAML — this includes
+  expectations (out:, err:, the state text tail, assertion values)
+  and seeds: a double-quoted "\xE4" is decoded by the YAML layer
+  into UTF-8 text (two bytes), not the one byte you meant, and the
+  machine refuses it at intake; single-quoted '\xE4' reaches the
+  value's own literal layer and pins exactly one raw byte.
 
   Compact assertion lines in scenarios: out:, err:, rc:, fails:,
   state-is: <file> <json> (= file json-equals).
@@ -229,8 +250,9 @@ ref.agents.text: |-
         edge-cases:    {scenarios: [SCN-2, SCN-3]}
         failure-matrix: {absent: "no failure matrix beyond the rows"}
         concurrency:   {absent: "one-shot CLI run, no parallelism"}
-  feature — the per-feature prose of the human spec (requirement,
-  text: living words — what it does, how it is
+  feature — the per-feature prose of the human spec (entries: a
+  list of {requirement, text} — ALL feature texts ride ONE submission,
+  the whole human spec in a single round trip; text: living words — what it does, how it is
   called, what the user sees, boundaries and errors, implementation
   details; machine facts only as references; a fresh text drops the
   previous ratification — ratify: true records the operator's
@@ -331,13 +353,17 @@ ref.agents.text: |-
         - remove-scenario: {id: SCN-002}
         - remove-requirement: {id: REQ-003}
 
-      kind: feature                 # the human spec of one feature
-      submission-key: feature-001
-      requirement: REQ-001
-      text: |
-        What the feature does, in living words: how it is
-        called, what the user sees, boundaries and errors,
-        implementation details; machine facts only as references.
+      kind: feature                 # the human spec of every feature,
+      submission-key: feature-001   # all texts in ONE submission
+      entries:
+        - requirement: REQ-001
+          text: |
+            What the feature does, in living words: how it is
+            called, what the user sees, boundaries and errors,
+            implementation details; machine facts only as references.
+        - requirement: REQ-002
+          text: |
+            ...
 
       kind: assert
       submission-key: assert-001
@@ -509,3 +535,12 @@ ref.agents.text: |-
   .punchtape/cache/ (rebuilt from the journal, safe to delete). Every
   data file carries a machine header naming its writer verbs; hand
   edits are detected and refused.
+
+# The precedence line of a COMBINED reference: rendered only when the
+# work root already carried the repository's own AGENTS.md — the
+# machine contract goes first and always prevails, the repository's
+# rules are preserved verbatim below the tail boundary (zero
+# interpretation, zero loss).
+ref.agents.precedence: |-
+  The machine contract above ALWAYS prevails over the repository
+  rules below: where the two disagree, work by the machine contract.

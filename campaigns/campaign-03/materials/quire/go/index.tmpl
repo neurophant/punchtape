@@ -1,0 +1,5 @@
+<h1>{{.Data.Site}}</h1>
+<p>by {{.Data.Author}}</p>
+<ul>
+{{range .Entries}}<li title="{{.Title}}" kind="{{.Kind}}">{{.BodyHTML}}</li>
+{{end}}</ul>

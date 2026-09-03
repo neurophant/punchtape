@@ -1,0 +1,120 @@
+== th3 world lock ==
+-- pip
+annotated-types==0.8.0
+async-timeout==5.0.1
+coverage==7.16.1
+gyp==0.1
+iniconfig==2.3.0
+Jinja2==3.1.4
+Markdown==3.6
+MarkupSafe==3.0.3
+mercurial==6.3.2
+numpy==2.4.6
+packaging==26.3
+pillow==12.3.0
+pip==23.0.1
+pluggy==1.6.0
+pydantic==2.8.2
+pydantic_core==2.20.1
+pyflakes==4.0.0
+Pygments==2.21.0
+pytest==9.1.1
+pytest-cov==7.1.0
+python-slugify==8.0.4
+PyYAML==6.0.1
+redis==8.1.0
+setuptools==66.1.1
+six==1.16.0
+text-unidecode==1.3
+typing_extensions==4.16.0
+wheel==0.38.4
+-- npm (th3 libs)
+/opt/th3-node_modules
++-- @borewit/text-codec@0.2.2 extraneous
++-- @ioredis/commands@2.0.0 extraneous
++-- @jimp/core@1.6.1 extraneous
++-- @jimp/diff@1.6.1 extraneous
++-- @jimp/file-ops@1.6.1 extraneous
++-- @jimp/js-bmp@1.6.1 extraneous
++-- @jimp/js-gif@1.6.1 extraneous
++-- @jimp/js-jpeg@1.6.1 extraneous
++-- @jimp/js-png@1.6.1 extraneous
++-- @jimp/js-tiff@1.6.1 extraneous
++-- @jimp/plugin-blit@1.6.1 extraneous
++-- @jimp/plugin-blur@1.6.1 extraneous
++-- @jimp/plugin-circle@1.6.1 extraneous
++-- @jimp/plugin-color@1.6.1 extraneous
++-- @jimp/plugin-contain@1.6.1 extraneous
++-- @jimp/plugin-cover@1.6.1 extraneous
++-- @jimp/plugin-crop@1.6.1 extraneous
++-- @jimp/plugin-displace@1.6.1 extraneous
++-- @jimp/plugin-dither@1.6.1 extraneous
++-- @jimp/plugin-fisheye@1.6.1 extraneous
++-- @jimp/plugin-flip@1.6.1 extraneous
++-- @jimp/plugin-hash@1.6.1 extraneous
++-- @jimp/plugin-mask@1.6.1 extraneous
++-- @jimp/plugin-print@1.6.1 extraneous
++-- @jimp/plugin-quantize@1.6.1 extraneous
++-- @jimp/plugin-resize@1.6.1 extraneous
++-- @jimp/plugin-rotate@1.6.1 extraneous
++-- @jimp/plugin-threshold@1.6.1 extraneous
++-- @jimp/types@1.6.1 extraneous
++-- @jimp/utils@1.6.1 extraneous
++-- @mourner/yeahml@1.0.0 extraneous
++-- @tokenizer/inflate@0.4.1 extraneous
++-- @tokenizer/token@0.3.0 extraneous
++-- @types/node@16.9.1 extraneous
++-- a-sync-waterfall@1.0.1 extraneous
++-- any-base@1.1.0 extraneous
++-- argparse@2.0.1 extraneous
++-- asap@2.0.6 extraneous
++-- await-to-js@3.0.0 extraneous
++-- bmp-ts@1.0.9 extraneous
++-- cluster-key-slot@1.1.1 extraneous
++-- commander@5.1.0 extraneous
++-- debug@4.4.3 extraneous
++-- denque@2.1.0 extraneous
++-- exif-parser@0.1.12 extraneous
++-- file-type@21.3.4 extraneous
++-- gifwrap@0.10.1 extraneous
++-- ieee754@1.2.1 extraneous
++-- image-q@4.0.0 extraneous
++-- ioredis@6.0.0 extraneous
++-- jimp@1.6.1 extraneous
++-- jpeg-js@0.4.4 extraneous
++-- js-yaml@5.4.2 extraneous
++-- marked@17.0.5 extraneous
++-- mime@3.0.0 extraneous
++-- ms@2.1.3 extraneous
++-- nunjucks@3.2.4 extraneous
++-- omggif@1.0.10 extraneous
++-- pako@1.0.11 extraneous
++-- parse-bmfont-ascii@1.0.6 extraneous
++-- parse-bmfont-binary@1.0.6 extraneous
++-- parse-bmfont-xml@1.1.6 extraneous
++-- pixelmatch@5.3.0 extraneous
++-- pngjs@7.0.0 extraneous
++-- redis-errors@1.2.0 extraneous
++-- sax@1.6.1 extraneous
++-- simple-xml-to-json@1.2.7 extraneous
++-- standard-as-callback@2.1.0 extraneous
++-- strtok3@10.3.5 extraneous
++-- tinycolor2@1.6.0 extraneous
++-- token-types@6.1.2 extraneous
++-- uint8array-extras@1.6.0 extraneous
++-- utif2@4.1.0 extraneous
++-- xml-parse-from-string@1.0.1 extraneous
++-- xml2js@0.5.0 extraneous
++-- xmlbuilder@11.0.1 extraneous
++-- yeahjs@0.3.1 extraneous
+`-- zod@3.25.76 extraneous
+
+-- go modules
+-- rust toolchain
+rustc 1.98.1 (48a229cea 2026-09-01)
+cargo 1.98.1 (797e8a9bc 2026-08-05)
+-- system
+g++ (Debian 12.2.0-14+deb12u1) 12.2.0
+v18.20.4
+Python 3.11.2
+Redis server v=7.0.15 sha=00000000:0 malloc=jemalloc-5.3.0 bits=64 build=ae4d7c971a948f0

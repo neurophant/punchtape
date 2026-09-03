@@ -12,6 +12,7 @@ import (
 
 	"github.com/neurophant/punchtape/internal/canon"
 	"github.com/neurophant/punchtape/internal/canondata"
+	"github.com/neurophant/punchtape/internal/checks"
 	"github.com/neurophant/punchtape/internal/delta"
 	"github.com/neurophant/punchtape/internal/yamlio"
 )
@@ -724,11 +725,52 @@ func (e *Engine) whyFragment(id string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return canondata.T("why.fragment.head", canondata.M{
+		out := canondata.T("why.fragment.head", canondata.M{
 			"id": sc.ID,
-		}) + "\n" + string(data), nil
+		}) + "\n" + string(data)
+		// An assertion of this fragment that is red right now shows
+		// its measured bytes from the last captured run — the pinned
+		// canon and the measured actual in one read, no probe
+		// submission needed. No capture (green, environment red,
+		// wiped cache) — the fragment stays as it is.
+		if tail := e.fragmentActual(sc.ID); tail != "" {
+			out += "\n" + tail
+		}
+		return out, nil
 	}
 	return "", &WhyNotFound{ID: id}
+}
+
+// fragmentActual — the measured actuals of a currently red check's
+// last captured run, one disciplined block; empty when the check is
+// not red or nothing was captured.
+func (e *Engine) fragmentActual(scnID string) string {
+	chkID := "TST-" + idNumSuffix(scnID)
+	chk, err := e.Store.Checks()
+	if err != nil {
+		return ""
+	}
+	for _, c := range chk {
+		if c.ID != chkID || c.Outcome != canon.CheckRed {
+			continue
+		}
+		ev := checks.LoadRunEvidence(e.Workdir, chkID)
+		if ev == nil {
+			return ""
+		}
+		return canondata.T("why.fragment.actual", canondata.M{
+			"at":     ev.At.Format(time.RFC3339),
+			"assert": ev.Assert, "path": ev.Path,
+			"want":   yamlio.EscapeControls(ev.Want),
+			"actual": yamlio.EscapeControls(ev.Actual),
+			"exit":   fmt.Sprintf("%d", ev.Exit),
+			// render-side escape as well: evidence captured by older
+			// builds may still carry raw bytes
+			"stdout": yamlio.EscapeControls(ev.Stdout),
+			"stderr": yamlio.EscapeControls(ev.Stderr),
+		})
+	}
+	return ""
 }
 
 // fragmentDoc — the output form of a scenario's observations: a
@@ -952,13 +994,27 @@ func (e *Engine) whyRed() (string, error) {
 	if len(red) == 0 {
 		return canondata.T("why.red.none"), nil
 	}
+	// The batch surface: ONE call replaces per-entity enumeration
+	// (the battery paid 57 entity reads for one 8-row repair). The
+	// list is bounded by the slot list budget; the cut names what is
+	// held back, so the reply never silently truncates.
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "%s\n", canondata.T("why.red.head", canondata.M{
 		"count": strconv.Itoa(len(red)),
 	}))
-	for _, c := range red {
+	budget := canondata.Limit("slot.list-budget")
+	shown := red
+	if len(red) > budget {
+		shown = red[:budget]
+	}
+	for _, c := range shown {
 		fmt.Fprintf(&sb, "%s\n", canondata.T("why.red.row", canondata.M{
 			"id": c.ID, "scn": c.Scenario, "reason": c.Reason,
+		}))
+	}
+	if len(red) > budget {
+		fmt.Fprintf(&sb, "%s\n", canondata.T("why.red.more", canondata.M{
+			"count": strconv.Itoa(len(red) - budget),
 		}))
 	}
 	return sb.String(), nil

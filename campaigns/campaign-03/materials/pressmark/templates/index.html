@@ -1,0 +1,4 @@
+<ul index-moment="{{moment}}">
+{% for r in records %}<li address="{{r.address}}">{{r.title}} {{r.moment}} {{r.short_html}} {% for p in r.pictures %}{{p.address}} {% endfor %}{% for t in r.tags %}{{t}} {% endfor %}</li>
+{% endfor %}
+</ul>

@@ -11,6 +11,7 @@ latency.read.next-ms: 500     # next read budget
 latency.read.why-ms: 300      # why read budget
 cost.overhead-pct: 10         # cap on ceremony overhead, %
 probe.capture-timeout-s: 10   # probe command run timeout, seconds
+check.timeout-default-s: 10  # default ceiling of one check-table row command, s (row timeout-sec overrides)
 conventions.build-timeout-s: 300  # timeout of one build recipe command, s
 conventions.gate-timeout-s: 120   # timeout of one static gate command, s
 digest-cache-max: 4096      # cap on digest cache entries; above it — recompute

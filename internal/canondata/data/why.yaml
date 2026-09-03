@@ -50,6 +50,8 @@ why.not-found: "FAIL: {id}: not found."
 why.fragment.usage: "FAIL: fragment needs a scenario id — why fragment SCN-N"
 why.fragment.head: |-
   FRAGMENT {id} — observations as data, verbatim match blocks (do not retype; copy from here):
+why.fragment.actual: |-
+  ACTUAL of the last captured red run ({at}): {assert} {path} — want: {want}; measured: {actual}; exit {exit}, stdout: {stdout}, stderr: {stderr}
 
 # The product passport: boundaries, conventions, freshness (a computed view).
 why.passport.head: "PASSPORT: {count} boundaries; conventions: {conventions}"
@@ -152,12 +154,13 @@ why.compatibility.notmeasured: "  everything else (other platforms, other caller
 why.red.none: "RED: no red checks — every check of this instance is green."
 why.red.head: "RED — {count} red check(s), full list with reasons (the slot cuts long red lists to a budget line):"
 why.red.row: "  {id} {scn}: {reason}"
+why.red.more: "  … and {count} more red check(s) — repair the listed ones first, then call why red again"
 why.drift.none: "DRIFT: no acceptance moment yet — nothing to drift from."
 why.drift.fresh: "DRIFT: the instance matches the acceptance digest {digest}."
 why.drift.drifted: "DRIFT: the surface moved since the acceptance moment ({old} -> {new}); the verdict is honestly NOT-READY until a fix re-verifies the changed instance."
 why.acceptance.none: "ACCEPTANCE: no acceptance moment recorded yet."
 why.acceptance.head: "ACCEPTANCE: outcome {outcome}, digest {digest}, green {green}, red {red}, total {total}; env probe: {env}."
-why.surface.direct: "SURFACE: direct submission mode (no build artifact declared; files at command[0] paths)."
+why.surface.direct: "SURFACE: direct submission mode (no build artifact declared; the product files the rows drive — a row's command[0] file, or the first project file of its argv when command[0] is an interpreter or a system tool)."
 why.surface.artifact: "SURFACE: declared artifact {artifact} (file or tree)."
 why.surface.no-digest: "no checkable surface digest yet (no checks with a command)."
 why.surface.digest: "current surface digest: {digest} (surface + definitions of all checks)."
@@ -168,7 +171,7 @@ why.coverage.waives-head: "active reasoned deviations (kind: waive): {n}"
 why.coverage.waive: "  - {rule} / {target}: {reason}"
 
 # --- Russian locale ---
-why.spec.head.ru: "РЕЕСТР СПЕК — фич: {features}, исполняемых сценариев: {scenarios}, прозы: {prose}; человеческий рендер: {render}; поиск: why spec <слова>"
+why.spec.head.ru: "РЕЕСТР СПЕЦИФИКАЦИЙ — функций: {features}, исполняемых сценариев: {scenarios}, прозы: {prose}; человеческий рендер: {render}; поиск: why spec <слова>"
 why.spec.feature.ru: "  {id} [{status}] {name} — сценариев: {scenarios}, проверено: {green}"
 why.spec.scenario.ru: "    {id} {line}"
 why.spec.search-head.ru: "ПОИСК ПО СПЕКЕ «{query}» — фич: {features}, сценариев: {scenarios} (сошлись все слова)"
@@ -206,7 +209,7 @@ why.handoff.done.zh: |-
     完成：
       阶段：{stage}
       账本事务：{deltas}
-      检查通过：{green}/{total}
+      检查为绿：{green}/{total}
       已验证边界：{verified}/{boundaries}
       判定：{verdict}
 why.handoff.head.zh: |-

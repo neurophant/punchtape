@@ -5,8 +5,8 @@ package journal
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -59,10 +59,18 @@ type Entry struct {
 type Journal struct {
 	path    string
 	entries []Entry
+	torn    *yamlio.TornTail
 }
 
+// TornTail — the diagnosis of a torn tail this journal was loaded
+// with: nil when the file is healthy. The intact records always
+// load; the torn region is quarantined by the next Append.
+func (j *Journal) TornTail() *yamlio.TornTail { return j.torn }
+
 // Open reads the journal in full; a missing file is an empty
-// journal.
+// journal. A torn tail (a record cut mid-write) does not blind the
+// machine: every complete record loads, the torn region is carried
+// as a named diagnosis and is quarantined by the next write.
 func Open(path string) (*Journal, error) {
 	j := &Journal{path: path}
 	data, err := os.ReadFile(path)
@@ -72,20 +80,46 @@ func Open(path string) (*Journal, error) {
 		}
 		return nil, fmt.Errorf("journal: %w", err)
 	}
-	dec := yaml.NewDecoder(bytes.NewReader(data))
-	dec.KnownFields(true)
-	for {
-		var e Entry
-		err := dec.Decode(&e)
-		if err == io.EOF {
-			break
-		}
+	preamble, frames := yamlio.SplitFrames(data)
+	for i, fr := range frames {
+		e, err := decodeFrame(fr)
 		if err != nil {
-			return nil, fmt.Errorf("journal %s: %w", path, err)
+			off := yamlio.FrameOffset(preamble, frames, i)
+			j.torn = &yamlio.TornTail{Good: i, Offset: off, Length: len(data) - off}
+			return j, nil
 		}
 		j.entries = append(j.entries, e)
 	}
 	return j, nil
+}
+
+// decodeFrame — one frame as one record, healthy only when it is
+// EXACTLY a machine-written record: complete line (the writer ends
+// every document with a newline), strict fields, and a byte-exact
+// decode→marshal round trip — the append writes the marshaled bytes
+// verbatim, so a frame that re-marshals differently is a write cut
+// at a line boundary (its tail fields are gone), not a fact.
+func decodeFrame(fr []byte) (Entry, error) {
+	if len(fr) == 0 || fr[len(fr)-1] != '\n' {
+		return Entry{}, errors.New("record cut mid-line")
+	}
+	var e Entry
+	dec := yaml.NewDecoder(bytes.NewReader(fr))
+	dec.KnownFields(true)
+	if err := dec.Decode(&e); err != nil {
+		return e, err
+	}
+	if e.Transaction == "" || e.RecordedAt.IsZero() {
+		return e, errors.New("record missing its anchors")
+	}
+	remarshaled, err := yamlio.Marshal(&e)
+	if err != nil {
+		return e, err
+	}
+	if !bytes.Equal(remarshaled, fr) {
+		return e, errors.New("record does not round-trip byte-exact")
+	}
+	return e, nil
 }
 
 // Append appends a record in one action and keeps a copy in memory.
@@ -99,6 +133,15 @@ func (j *Journal) Append(e Entry) error {
 	}
 	if err := os.MkdirAll(filepath.Dir(j.path), 0o755); err != nil {
 		return fmt.Errorf("journal dir: %w", err)
+	}
+	// A torn tail heals on the write path (the writer holds the
+	// lock; read-only processes never touch the file): the intact
+	// records are rebuilt verbatim, the torn region is quarantined
+	// to a sidecar — never silently dropped.
+	if j.torn != nil {
+		if err := j.HealTail(); err != nil {
+			return err
+		}
 	}
 	// The manifest header is the first line of a new file: only the
 	// machine writes the journal; it is not edited by hand; comments
@@ -119,6 +162,48 @@ func (j *Journal) Append(e Entry) error {
 		return fmt.Errorf("journal sync: %w", err)
 	}
 	j.entries = append(j.entries, e)
+	return nil
+}
+
+// HealTail — quarantine the torn region and rebuild the journal
+// from the intact records: the machine's own write discipline
+// (append, never edit) is restored; the sidecar keeps the torn
+// bytes as evidence with the diagnosis. Caller holds the writer
+// lock (the engine's verification or the next append).
+func (j *Journal) HealTail() error {
+	data, err := os.ReadFile(j.path)
+	if err != nil {
+		return fmt.Errorf("journal repair read: %w", err)
+	}
+	preamble, frames := yamlio.SplitFrames(data)
+	good := frames
+	if j.torn.Good < len(frames) {
+		good = frames[:j.torn.Good]
+	}
+	off := yamlio.FrameOffset(preamble, frames, j.torn.Good)
+	torn := data[min(off, len(data)):]
+	q := j.path + ".torn"
+	qf, err := os.OpenFile(q, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return fmt.Errorf("journal quarantine: %w", err)
+	}
+	if _, err := fmt.Fprintf(qf, "# quarantined %s: %s\n", time.Now().UTC().Format(time.RFC3339), j.torn.Error()); err != nil {
+		qf.Close()
+		return fmt.Errorf("journal quarantine: %w", err)
+	}
+	if len(torn) > 0 {
+		if _, err := qf.Write(torn); err != nil {
+			qf.Close()
+			return fmt.Errorf("journal quarantine: %w", err)
+		}
+	}
+	if err := qf.Close(); err != nil {
+		return fmt.Errorf("journal quarantine: %w", err)
+	}
+	if err := yamlio.WriteAtomic(j.path, yamlio.Rebuild(preamble, good)); err != nil {
+		return fmt.Errorf("journal repair write: %w", err)
+	}
+	j.torn = nil
 	return nil
 }
 

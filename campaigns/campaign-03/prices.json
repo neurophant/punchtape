@@ -1,0 +1,8 @@
+{
+"currency": "USD",
+"source": "market z.ai tariffs as of 2026-09-03, cross-checked against several independent summaries (ccswitch.io 2026-09-03 citing the official tariff; pi.dev zcode-executor; saygm.com 2026-09-03)",
+"per_million": {
+"GLM-5.3 Max": {"in": 1.4, "out": 4.4, "cached_in": 0.26},
+"GLM-5.3 Flash High": {"in": 0.15, "out": 0.5, "cached_in": 0.03}
+}
+}

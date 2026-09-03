@@ -5,12 +5,13 @@
 summary.title: "# Summary"
 summary.made.head: "## Made"
 summary.made.composition: "- composition: {reqs} requirements, {scenarios} scenarios ({prose} prose), {cards} cards"
-summary.made.flow: "- flow: {submitted} submissions accepted, {runs} machine runs"
+summary.made.flow: "- flow: {submitted} submissions accepted — distinct keys, replays not counted; {runs} machine runs"
 summary.made.verdict: "- verdict: {status}"
 summary.checked.head: "## Checked"
 summary.checked.checks: "- checks: {green} green, {red} red of {total}"
 summary.checked.trace: "- traceability: {green} of {executable} executable scenarios linked to green checks"
 summary.checked.acceptance: "- acceptance: {line}"
+summary.checked.unpinned: "- WARNING, unpinned CLI surface: {names} — named in observed run output, pinned by no row (the gates check the table, not the table's completeness; empty means nothing observed unpinned, not everything pinned)"
 summary.remaining.head: "## Remaining"
 summary.remaining.none: "- nothing remains: no taste queue, no quarantine"
 summary.remaining.taste: "- taste queue: {items}"
@@ -48,12 +49,15 @@ summary.price.total-notokens: "- total: {wall}, verb calls {calls}"
 summary.title.ru: "# Сводка"
 summary.made.head.ru: "## Сделано"
 summary.made.composition.ru: "- состав: требований {reqs}, сценариев {scenarios} (прозы {prose}), карточек {cards}"
-summary.made.flow.ru: "- поток: подач принято {submitted}, машинных прогонов {runs}"
+summary.made.flow.ru: "- поток: подач принято {submitted} — отдельные ключи, повторы не считаются; машинных прогонов {runs}"
 summary.made.verdict.ru: "- вердикт: {status}"
 summary.checked.head.ru: "## Проверено"
 summary.checked.checks.ru: "- проверки: зелёных {green}, красных {red} из {total}"
 summary.checked.trace.ru: "- трассировка: зелёные проверки покрывают {green} из {executable} исполняемых сценариев"
 summary.checked.acceptance.ru: "- приёмка: {line}"
+summary.checked.unpinned.ru: "- ПРЕДУПРЕЖДЕНИЕ, незапиненная CLI-поверхность: {names} — названы в наблюдаемом выводе прогонов, но не запинены ни одной строкой (гейты проверяют таблицу, а не полноту таблицы; пусто = ничего незапиненного не наблюдалось, а не «всё запинено»)"
+summary.checked.unpinned.zh: |-
+    - 警告，未固定的 CLI 表面：{names} —— 在观测到的运行输出中被提及，但没有被任何一行固定（门检查的是表格，而不是表格的完备性；为空 = 未观测到未固定的名称，而不是「全部已固定」）
 summary.remaining.head.ru: "## Осталось"
 summary.remaining.none.ru: "- остатка нет: ни вкусовой очереди, ни карантина"
 summary.remaining.taste.ru: "- вкусовая очередь: {items}"
@@ -113,7 +117,7 @@ summary.derived.not-run.zh: |-
 summary.made.composition.zh: |-
     - 组成：{reqs} 项需求、{scenarios} 个场景（文字 {prose}）、{cards} 张卡片
 summary.made.flow.zh: |-
-    - 流程：受理提交 {submitted} 次，机器运行 {runs} 次
+    - 流程：受理提交 {submitted} 次（按去重键计，重放不计数），机器运行 {runs} 次
 summary.made.head.zh: |-
     ## 产出
 summary.made.verdict.zh: |-

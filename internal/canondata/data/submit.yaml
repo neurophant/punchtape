@@ -21,8 +21,9 @@ submit.rerun: "RERUN: no new bytes — nothing applied, gates re-run; {gates}{ta
 submit.check.ok: "CHECK OK: kind {kind}, key {key} — format and canon validation pass; nothing applied"
 submit.check.journaled: "CHECK OK: kind {kind}, key {key} — already journaled (idempotent repeat); nothing applied"
 submit.idempotent: "IDEMPOTENT REPLAY: transaction {tx}{note}{tail}"
-submit.next-slot: "\n\nNEXT SLOT:"
+submit.next-slot: "\n\nNEXT SLOT (the full current state after this submission — no separate next call is needed):"
 submit.reply.gates-summary: "gates: {summary}"
+submit.reply.gates-scope: " (this submission; {count} standing reds untouched — why red lists them)"
 submit.hint-eg: " — e.g.: {hint}"
 submit.diag-eg: " — cause: {hint}"
 submit.fail: "FAIL: {err}."
@@ -83,7 +84,7 @@ submit.answers.kept: "answers: {list} — already answered explicitly, the first
 
 # The spec.
 submit.reject.spec-operations-empty: "operations: empty"
-submit.reject.spec-implement-frozen: "on implement only add-scenario (growth, fresh checks billed) and update-scenario (repair of a pinned form) are allowed: the rest of the composition is frozen by started code"
+submit.reject.spec-implement-frozen: "on implement only add-scenario (growth, fresh checks billed) and update-scenario (repair of a pinned form) are allowed: the rest of the composition is frozen by started code (before the first accepted code submission the composition may be re-cut freely — the stage alone does not freeze it)"
 submit.reject.spec-op-empty: "empty spec operation"
 
 # Growth on implement.
@@ -97,6 +98,7 @@ submit.reject.id-taken: "id: already taken"
 submit.reject.formulation-empty: "formulation: empty"
 submit.reject.not-found: "not found"
 submit.reject.req-has-scenarios: "has scenarios: remove them first"
+submit.reject.req-has-proven-scenarios: "has green rows ({scns}): a proven row is a fact, its removal goes through the change-request channel; before code only never-green placeholder rows ride out with their requirement"
 submit.reject.deps-cycle: "dependencies: cycle through {id}"
 submit.reject.deps-not-found: "dependencies: {dep} not found"
 
@@ -155,8 +157,6 @@ submit.reject.digest-unknown: "file {file}: digest {digest}: no file with this d
 submit.reject.path-owned: "path {path}: owned by {owner}"
 submit.reject.path-not-in-card: "path {path}: not in the card's files"
 
-# Fixtures.
-
 # Project paths.
 submit.reject.path-not-relative: "expected a relative path inside the project"
 submit.reject.instance-untouchable: "instance directory is untouchable"
@@ -194,6 +194,8 @@ amend.change.capture: "{scenario} {observation}: was \"{old}\" → machine measu
 amend.change.remove: "{scenario} (its check already ran) is removed"
 amend.change.update-req: "{requirement}: the boundary formulation changes on a delivered product"
 amend.change.remove-req: "{requirement}: the boundary is removed from a delivered product"
+amend.change.remove-placeholder: "{requirement} (a placeholder: every row proved nothing) is removed with its scenarios {scns}"
+amend.change.atomic: "the free operations of this delta ride the same hold: applied alone they would leave the spec inconsistent (a requirement without scenarios, a detail block without its scenarios) — the whole delta is ONE amendment, the approve applies it atomically"
 amend.change.cr-cards: "change request closes {n} card(s) — the cut opens again"
 amend.change.cr-contracts: "change request unfreezes {n} frozen contract(s)"
 amend.change.cr-stage: "the cycle rolls back from deliver to re-acceptance"
@@ -234,3 +236,5 @@ submit.reject.feature-req-missing: "feature: requirement is required"
 submit.reject.feature-req-not-found: "feature: requirement {id} not found"
 submit.reject.feature-no-doc: "feature: {id} has no description to ratify"
 submit.reject.feature-empty: "feature: text or ratify is required"
+submit.reject.feature-two-forms: "one form per submission — either the entries list or a single requirement+text, not both"
+submit.reject.feature-dup: "{id} appears twice in this submission"

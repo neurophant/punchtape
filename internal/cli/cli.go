@@ -28,9 +28,8 @@ import (
 const usageKey = "cli.usage"
 
 // Version — the machine's delivery version (semver). Stamped by the
-// build (-ldflags -X); without stamping — a dev build from the
-// working tree.
-var Version = "dev"
+// build (-ldflags -X); without stamping — the current release 0.2.0.
+var Version = "0.2.0"
 
 // Run executes the verb and returns the process code: 0 — success,
 // 1 — submission rejected, 2 — failure, 3 — a choice is required (a

@@ -232,6 +232,36 @@ func (b *builder) specTriggerOps(sp *delta.Spec) ([]int, []string) {
 			changes = append(changes, canondata.T("amend.change.remove", canondata.M{
 				"scenario": id,
 			}))
+		case op.RemoveRequirement != nil:
+			// Post-code placeholder cleanup: a requirement whose every
+			// scenario proved nothing (a machine-drafted placeholder
+			// never re-cut) is removed TOGETHER with those scenarios —
+			// staged as a deferred edit, the human asserts it through
+			// the amend channel. A removal touching a proven row keeps
+			// the change-request refusal (the ladder holds).
+			id := op.RemoveRequirement.ID
+			if _, ok := b.reqs[id]; !ok {
+				continue
+			}
+			var scns []string
+			protected := false
+			for _, sid := range sortedIDs(b.scns) {
+				if b.scns[sid].Requirement != id {
+					continue
+				}
+				if b.rowProtected(b.scns[sid]) {
+					protected = true
+					break
+				}
+				scns = append(scns, sid)
+			}
+			if protected || len(scns) == 0 {
+				continue
+			}
+			idx = append(idx, i)
+			changes = append(changes, canondata.T("amend.change.remove-placeholder", canondata.M{
+				"requirement": id, "scns": strings.Join(scns, ", "),
+			}))
 		}
 	}
 	return idx, changes
@@ -397,6 +427,71 @@ func eqStrPtr(a, b *string) bool {
 		return a == b
 	}
 	return *a == *b
+}
+
+// checkSpecIR — the spec's referential invariants over the current
+// projection: every requirement carries at least one scenario, every
+// detail block names only its own scenarios, the dependency graph is
+// clean. One checker, every channel: the spec channel after its
+// operations, the table channel after its own mutations — a state
+// this checker refuses is a poisoned state (its only repair routes
+// are themselves refused against it), it must not be writable at all.
+func (b *builder) checkSpecIR() error {
+	scnsByReq := map[string]int{}
+	scenarioReq := map[string]string{}
+	for _, sc := range b.scns {
+		scnsByReq[sc.Requirement]++
+		scenarioReq[sc.ID] = sc.Requirement
+	}
+	for _, id := range sortedIDs(b.reqs) {
+		if scnsByReq[id] == 0 {
+			return rejection(id, canondata.LintMessage("spec.req-scenario"))
+		}
+		// detail minimum: a filled block must be complete.
+		if err := canon.ValidateDetail(b.reqs[id].Detail, id, scenarioReq); err != nil {
+			return rejection(id, err.Error())
+		}
+	}
+	return checkDependencies(b.reqs)
+}
+
+// freeOpsKeepSpecIR — whether the FREE part of a partitioned
+// submission, applied alone, keeps the spec IR valid. Checked on a
+// throwaway projection of the canon (a second builder over the same
+// untouched store state): when the free operations alone would leave
+// the spec inconsistent — a requirement without scenarios, a detail
+// block naming scenarios still bound elsewhere — the parts are one
+// amendment, not two submissions: the whole delta stages and the
+// approve applies it atomically. A broken free operation reports
+// "cannot decide": the normal path refuses it with its own number.
+func (b *builder) freeOpsKeepSpecIR(free []delta.SpecOperation) bool {
+	probe := newBuilder(b.e, b.state)
+	if err := probe.load(); err != nil {
+		return true
+	}
+	for _, op := range free {
+		var err error
+		switch {
+		case op.AddRequirement != nil:
+			err = probe.opAddReq(op.AddRequirement)
+		case op.UpdateRequirement != nil:
+			err = probe.opUpdateReq(op.UpdateRequirement)
+		case op.RemoveRequirement != nil:
+			err = probe.opRemoveReq(op.RemoveRequirement)
+		case op.AddScenario != nil:
+			err = probe.opAddScn(op.AddScenario)
+		case op.UpdateScenario != nil:
+			err = probe.opUpdateScn(op.UpdateScenario)
+		case op.UpdateAssertions != nil:
+			err = probe.opUpdateAsserts(op.UpdateAssertions)
+		case op.RemoveScenario != nil:
+			err = probe.opRemoveScn(op.RemoveScenario)
+		}
+		if err != nil {
+			return true
+		}
+	}
+	return probe.checkSpecIR() == nil
 }
 
 // stageChangeRequest — a submission on deliver becomes a pending

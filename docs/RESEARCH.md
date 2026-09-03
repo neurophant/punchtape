@@ -1,6 +1,10 @@
-# RESEARCH
-
 # Closing the verification loop in generative development: an external transactional state machine and a field evaluation of its economics and convergence
+
+**Anton Smolin**
+
+Independent researcher
+
+hey@neurophant.tech
 
 ## Abstract
 
@@ -16,18 +20,22 @@ senses × 5 technology stacks): a baseline run, eight control waves, a
 repeat full run after systemic fixes, and a three-hand comparative
 experiment (a top model in the system, a budget model in the system,
 solo execution without the system) with independent judges. The system
-hands delivered 50/50 machine verdicts of "verified twice" at 0 minutes
-of intermediate human attention, with quality invariant to the model
-class (the budget loop — the same verdicts for twice the time and
-eight times less money); the solo executions, at a better economy
-(−31% tokens, −21% time against the top hand) converged to the
-byte-exact reference in only 22% of the judges' table rows, and 95% of
-the divergence was freedom of interpreting the brief, not functional
-defects. Systemic fixes between the full runs cut the battery's cost by
-49% of tokens without changing the methodology. The conclusion: the
-benefit of the closed loop is measured not in tokens but in
-reconcilability; an anti-entropy frame is proposed for interpreting the
-result.
+hands delivered 50/50 machine verdicts of "verified twice" with zero
+minutes of intermediate human attention, with quality invariant to the
+model class (the budget loop — the same verdicts for twice the time
+and an eighth of the money); the solo executions, with better
+economics (−31% tokens, −22% time against the top hand), converged to
+the byte-exact reference in only 22% of the judges' table rows, and
+the bulk of the divergence was freedom of interpreting the brief, not
+functional defects. Systemic fixes between the full runs cut the
+battery's cost by 49% of tokens without changing the methodology. A
+September replication campaign on the evolved machine (v0.1.x → 0.2.0)
+— a 75-cell three-hand wave pair, a 20-cell release-validation wave, a
+three-language smoke — reproduced the verdict and quality invariance,
+the judges' protocol-red pattern, and the attention economics. The
+conclusion: the benefit of the closed loop is measured not in tokens
+but in reconcilability; an anti-entropy frame is proposed for
+interpreting the result.
 
 **Keywords:** generative development, verification, state machine,
 specification, acceptance checks, compute economics, executor
@@ -75,16 +83,20 @@ paper's working terms.
 - **Brief fork** — a point where the wish is silent; closed by a
   recorded default or an escalation.
 - **Hand** — one parallel executor of the three-hand experiment:
-  **top** — GLM 5.3 Max (maximum reasoning mode);
-  **flash** — GLM 5.3 Flash (high reasoning mode);
-  **solo** — GLM 5.3 Max without the machine; **judge** — GLM 5.3 Max,
+  **top** — GLM-5.3 Max (maximum reasoning mode);
+  **flash** — GLM-5.3 Flash (high reasoning mode);
+  **solo** — GLM-5.3 Max without the machine; **judge** — GLM-5.3 Max,
   reconciles the solo product against the top hand's checks table.
 - **Reconcilability / convergence** — the share of the product's rows
   that match the reference table byte-for-byte; the strict count —
   against the declared table, the conditional count — with the judge's
   neutral driver.
-- **Wall** — the executor's time per task (by the ledger / the
-  environment's accounting).
+- **Wall** — the executor's time per task. August series: the ledger /
+  the environment's accounting of the run. September replication: the
+  full wall — the sum of the durations of all the executor's platform
+  segments, rotations and restarts included (the campaign registry's
+  basis, `docs/METRICS.md` §1.2). The two bases are never mixed inside
+  one comparison.
 - **submit p95** — the 95th percentile of the machine's submission
   processing time; the budget is 300 ms.
 - **# TOKENS** — the submission trailer with the executor environment's
@@ -110,7 +122,7 @@ experiment, a solo execution that is "green in its own way" diverges
 from the byte-exact reference in 78% of the check rows, while the
 executor's self-assessment does not reveal these divergences: finishing
 the solo product to verifiable quality cost an additional 4–7.5 hours
-of a living human per batch — against zero for the system hands.
+of a live human per batch — against zero for the system hands.
 
 ### 1.2. The approach
 
@@ -143,12 +155,58 @@ an independent judicial reconciliation of the products against the
 byte-exact tables of the machine runs themselves, and all numbers come
 from transaction ledgers, not self-reports.
 
+### 1.4. Related work
+
+**Agents in software engineering.** The field is systematized by a
+survey of 124 studies of LLM-based agents across the software
+lifecycle [1] — the designs surveyed there orchestrate the dialog and
+the tools, the task's state living in the session. The same literature
+contains its own counterpoint: Agentless [2] shows a simple three-phase
+localize–repair–validate pipeline outperforming complex autonomous
+agents on SWE-bench Lite at a lower cost. This work takes the
+counterpoint further: the guaranteeing party is not a smarter or
+simpler agent but a transactional state machine outside the executor —
+the state outlives sessions, and the verdict is signed, not asserted.
+
+**Closing the loop with verification.** A growing line of work equips
+LLM code generation with verification cycles: Detect–Repair–Verify
+pipelines for securing LLM-generated code [3]; formal-method guidance
+that routes LLM-generated safety-critical code through deductive
+verification and turns each failure into a correction prompt (Forge)
+[4]; self-generated formal specifications with verifier feedback,
+where the self-generated specification is itself the measured
+bottleneck (Self-Spec) [5]; and security tests used as executable
+specifications shown to the model up front [6]. The machine of this
+paper belongs to this line with two differences: the checks table is
+human-readable and the canon is compiled from it by the machine, not a
+formalism the model authors; and every check is run twice in clean
+directories by the machine itself — the loop's owner and the loop's
+executor are different parties.
+
+**Vibe coding, measured.** The open loop this paper studies is the
+object of a survey of over a thousand works that defines vibe coding
+formally [7]. Empirically, an assessment of 450 LLM-generated scripts
+reports ≈85% execution success but ≈45% silent failures of flawed
+logic behind syntactic correctness, and calls for deterministic
+wrappers and strict governance [8]. Our field data independently
+reproduces the same class — "green in its own way", claim ≠ fact — and
+measures what a deterministic wrapper costs and buys when it owns the
+task's state.
+
+**Judges.** Since the judges here are LLMs, the known fragility of
+LLM-as-a-judge evaluation — verdicts sensitive to prompt-induced bias,
+enough to change task-level conclusions and model rankings [9] — is
+directly relevant; the design answers it by construction: the judge
+executes a fixed table row by row, byte-strict, with no right to edit
+or adapt, a doubt counts against the product, and a calibration must
+pass before any count is recorded.
+
 ## 2. Methodology
 
 ### 2.1. The object
 
 The machine is a single binary (Go); the sources and the full
-documentation are in this repository (v0.1.0). The composition: canon
+documentation are in this repository (v0.2.0). The composition: canon
 data (every human-readable surface and threshold as data, not code), a
 transaction journal, a metrics ledger, a compiler from the checks table
 to scenarios, gates (statics, coverage, tracing, an empty-check probe,
@@ -193,9 +251,9 @@ comparable across the five run factors.
 ### 2.4. The comparative experiment design
 
 The three-hand mode: every task is executed three ways — (A) the top
-model **GLM 5.3 Max** (maximum reasoning mode) through the machine;
-(B) the budget model **GLM 5.3 Flash** (high reasoning mode) through
-the machine; (C) the top model GLM 5.3 Max without the machine (solo).
+model **GLM-5.3 Max** (maximum reasoning mode) through the machine;
+(B) the budget model **GLM-5.3 Flash** (high reasoning mode) through
+the machine; (C) the top model GLM-5.3 Max without the machine (solo).
 The worlds, the briefs, and the limits are identical; for solo the
 binary is not mounted. A fourth agent — the judge — receives the checks
 table of hand (A) for the same task (the byte-exact expectations the
@@ -208,8 +266,8 @@ share of green rows as the measure of strict convergence.
 
 - **Hypothesis 1 (reconcilability without proportional payment).**
   Moving verification into an executable table with a double run makes
-  "done" a reproducible fact, without requiring a multiple growth of
-  cost relative to the open loop.
+  "done" a reproducible fact, without requiring a multiple increase
+  in cost relative to the open loop.
 - **Hypothesis 2 (systemic economy).** The cycle's cost reduction is
   achieved by properties of the system itself (byte capture by the
   machine, elimination of manual retranscription, suppression of noisy
@@ -219,8 +277,8 @@ share of green rows as the measure of strict convergence.
   the same brief; the divergences are not revealed by self-reports and
   do not correlate with functional quality.
 - **Hypothesis 4 (the model's price in the loop).** In the closed loop
-  the model class does not determine reaching the verdict, but
-  determines the time; the budget model in the system loses on the
+  the model class does not determine whether the verdict is reached,
+  but determines the time; the budget model in the system loses on the
   total cost of the path.
 - **Hypothesis 5 (zero intermediate attention).** For the tasks of the
   S band, a machine `READY` is reachable without a single intermediate
@@ -232,56 +290,20 @@ share of green rows as the measure of strict convergence.
 
 ## 3. Experimental record
 
-All the experiment dates lie in the interval from August 25 to
-September 1, 2026; there is one machine release (v0.1.0); the binary
-inside each comparison is unchanged. The cost is given at the August
-2026 API list prices; for comparability the ratios matter, not the
-absolute values (the top model's token is ≈ 9 times more expensive
-than the flash model's token).
+All the experiment dates lie in the interval from August 30 to
+September 3, 2026; the August series ran on a single machine release
+(v0.1.0); the binary inside each comparison is unchanged. The cost is
+given at the August 2026 API list prices; for comparability the
+ratios matter, not the absolute values (the top model's token is
+≈ 9 times more expensive than the flash model's token).
 
 ### 3.1. The baseline run (2026-08-30)
 
 25/25 tasks finished with a machine `READY` and a successful
 acceptance; 0 quarantines; the token sum 80.31 M; 53 rejected
-submissions; 25 questions to the operator. The per-task record is in
-`docs/METRICS.md` §2.
+submissions; 25 questions to the operator.
 
-### 3.2. The control waves
-
-Eight control runs (one sense × five stacks, an unchanged binary after
-each wave of fixes), all 5/5 `READY`. The waves' summary values
-(the per-task tables are `docs/METRICS.md` §3):
-
-| Run | Wall median, min | Tokens, M | submit p95, ms | Rejected submissions | Question batches |
-|---|---|---|---|---|---|
-| baseline | 15.3 | 8.98 | 282–481 | 4 | 5+ |
-| cw1 | 18.9 | 10.40 | 79–116 | 6 | 5 |
-| cw2 | 11.2 | 7.28 | 90–235 | 3 | 2 |
-| cw3 | 18.1 (12.0†) | 9.86 | 101–149 | 0 | 0 |
-| cw4 | 13.2 | 8.47 | 92–151 | 1 | 1 |
-| cw5 | 12.7 | 8.59 | 94–212 | 11\* | 3 |
-| cw6 | 8.1 | 6.32 | 106–167 | 1 | 3 |
-| cw7 | n/a | n/a | n/a | — | — |
-| cw8 | 10.5 | 6.17 | 114–178 | 2 | — |
-
-\* cw5: all 11 rejections — the executors' own YAML typos, each named
-by a one-line reason; no machine refusals. The waves run on one sense
-(brim): the "baseline" in the table is the median of the five brim
-tasks; the median of all 25 tasks of the baseline run is 17.3 min
-(Appendix A).
-† cw3: a one-off materials incident (an executor overwrote its
-writable copy of the materials; the restoration took about two hours);
-without that task the wave's median is 12.0. cw7 ran after the spec
-rework — the prose gate fired in all five tasks at the price of one
-extra submission per task; the wave left no numeric summary.
-
-The trajectory is nonmonotonic: the medians swing from 8.1 to 18.9
-min, while the token sums of the best waves fall monotonically
-(8.98 → 6.17 M), as does the submission latency (282–481 → 79–235 ms
-by the waves' min–max); the machine's submission refusals converge to
-zero.
-
-### 3.3. The repeat full run (2026-08-30, after a wave of systemic fixes)
+### 3.2. The repeat full run (2026-08-30, after a wave of systemic fixes)
 
 25/25 `READY`; every task run exactly once; tokens 80.31 → 41.00 M
 (**−49%**); the task wall median 17.3 → 13.5 min; submissions 219/53
@@ -291,7 +313,7 @@ the 300 ms budget; the machine's fix cycles — 4 per battery; 0
 quarantines. The methodology and the battery did not change; the
 changes are only systemic properties of the machine (see hypothesis 2).
 
-### 3.4. The three-hand experiment (2026-08-31)
+### 3.3. The three-hand experiment (2026-08-31)
 
 75 executor runs (25 tasks × 3 hands) and 25 independent judge runs.
 The system hands: **50/50 `READY` + acceptance** (25 top + 25 flash),
@@ -308,7 +330,7 @@ hand):
 | solo (no machine) | 45.22 / 1.41 / 0.39–5.46 | 339.9 / 11.4 / 7.1–22.5 | ≈ $77–90 |
 
 Solo is the cheapest and the fastest hand; flash is the most expensive
-by the total path (the cheap step is paid for by their number).
+by the total path (the cheap step is paid for by the number of steps).
 
 Strict convergence (the judges against the byte-exact tables): **108/491
 green rows (22%)**; per sense (green/rows): conduit 34/97 (35%),
@@ -336,7 +358,7 @@ nearly complete;
    its own way" they are invisible to the self-report.
 
 Finishing the solo products to verifiable quality (the same battery)
-is estimated at ≈ $204–240 and 4–7.5 hours of a living human — against
+is estimated at ≈ $204–240 and 4–7.5 hours of a live human — against
 zero intermediate participation for the system hands.
 
 ### The per-task structure (paired comparisons)
@@ -346,7 +368,7 @@ more informative than the summaries:
 
 - **Flash is slower than top in 24 of the 25 tasks** (the only
   exception — errand-go: 20.8 against 21.8 min). In the absence of an
-  effect, the probability of such or greater a preponderance is
+  effect, the probability of a preponderance at least this large is
   7.7·10⁻⁷ (sign test, n = 25 pairs): the flash model's cheaper step is
   paid for by the number of steps practically always, not on average.
 - **The hands' token medians are almost equal (2.23 / 2.32 / 1.41 M),
@@ -372,7 +394,7 @@ more informative than the summaries:
   (11/11, 24/24, 8/11, 8/10 across the go/rust/cpp/js tasks). The
   strict red remains an honest fact of the missing surface.
 
-### 3.5. Human attention and forks
+### 3.4. Human attention and forks
 
 In the three-hand run, 74 brief forks (the points where the wish was
 silent) were closed by the machine's defaults with a journal and
@@ -382,7 +404,7 @@ rule: when a human decision is requested (code 3/4), the executor
 applies the recommended option, marks it "awaiting ratification", and
 continues — in the isolated worlds nothing is irreversible.
 
-### 3.6. Environment observations (the cause registry, a selection)
+### 3.5. Environment observations (the cause registry, a selection)
 
 - An OOM kill (code 137) is a fact of the environment's limits, not of
   the task: recreate the world with a larger limit, log the case.
@@ -401,16 +423,115 @@ continues — in the isolated worlds nothing is irreversible.
   systematization the battery's most expensive task fell from 10.45 to
   1.10 M tokens.
 
-## 4. Discussion
+## 4. Replication on the evolved machine (2026-09-03)
 
-### 4.1. Reconcilability, not economy
+The study above ran on v0.1.0. Before publication the machine went
+through a series of systemic fixes to the 0.2.0 release (v0.1.x →
+0.2.0), and the measurement design was re-run on the evolved machine
+as a September campaign: two full three-hand waves (wave 1: one
+sense × five stacks × three hands, 15 cells; wave S: the other four
+senses × five stacks × three hands, 60 cells — together covering the
+same 5 × 5 × 3 battery shape as the August series), a
+release-validation wave on the frozen 0.2.0 candidate (five senses ×
+two stacks × two machine hands, 20 cells, the arbiter's sha recorded
+in the wave journal), and a live three-language smoke (ru/en/zh). The
+prices are the 2026-09-03 market tariffs; as in §3, the ratios, not
+the absolutes, carry the meaning.
+All numbers below are the campaign registry's (`docs/METRICS.md`),
+every one mechanically revalidated against the run evidence — the cell
+captures and the platform ledger; nothing is retyped from a report.
+
+**Measurement bases.** The September campaign reports the executor's
+time as the full wall — the sum of the durations of all the executor's
+platform segments, rotations and restarts included (the campaign
+registry defines the full wall and every other metric's provenance —
+`docs/METRICS.md` §1.2); the August series' wall is the ledger /
+environment accounting of its era. The bases differ (the full wall is
+the stricter one: it adds what a single-segment accounting prunes — the
+registry's own basis correction moved 21 multi-segment cells to the
+full wall), and no comparison in this paper mixes them: the August
+numbers are compared within Appendices A–D, the September numbers
+within this section.
+
+| September wave | Machine | Cells | What it replicates | Result |
+|---|---|---|---|---|
+| wave 1 + wave S | the v0.1.x line (a pinned binary per wave) | 75 = 25 tasks × 3 hands | the three-hand experiment of §3.3 | machine hands 50/50 `VERDICT READY`; blind measurer: suite ×2 green, 5/5 deliverables in 75/75 products; solo 20/20 accepted via operator cycles |
+| validation wave | 0.2.0, frozen | 20 machine cells | the fixes hold on the release candidate | 20/20 `VERDICT READY`, zero panics / deadlocks / quarantines / lost cells, zero new machine defect classes |
+| smoke (ru/en/zh) | 0.2.0, frozen | 3 live wishes | the wish → verdict cycle with no human in the loop | `READY` ×3, zero question batches, $0.66 total, 256 s parallel wall |
+
+### 4.1. What replicated
+
+- **Verdicts and quality (hypotheses 1, 5).** Every machine run of the
+  campaign closed at `VERDICT READY` — 50/50 in the three-hand waves,
+  20/20 on the frozen candidate; the blind double-run measurer found
+  suite ×2 green and 5/5 deliverables in all 75 wave-1+S products (the
+  validation wave: 16/20, the four exceptions are a measured-procedure
+  nondeterminism, not product defects — single runs of the affected rows
+  are green). The smoke reached READY in all three languages with zero
+  question batches.
+- **The judges' pattern (hypothesis 3).** The September judges reproduce
+  the August decoding: the solo functional core is byte-green, the red
+  mass is protocol and surface. Strict convergence against the top
+  benchmark: solo 87/336 rows (26%), the budget hand 105/336 (31%);
+  13 of 20 solo acceptances went to a second verification cycle with
+  real findings — the same class of work as the August 4–7.5-hour
+  finishing estimate.
+- **The model class (hypothesis 4).** Identical mechanical quality at
+  both model classes; the flash hand is 3.75× cheaper by the hand mean
+  ($0.31 against $1.16) and ≈2× slower on the full wall (2258 against
+  1131 s mean) — "time or money", not a quality tradeoff, confirmed.
+- **Attention (hypothesis 5).** The machine hands triggered operator
+  involvement in 7 of 40 wave-S cells (waits 16–59 s; campaign-wide,
+  at the top model, a batch was triggered in 4 of 25 cells) and in 7
+  of 20 validation-wave cells (waits 23–216 s, $0.60 in total at the
+  input-rate upper estimate); the solo path needed its acceptance
+  operator at every task — the operator's AI wall averaged 530 s per
+  task (range 258–937 s), a lower bound for a live human (the anchored
+  estimate: ≈10–18 min per task).
+- **Economics — sharpened, not just confirmed.** The August series
+  priced the hands: solo won the hand's own tokens (−31%) but its
+  "done" carried an unpriced human finishing (≈$204–240 and 4–7.5 h per
+  batch, §3.3). The September campaign prices the full path — the hand
+  plus its verifying operator, cache-aware tariffs: solo $6.07 per task
+  (hand $4.88 + operator $1.19) against the top hand's $1.18 (5.1×) and
+  the flash hand's $0.32 (19×). Under full-path accounting the closed
+  loop is the cheaper path, not the more expensive one — the August
+  conclusion (the benefit is reconcilability, not economy) stands, and
+  its hidden term is now measured. One further measured mechanism: the
+  September solo hand is itself the token-heaviest of the three
+  (5.95M life-tokens per task against the top hand's 2.78M, cache
+  coverage 58% against 99%) — without a machine that has already
+  verified, the agent re-reads and re-probes its own product (the
+  per-task full-path table is Appendix E).
+- **Self-gating (hypothesis 6).** The validation wave's criteria closed
+  green: the gate stack green on every tree of the wave, zero lint
+  rejections, zero non-UTF-8 surfaces in the 20 exports, zero zombie
+  incidents, zero journal breaks.
+
+### 4.2. What the replication adds
+
+Two findings the August series could not see. First, the artifact-path
+class: in the validation wave's cross-judgment (the flash product
+against the top benchmark) 7 of 10 tasks scored zero strictly because
+the benchmark rows call the top hand's declared surface while the flash
+product declared its own — a brief/conventions fix candidate, not a
+machine or model defect. Second, the blind-suite nondeterminism of the
+four validation cells (a container per run, not per case) — an honest
+boundary of the measuring procedure itself, caught by the double run.
+
+## 5. Discussion
+
+### 5.1. Reconcilability, not economy
 
 Hypotheses 1–3 are confirmed jointly. The closed loop does not make
-the task cheaper than solo (solo wins both tokens and time), but it
+the task cheaper than solo (solo wins both tokens and time — in the
+August accounting of the hand's own work; the September full-path
+accounting, §4.1, counts the verifying operator in the price and
+flips the sign: the machine path is the cheaper one), but it
 changes the very subject of the purchase: the executor without the
 machine delivers "its own opinion of readiness"; the executor with the
 machine — a product to which an executable exam is attached,
-re-verifiable at any moment at a zero marginal price. Solo's 22% strict
+re-verifiable at any moment at zero marginal price. Solo's 22% strict
 convergence at an almost fully green functional core shows that the
 gap lies in interface discipline (protocols, texts, codes) — exactly
 where the contract should live. Freedom of interpretation is a
@@ -419,34 +540,35 @@ fires at any change of executor; the external fixation of decisions
 (the canon + the journal of defaults) moves it from invisible to
 signed.
 
-### 4.2. The anti-entropy frame
+### 5.2. The anti-entropy frame
 
 The uncertainty of meaning behaves like entropy: it grows on its own
 unless it is pumped out. The machine acts as a heat pump: the local
 reduction of uncertainty is paid for by work — the tokens of double
 runs, the containers, the computation. By Landauer, erasing a bit
 costs ≥ kT·ln2 ≈ 3·10⁻²¹ J; the task's information entropy (~10⁻¹⁵ J,
-even generously) is negligible against the ~10⁵ J of real computation
-— the heat pays not for the annihilation of uncertainty but for search
-and measurement. The unavoidable forks are not erased but move into an
-explicit, signed form (question → default → journal); the order is
-stored: the canon + a green verdict form a "battery" that makes
-regression re-runs nearly free. The result's formula: cheap measurable
-heat buys expensive unmeasurable uncertainty.
+even computed generously) is negligible against the ~10⁵ J of real
+computation — the heat pays not for the annihilation of uncertainty
+but for search and measurement. The unavoidable forks are not erased
+but move into an explicit, signed form (question → default →
+journal); the order is stored: the canon + a green verdict form a
+"battery of order" that makes regression re-runs nearly free. The
+result's formula: cheap measurable heat buys expensive unmeasurable
+uncertainty.
 
-### 4.3. The model's price and the path
+### 5.3. The model's price and the path
 
 Hypothesis 4 is refined by the experiment: the model class does not
 separate from the verdict (50/50 for both system hands), but separates
 by time — flash is slower than top in 24 of the 25 tasks (the median
-29.0 against 14.4 min; p ≈ 8·10⁻⁷) at an equal median token price
+29.0 against 14.4 min; p = 7.7·10⁻⁷) at an equal median token price
 (2.32 against 2.23 M); the "top or flash" choice is "time or money",
-not "quality or worse". Solo's economic advantage (cheaper than top in
+not a quality tradeoff. Solo's economic advantage (cheaper than top in
 19 of the 25 tasks, p ≈ 0.007) is real, but it is bought at the price
 of incomparability: 22% strict convergence means that solo's "done" is
 the executor's private opinion, not a portable fact.
 
-### 4.4. The invariance of quality to the model class
+### 5.4. The invariance of quality to the model class
 
 The three-hand experiment's main practical result: **the delivery
 quality does not depend on the model class inside the closed loop** —
@@ -462,25 +584,25 @@ both system hands delivered 25/25 `READY` + acceptance, 0 quarantines,
 | Task cost | ≈ $4.4–5.2 | ≈ $0.54–0.64 | ≈ ÷8 |
 
 The cheap model in the system delivers the same signed result for
-twice the time and roughly eight times less money: the cheap step is
+twice the time and roughly an eighth of the cost: the cheap step is
 paid for by the number of steps (the token medians are equal — 2.23
-against 2.32 M; flash is slower in 24 of the 25 tasks, p ≈ 8·10⁻⁷),
+against 2.32 M; flash is slower in 24 of the 25 tasks, p = 7.7·10⁻⁷),
 not by quality. The "top or flash" choice is "time or money" at the
 same result; outside the loop the same choice is "money or risk"
 (solo: −31% tokens against top at 22% strict convergence and finishing
-by a living human).
+by a live human).
 
-### 4.5. The machine and the harness: the separation of ownership
+### 5.5. The machine and the harness: the separation of ownership
 
 The harness (the agent's execution environment) and the machine do not
 compete: the agent lives in the harness, the machine stands outside and
-owns the task's state. The separation of responsibility by the
-experiments' data:
+owns the task's state. The separation of responsibility, as shown by
+the experiments' data:
 
 | The harness alone | The machine | The evidence |
 |---|---|---|
 | readiness is the agent's opinion | the verdict is an executable fact with a digest | 50/50 verdicts against solo's 22% strict convergence — in the same harness |
-| the task's state dies with the session | the canon lives indefinitely; a change of executor loses nothing | "three top hands — three answers" on one fork; 74 forks closed by journaled defaults |
+| the task's state dies with the session | the canon lives indefinitely; a change of executor loses nothing | "three top hands — three different answers" on one fork; 74 forks closed by journaled defaults |
 | a check on someone's word: one run, possibly with a cache and garbage | every check twice in clean directories, an empty-check probe | determinism is a property of the procedure, not of the agent's discipline |
 | the platform's metrics are a side effect and get lost | the instance ledger, the `# TOKENS` trailers: the price does not depend on the platform | the actual losses of the environment's metrics in the runs; the rule of the immediate take |
 | the overhead is not measured | the overhead is itself a gate | submit p95 46–175 ms at the 300 ms budget; the ceremony ≤ 10% |
@@ -488,13 +610,13 @@ experiments' data:
 | the endless "almost done" loops | a quarantine with an attempt budget | 0 quarantines across the 50 system runs — the loops end, they are not masked |
 
 The separation formula: the harness runs the conversation; the machine
-owns the state and the verdict. The economics of closing the loop buys
-cheap measurable heat (the tokens of the double runs) with expensive
-unmeasurable uncertainty (the freedom of interpretation); a harness
-without an external canon gives the solo mode — fast, cheap, and
-incomparable.
+owns the state and the verdict. The economics of closing the loop pays
+cheap measurable heat (the tokens of the double runs) to pump out
+expensive unmeasurable uncertainty (the freedom of interpretation); a
+harness without an external canon gives the solo mode — fast, cheap,
+and incomparable.
 
-### 4.6. Validity
+### 5.6. Validity
 
 - **Internal**: an unchanged binary inside the comparisons (the double
   build, the digests); identical briefs, materials, and limits of the
@@ -529,7 +651,7 @@ incomparable.
   to the M/L bands, the long tasks, and the other product classes is
   the subject of the next experiments.
 
-## 5. Conclusions
+## 6. Conclusions
 
 1. An external transactional state machine moves readiness from an
    opinion to a signed, re-verifiable fact: 50/50 machine verdicts on
@@ -539,16 +661,16 @@ incomparable.
    change of methodology (hypothesis 2); the largest classes of losses
    (the byte retranscription, the noisy questions, the environment's
    resolution) are eliminated as classes.
-3. The brief's freedom of interpretation is a measurable and the main
-   cause of the executors' divergence (78% of the judge tables' red
+3. The brief's freedom of interpretation is a measurable and the
+   principal cause of the executors' divergence (78% of the judge tables' red
    rows at a green functional core); the self-reports do not reveal it
    (hypothesis 3).
 4. The delivery quality is invariant to the model class in the closed
    loop: both system hands — 25/25 verdicts; flash delivers the same
    result for twice the time (slower in 24 of the 25 tasks,
-   p ≈ 8·10⁻⁷, at an equal median token price) and roughly eight times
-   less money (≈ $13.5–16 against ≈ $111–131 per battery); the
-   cheapest hand with a guarantee is the cheap model in the system;
+   p = 7.7·10⁻⁷, at an equal median token price) and roughly
+   one-eighth the money (≈ $13.5–16 against ≈ $111–131 per battery);
+   the cheapest hand with a guarantee is the cheap model in the system;
    the most expensive guarantee is the manual finishing of solo
    (hypothesis 4).
 5. The dominant factor of a single task's cost is the executor's
@@ -562,8 +684,16 @@ incomparable.
 7. The machine's own overhead is itself gated: the submission latency
    and the ceremony share stay under the budget in every run
    (hypothesis 6).
+8. The results replicate on the evolved machine (v0.1.x → 0.2.0,
+   the September campaign): 75/75 products green by the blind
+   double-run measurer, 50/50 + 20/20 machine verdicts, the judges'
+   protocol-red pattern reproduced (solo 87/336 strict rows), and the
+   full-path economics made explicit — with the verifying operator
+   priced in, the machine path is the cheaper one (solo $6.07 against
+   top $1.18 per task). Conclusions 1–7 hold beyond the original
+   binary and price epoch.
 
-## 6. Prospects
+## 7. Prospects
 
 - **The M/L bands**: extending the battery upward (the large tasks,
   the multi-file products) after calibrating the bands by the
@@ -572,8 +702,8 @@ incomparable.
   benefit grows faster.
 - **Bootstrap**: running the machine's own development through its own
   loop — the wishes for the machine as briefs, the loop to the
-  verdict, the pains fixed by its own diary; a direct test of the
-  approach's scalability beyond the S band.
+  verdict, the pains recorded and cured through its own journal; a
+  direct test of the approach's scalability beyond the S band.
 - **Multi-hand and multi-model**: the three-hand design generalizes to
   N hands with a judicial reconciliation against the best table — as
   the standard acceptance procedure of generative delivery.
@@ -582,19 +712,66 @@ incomparable.
   "taste queue" and safe defaults for it.
 - **Reproducibility**: all the experiment materials — the briefs, the
   task materials, the world images, the methodology, and the full
-  tables — are in this repository (`campaigns/`, `docs/METRICS.md`,
-  `docs/SAMPLES.md`, `docs/SCENARIOS.md`), which allows the runs to be
+  tables — are in this repository (`campaigns/`, `docs/SAMPLES.md`,
+  `docs/SCENARIOS.md`, `docs/METRICS.md` — the replication waves'
+  verified registry), which allows the runs to be
   repeated independently.
 
 ## Data sources
 
 All the paper's numbers are taken from the runs' machine evidence and
-summarized in the repository's documents: `docs/METRICS.md` (the
-tables of every run, wave by wave), `docs/SAMPLES.md` (the battery and
-the band calibration), `docs/SCENARIOS.md` (the field coverage of the
-features), `campaigns/` (the briefs, the materials, the generator, the
-world images, the run methodology). The per-task data of every run is
-duplicated in Appendices A–D below.
+summarized in the repository's documents: `docs/SAMPLES.md` (the
+battery and the band calibration), `docs/SCENARIOS.md` (the field
+coverage of the features), `campaigns/` (the briefs, the materials,
+the generator, the world images, the run methodology). The per-task
+data of every run is duplicated in Appendices A–D below; the
+replication's full-path breakdown is Appendix E. The September
+replication (§4) is documented in `docs/METRICS.md` — a
+provenance-first registry (three evidence tiers: the instance-ledger
+telemetry, the cell captures at each hand's finish, the platform
+session-database ledger) whose every number is mechanically
+revalidated against the run evidence. The artifact — the machine's
+sources, the campaign methodology and the verified metrics registry —
+is at https://github.com/neurophant/punchtape. Manuscript preparation
+was assisted by AI tools under the author's full responsibility; the
+execution of the runs by AI agents is the subject of the study itself
+and is documented in §2–§4.
+
+## Conflicts of interest
+
+The author declares no conflicts of interest.
+
+## References
+
+1. Junwei Liu, Kaixin Wang, Yixuan Chen, Xin Peng, Zhenpeng Chen,
+   Lingming Zhang, Yiling Lou. Large Language Model-Based Agents for
+   Software Engineering: A Survey. arXiv:2409.02977, 2024 (revised
+   2025).
+2. Chunqiu Steven Xia, Yinlin Deng, Soren Dunn, Lingming Zhang.
+   Agentless: Demystifying LLM-based Software Engineering Agents.
+   arXiv:2407.01489, 2024.
+3. Cheng Cheng. Detect–Repair–Verify for Securing LLM-Generated Code:
+   A Multi-Language Empirical Study. arXiv:2603.00897, 2026.
+4. Ran Wei, Le Zhu, Haochi Wang, Jim Woodcock, Fang Yan, Simon Foster,
+   Xiangyang Ji. Formal-Method-Guided Vibe Coding: Closing the
+   Verification Loop on AI-Generated Safety-Critical Software Through
+   Model-Driven Engineering. arXiv:2606.22413, 2026.
+5. Jiaru Qian, Yihong Dong, Yongmin Li, Hao Zhu, Bin Gu, Ge Li.
+   Self-Spec Verifiable Code Generation. arXiv:2609.39568, 2026.
+6. Yunhao Liang, Chengguang Gan, Ruixuan Ying, Hanjun Wei, Zhe Cui,
+   Shiwen Ni. Security Tests as Executable Specifications for LLM Code
+   Generation: Benefits, Trade-offs, and Coverage Limits.
+   arXiv:2608.09740, 2026.
+7. Yuyao Ge, Lingrui Mei, Zenghao Duan, Tianhao Li, Yujia Zheng,
+   Yiwei Wang, Lexin Wang, Jiayu Yao, Tianyu Liu, Yujun Cai, Baolong
+   Bi, Fangda Guo, Jiafeng Guo, Shenghua Liu, Xueqi Cheng. A Survey of
+   Vibe Coding with Large Language Models. arXiv:2510.12399, 2025.
+8. S M Jamil Uddin. Is Vibe Coding the Future? An Empirical Assessment
+   of LLM Generated Codes for Construction Safety. arXiv:2604.12311,
+   2026.
+9. Zixiao Zhao, Amirreza Esmaeili, Fatemeh Fard. Bias in the Loop:
+   Auditing LLM-as-a-Judge for Software Engineering. arXiv:2604.16790,
+   2026.
 
 ## Appendix A. The baseline run, per task (2026-08-30)
 
@@ -667,7 +844,7 @@ The wall grew for seven tasks: conduit-rust +5.3 and errand-rust +5.0
 (the price of cargo builds), quire-cpp +1.9, pressmark-rust +1.3,
 quire-js +0.5, conduit-cpp +0.2, brim-js +0.1. The token growth for
 conduit-rust, pressmark-go/rust, errand-rust, brim-go, and quire-js —
-the executors ran more probe sorties; all the values inside the
+the executors ran more probe sorties; all the values are inside the
 tasks' budgets.
 
 ## Appendix C. The submissions and questions of the repeat full run
@@ -752,3 +929,98 @@ RST instead of a clean close and the exit code on a taken port
 (conduit-rust), a missing name field in the records (quire-rust), the
 silent acceptance of a repeated option (pressmark-js), a "None" string
 instead of an empty value (quire-python).
+
+## Appendix E. The full path per task, the September replication: hand + its operator
+
+What this table compares is the full price of reaching "done" on one
+task — the executor's work and the verification work that necessarily
+accompanies it. The operator column is the human-attention proxy: the
+scarce resource the closed loop buys back is not the hand's tokens but
+this column. Roles are never mixed: the hand's and the operator's
+time/tokens are separate columns, the sum is analytical.
+
+Bases: the whole solo side (hand and operator) is the wave-S uniform
+tier — full-wall times and life tokens from the platform ledger, the
+solo operators being the acceptance operators (errand-rust: its two
+agents summed); the brim rows are the wave-1 cell captures; the
+machine hands are the validation wave's cell captures (the full wall,
+restarts included).
+
+| task | path | hand s | op s | Σ s | hand tok | op tok | Σ tok |
+|---|---|---|---|---|---|---|---|
+| errand-rust | SOLO+OP | 1056 | 318 | 1374 | 4,130,645 | 964,480 | 5,095,125 |
+| errand-rust | TOP+OP | 2585 | 20 | 2605 | 8,568,640 | 26,536 | 8,595,176 |
+| errand-rust | FLASH+OP | 1239 | 88 | 1327 | 1,714,546 | 101,728 | 1,816,274 |
+| quire-rust | SOLO+OP | 1502 | 392 | 1894 | 4,351,174 | 1,283,340 | 5,634,514 |
+| quire-rust | TOP+OP | 1199 | 0 | 1199 | 4,124,665 | 0 | 4,124,665 |
+| quire-rust | FLASH+OP | 1879 | 26 | 1905 | 1,991,581 | 53,304 | 2,044,885 |
+| pressmark-cpp | SOLO+OP | 1730 | 446 | 2176 | 13,382,104 | 1,747,647 | 15,129,751 |
+| pressmark-cpp | TOP+OP | 1327 | 0 | 1327 | 4,162,966 | 0 | 4,162,966 |
+| pressmark-cpp | FLASH+OP | 2289 | 20 | 2309 | 1,764,456 | 52,896 | 1,817,352 |
+| brim-cpp | SOLO+OP | 1174 | 352 | 1526 | 2,645,371 | 1,192,897 | 3,838,268 |
+| brim-cpp | TOP+OP | 1047 | 0 | 1047 | 3,534,844 | 0 | 3,534,844 |
+| brim-cpp | FLASH+OP | 1614 | 0 | 1614 | 2,693,469 | 0 | 2,693,469 |
+| conduit-go | SOLO+OP | 2894 | 851 | 3745 | 10,835,440 | 1,828,141 | 12,663,581 |
+| conduit-go | TOP+OP | 1231 | 23 | 1254 | 3,252,464 | 53,672 | 3,306,136 |
+| conduit-go | FLASH+OP | 1854 | 0 | 1854 | 2,777,242 | 0 | 2,777,242 |
+| pressmark-go | SOLO+OP | 1756 | 430 | 2186 | 9,618,938 | 1,411,906 | 11,030,844 |
+| pressmark-go | TOP+OP | 1242 | 0 | 1242 | 2,667,712 | 0 | 2,667,712 |
+| pressmark-go | FLASH+OP | 1698 | 29 | 1727 | 3,406,402 | 56,275 | 3,462,677 |
+| conduit-js | SOLO+OP | 1842 | 588 | 2430 | 5,988,886 | 1,026,589 | 7,015,475 |
+| conduit-js | TOP+OP | 1481 | 0 | 1481 | 2,619,710 | 0 | 2,619,710 |
+| conduit-js | FLASH+OP | 4287 | 48 | 4335 | 8,224,739 | 87,203 | 8,311,942 |
+| quire-js | SOLO+OP | 1028 | 449 | 1477 | 3,028,079 | 1,124,157 | 4,152,236 |
+| quire-js | TOP+OP | 956 | 0 | 956 | 2,439,113 | 0 | 2,439,113 |
+| quire-js | FLASH+OP | 1872 | 0 | 1872 | 2,765,424 | 0 | 2,765,424 |
+| errand-python | SOLO+OP | 533 | 937 | 1470 | 1,260,075 | 2,286,054 | 3,546,129 |
+| errand-python | TOP+OP | 702 | 0 | 702 | 2,310,564 | 0 | 2,310,564 |
+| errand-python | FLASH+OP | 1439 | 0 | 1439 | 2,192,105 | 0 | 2,192,105 |
+| brim-python | SOLO+OP | 729 | 273 | 1002 | 3,386,686 | 460,723 | 3,847,409 |
+| brim-python | TOP+OP | 669 | 0 | 669 | 1,261,701 | 0 | 1,261,701 |
+| brim-python | FLASH+OP | 1298 | 0 | 1298 | 995,519 | 0 | 995,519 |
+
+Reading: for solo the acceptance operator is a full role (273–937 s
+over the ten tasks, up to 2.3M tokens on errand-python and 1.8M on
+conduit-go), and the solo hand is the token-heaviest of the three
+paths (its mean life is 5.95M tokens against the top hand's 2.78M —
+without a machine that has already verified, the agent re-reads and
+re-probes its own product); on the wave's machine paths the operator
+barely works (0–88 s, fired in 7 cells of 20) — the machine took the
+verification over. On the full path the machine top beats solo on
+9 of the 10 tasks (the exception is errand-rust, the redis-integration
+outlier); zero op for a machine hand means no question batch fired.
+The hands' decision waits (23–216 s in the 7 cells) are not part of
+elapsed — they are counted separately in each cell's capture.
+
+### The operator column under a live human (the correction)
+
+In every wave of the replication the operator role was executed by an
+AI agent (GLM-5.3 Max / GLM-5.3 by the role tables of the wave
+journals); the operator seconds recorded above are an AI's wall, and
+for the human cost of the solo path they are a lower bound, for three
+reasons: the speed of analysis (the AI re-reads the whole cell context
+in seconds and fires its own probe runs between readings; a person
+reads at reading speed, re-runs by hand, and re-derives the state of
+the environment before each judgment); no setup, no fatigue, no
+context switch (the AI's wall contains only the verification itself);
+and the asynchrony of a live answer is unmeasured (the recorded
+decision waits are the machine's side of the pause, not the person's
+calendar time).
+
+The measured anchor: the solo acceptance operator's full wall is
+530 s (8.8 min) per task on average over the 20 non-brim wave-S tasks
+(range 258–937 s). The live-human anchor for the same class of work —
+the August finishing estimate, 4–7.5 hours of a live human per
+25-task batch — is ≈10–18 min per task, i.e. 1.2–2× the AI wall,
+before the asynchronous latency. Per 25-task batch of this class the
+solo path therefore needs a verifying human cycle at every task
+(≈4–8 hours by the human anchor, or ≈3.7 hours at the AI wall —
+whichever operator stands in), while the machine paths fired an
+operator in 7 of 40 wave-S cells and 7 of 20 validation-wave cells, at
+cents per cell — on the remaining cells the human leaves the loop
+entirely.
+
+Honesty marks: the 10–18 min and the derived ≈4–8 hours are an
+extrapolation from the documented estimate of the earlier series — a
+labeled estimate, not a measurement of these waves; the 530 s mean is
+the ledger recomputation; nothing else is extrapolated.

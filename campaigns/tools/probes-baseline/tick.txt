@@ -1,0 +1,898 @@
+### step 1: next Демон tick: tick <сек> — печатает строку tick каждую секунду в stdout, работает до сигнала завершения
+rc=0
+THE WORKING CONTRACT — AGENTS.md in full (the same file sits in the work root; read it now, work by it):
+<!-- punchtape: agent reference, machine-written -->
+
+# Working with punchtape
+
+punchtape owns the state (.punchtape/, survives restarts) and
+computes readiness. Three verbs:
+
+- next — the one current slot (situation, action, example, gates);
+  a fresh session starts with `next --full`.
+- submit <file|-> — submit the slot's YAML delta; an accepted submit
+  answers with the next slot after "NEXT SLOT:" — keep going
+  without calling next; a rejection is one line — fix and submit
+  again. Submit until the reply prints a VERDICT line; show it to
+  the human and stop. Uncertain about the form — submit --check
+  <file|-> runs the same validation with NO state change (a
+  rejection costs nothing; a schema error caught here never
+  reached the loop).
+- why <topic|ID> — price, stage, latency, coverage, spec (the spec
+  registry of this instance; `spec <words>` searches features,
+  scenarios and expected texts — all words must meet), or an entity
+  BY ITS ID: `why REQ-<n>`, `why SCN-<n>` (a kind word before the
+  id — requirement, scenario, decision… — is stripped and changes
+  nothing; `why` is the verb, there is no `card` verb).
+
+Exit codes (the stop contract): 0 ok; 1 rejected; 2 failure; 3 choice
+required — an open question batch rides the reply: relay it verbatim
+to the human or proceed (silence applies the recommended defaults);
+4 escalation — an open conflict question needs an explicit human
+choice, silence does not resolve it; the loop holds until the answer.
+
+## The check table (the spec you write)
+
+    kind: checks
+    submission-key: checks-001
+    rows:
+      - seeds:              # state files before the run
+          - notes.json []
+        materials:          # project files copied into the run
+          - sample.bin      # byte-for-byte, same path (binary inputs)
+        run:                # one command per element, two forms:
+          - notes add A     # a string "cmd args" (spaces split,
+          - [notes, add, B] # quotes group) or an argv list (no
+                            # splitting: commas/quotes ride as-is);
+          - notes list      # arbitrary argv — surface entries, tools,
+                            # shell; all but last exit 0 (build state);
+                            # the last is asserted
+        out: "1 A"          # exact stdout of the last command;
+                            # "(contains) X" — substring, not bytes
+                            # (unpredictable bytes around the pinned
+                            # fragment: harness timings, random ids)
+        rc: 0               # its exit code (0 when omitted)
+        state:              # "<path> <json>" structural; "<path> text
+          - notes.json {...} # <bytes>" exact; "<path> absent"; escapes
+                            # \n \t \r \\ \xNN in seeds and bytes
+        volatile: [stdout]  # bytes the wish itself declares
+                            # unpredictable (random ids, timestamps):
+                            # stream names or state-file paths — the
+                            # machine checks behavior, not those bytes
+
+Same seeds+materials+run replaces that row — submit in parts, resubmit.
+An optional `key:` on a row is its stable repair identity: while the
+row has never gone green, a resubmission with the same key replaces
+it even with different seeds and run (a broken row's repair must not
+orphan the broken original — keep the key while you iterate); once
+the row is proven green, the key's changes go through the
+change-request hold like any other.
+A real submission enters the canon and moves the stage — to try a
+form first, run `submit --try <file>` with a ONE-row checks delta:
+the same runner in a clean dir (twice, determinism checked), the
+answer is the outcome; nothing is recorded, the stage does not move.
+Build state by calling the tool; every command family needs a row
+(uncovered ones are named); boundary rows welcome. A gap the human
+accepts rides "kind: waive" (rule, target, reason): the rule stops
+blocking, the verdict keeps showing it with the reason.
+
+Expectation values (out/err/stdin/assertion values) take \xNN byte
+escapes only: a literal backslash is \x5C, and lone \n, \t or any
+loose backslash is rejected at input — write real control characters
+(YAML double quotes or a block scalar decode them).
+
+The YAML subset (what decodes reliably): plain mappings and lists;
+in a flow list [a, b] the comma separates ELEMENTS (for run — whole
+commands): `run: [tool, src, out]` is THREE one-word commands, not
+one command with two arguments — one command with arguments is ONE
+element (`tool src out` or the argv form [tool, src, out]); an
+argument containing a comma goes as a quoted string or in the argv
+form;
+in a flow MAP {k: v, ...} the comma separates ENTRIES: a value with
+a comma or ": " inside goes in double quotes —
+`{id: a, scope: "one line, per note"}` — a torn value is repaired
+once by the machine, quoting is the reliable form; seeds are the
+ROW's own list (under seeds:), never elements of run — a run
+element is one command, a seed under run is not a seed;
+block scalars (|, >) for long texts — the only home of multiline
+values; double/single quotes for values with `,` or `:` in them.
+Outside the subset (not promised to decode): anchors (&/*) —
+inline the values; block scalars
+inside flow maps ({... |}) — quote the text or use block form; a
+real newline inside a one-line quoted scalar breaks it — long
+texts go as block scalars. A bare null/~ decodes to nothing —
+quote it when the literal word is the value.
+
+Every normal check runs twice in clean run directories and the two
+runs must match byte-for-byte: full streams AND the full file set
+of the run dir (not only the seeded files). Bytes the wish itself
+declares unpredictable ride "volatile"; a build tool writing its
+working directory into the run dir belongs outside it (the surface
+decides), or declared volatile.
+Run-dir determinism recipes (ephemeral bytes — random identifiers,
+timestamps): normalize inside the row when the bytes carry no
+meaning; declare the file volatile (on the row, before its first
+run) when the wish itself says the exact bytes are unpredictable.
+Declaring volatile on a row whose check has already run (after code
+started) is an assertion like any expectation change: the machine
+holds it for a human (kind: amend).
+
+## Commands, seeds, materials — the machine is agnostic
+
+The machine knows nothing about your product or environment: it
+runs commands and reads bytes. Every run line is plain argv;
+command[0] resolves in this order:
+1. a file already in the run directory (seed, material, or the
+   output of an earlier command of this row);
+2. a surface entry: with a recipe (kind: conventions) the declared
+   artifact — regular files only, symlinks are not transferred —
+   materialized at its declared path, and command[0] spells the
+   entry by that path (`bin/tool`, not `tool`; `out: "."` puts
+   the project files at the run-dir root; files OUTSIDE the
+   artifact do not reach the run dir — put runnable inputs inside
+   the artifact); without a recipe, a project file at the
+   command[0] path (the file you submitted) is the entry directly;
+3. otherwise the name goes to the environment as-is (PATH: sh,
+   sleep — anything your environment provides).
+Inside a shell (`sh -c ...`) the run directory is the working
+directory but not on PATH — call run-dir files as `./name`; the
+right to execute is the file's own (copies of surface entries are
+made executable; seeds and outputs keep what they got).
+Each command runs in its own process group; whatever it leaves
+running is killed when the row ends, before observations.
+
+Long-running helpers, waits, orchestration: yours, in the row
+itself —
+    run:
+      - sh -c 'helper ... & helper2 ... & sleep 0.3; caller ...; kill %1 %2'
+Every command of the row runs under its own timeout; the machine
+observes only stdout/stderr/exit-code/files.
+
+A check-table row declares its own ceiling with `timeout-sec: <n>`
+when its shape needs more than the delivery default (10 s,
+limits.yaml check.timeout-default-s) — long-running helpers must
+still finish and exit inside the row.
+
+Seeds are plain one-line strings `<path> <content>` (one file per
+line) — escapes \n \t \r \\ \xNN decode in seed and text-bytes
+contents, in check-table seed lines AND in scenario seed maps
+({path: …, content: …}) alike — one decoder, one rule: BYTE LITERALS
+GO IN SINGLE-QUOTED YAML ('\x00\x01\xFF…'); double quotes decode \xNN
+into unicode runes at the YAML level and the bytes are wrong before
+the machine sees them. A seed already in the canon may ride by
+reference instead of bytes: check-table line `<path> @<digest>` or
+scenario map {path: …, digest: …} — the machine substitutes the
+bytes (digests come from the FILES WRITTEN block / prior
+transactions); resolved bytes give the same row identity as the
+full text, so later rows reference the same seed without
+retransmitting it. update-scenario replaces exactly the fields you
+name; unnamed fields stay — clear an unwanted `pre` with `pre: []`. materials are project-root-relative file
+paths (`materials/sample.bin`, not `sample.bin`), copied into the run
+byte-for-byte under the same path (binary inputs never travel
+through your hands).
+
+## Assertions and the surface call
+
+Observation vocabulary (assertion full form):
+
+- stdout | stderr: conditions contains, equals, absent (the stream
+  is empty), json-equals, json-contains.
+- exit-code: conditions equals, fails (a non-zero exit; no value).
+- file (path required): conditions exists, not-exists, contains,
+  equals, absent (the file does not exist), json-equals,
+  json-contains, bytes-equals.
+
+EOL tolerance, one rule: text comparisons on FILES (file contains,
+file equals) normalize CRLF→LF on both sides before comparing
+(cross-OS stability); EVERYTHING ELSE is byte-strict — streams
+(stdout/stderr), and file bytes-equals (the compact
+`state: <path> text <bytes>` compiles to it). Pick the channel
+knowing its semantics: a CRLF-vs-LF divergence is green through
+file equals, red through bytes-equals and through any stream pin.
+
+Byte literals go in SINGLE-quoted YAML — this includes
+expectations (out:, err:, the state text tail, assertion values)
+and seeds: a double-quoted "\xE4" is decoded by the YAML layer
+into UTF-8 text (two bytes), not the one byte you meant, and the
+machine refuses it at intake; single-quoted '\xE4' reaches the
+value's own literal layer and pins exactly one raw byte.
+
+Compact assertion lines in scenarios: out:, err:, rc:, fails:,
+state-is: <file> <json> (= file json-equals).
+
+The action (`when`): a quoted command string `"<name> <args...>"`
+(surface cli, timeout 10 s) or the full mapping — surface: cli;
+command: [<argv>]; stdin: <text or null>; timeout-sec: <n>; volatile:
+[stream names or state-file paths]. Scenario setup lives BESIDE
+`when`, at the scenario level: seed (files with content), materials
+(project files, one `{from: <path>}` per entry) and pre (argv
+commands, each must exit 0); check-table rows have no pre — their
+setup is the earlier run commands.
+
+## Delta kinds
+
+kind: intent — the wish in one paragraph; lint — goal findings as
+questions for the human (outside the intake stage only
+dimension: conflict findings are accepted — a contradiction may
+open at any moment, including after a verdict); clarify — answers
+to a lint batch (ids from the batch); checks — the check table
+(the main authoring path); spec — composition operations:
+add-requirement, add-scenario, update-requirement, update-scenario,
+update-assertions, remove-requirement, remove-scenario. A
+requirement is one user-facing feature of the wish: the per-family
+drafts the table starts from are placeholders — re-cut and name
+them in living words BEFORE the first code submission
+(update-requirement
+formulation; update-scenario re-binds a row to another
+requirement, keeping its proven expectations); once code is
+delivered, a formulation change is a held change request, not a
+free edit — re-cut early, not at the verdict.
+update-assertions edits individual observations of one scenario
+without retranscribing the whole then block (submission volume is
+proportional to the number of edits, not the block size): each op is
+exactly one of match+set, match+drop, match+capture, add; match must
+equal exactly one current observation (ops apply in order, each sees
+the result of the previous), add appends to the end. Bytes come from
+the machine, not from typing: `why fragment SCN-N` prints the
+observations as data — copy match blocks verbatim from it; for a
+deliberate behavior change deliver the code first, let the check go
+red, then match+capture — the machine runs the product and sets the
+measured value (exact conditions only: equals, bytes-equals for
+files), the change waits for a human assertion. update-requirement
+may carry a
+"detail" block — the four behavior classes of the boundary, each
+named by scenarios or an honest refusal:
+    detail:
+      invariants:    {scenarios: [SCN-1]}
+      edge-cases:    {scenarios: [SCN-2, SCN-3]}
+      failure-matrix: {absent: "no failure matrix beyond the rows"}
+      concurrency:   {absent: "one-shot CLI run, no parallelism"}
+feature — the per-feature prose of the human spec (entries: a
+list of {requirement, text} — ALL feature texts ride ONE submission,
+the whole human spec in a single round trip; text: living words — what it does, how it is
+called, what the user sees, boundaries and errors, implementation
+details; machine facts only as references; a fresh text drops the
+previous ratification — ratify: true records the operator's
+approval of the current text). The final verdict requires every
+delivered feature to carry its prose: the human spec is part of
+done, not a decoration (an honest gap is accepted by the human:
+kind: waive, rule feature.doc, target <REQ-id>, reason); assert — pin assertions to a
+scenario; split — cut the code stage
+into cards; code — deliver the files of a card; fix — repair files
+against a gate red; probe — formalize observed surface calls into a check;
+conventions — the environment recipe, a human surface (build with
+`out`, optional types and lint commands; placeholders {out} the
+artifact path, {name} command[0] — substituted the same way in
+build, types and lint commands); amend — a human asserting an open
+deferred edit; waive — a human accepting a completeness gap (rule,
+target, reason); decision, kb — instance knowledge bookkeeping.
+
+## One working example per kind
+
+Questions to the human and answers ride the checks delta (the
+clarification loop lives inside the table answer — no separate
+round trip); a code/fix delta may carry "answers:" too — the
+explicit-answer window stays open after the code starts (an
+explicit answer upgrades a silent default; already-explicit
+choices stand):
+
+    kind: checks
+    submission-key: checks-004
+    questions:                      # a NEW batch for the human
+      - id: Q1
+        dimension: ambiguous
+        finding: the wish names two output shapes for one command
+        question: which shape does `notes list` print?
+        options:
+          - {id: a, label: one line per note, scope: "one line, per stored note"}
+          - {id: b, label: json array, scope: one json array of notes, default: true}
+    answers:                        # answers to the OPEN batch
+      - {question: Q1, option: b}
+    rows:                           # rows optional with answers
+      - run:
+          - notes list
+        rc: 0
+
+    kind: intent
+    submission-key: intent-001
+    text: |
+      the wish in one paragraph, the human's own words
+
+    kind: lint                      # goal findings at intake; ONLY
+    submission-key: lint-001        # dimension: conflict is accepted
+    findings:                       # after intake (a contradiction
+      - id: Q1                      # may open at any moment)
+        dimension: conflict
+        finding: the wish demands X and forbids X
+        question: which side wins?
+        options:
+          - {id: a, label: X wins, scope: X is kept}
+          - {id: b, label: the forbidding side wins, scope: X is dropped, default: true}
+
+    kind: clarify
+    submission-key: clarify-001
+    answers: [{question: Q1, option: a}]
+
+    kind: spec
+    submission-key: spec-001
+    operations:
+      - add-requirement: {id: REQ-001, formulation: listing works}
+      - add-scenario:
+          id: SCN-001
+          requirement: REQ-001
+          summary: empty store lists nothing
+          seed:
+            - {path: store.json, content: "{}"}
+          materials:
+            - {from: sample.bin}
+          pre:
+            - [notes, add, first]
+          when: {surface: cli, command: [notes, list], timeout-sec: 10}
+          then:
+            - {observation: stdout, condition: equals, value: ""}
+            - {observation: exit-code, condition: equals, value: "0"}
+      - update-scenario: {id: SCN-001, summary: empty store lists zero lines}
+      - update-scenario: {id: SCN-001, requirement: REQ-002}   # rebind
+      - update-assertions:            # surgical edits of one scenario's then
+          scenario: SCN-001
+          ops:
+            - match: {out: "old exact line"}   # must equal exactly one
+              set:   {out: "new exact line"}   # observation (any form)
+            - match: {out: "old exact line"}   # machine measures the new
+              capture: true                    # value by running the delivered
+                                               # product; never type bytes by
+                                               # hand — deliver the change, let
+                                               # it go red, then capture
+            - match: {rc: 1}
+              drop: true
+            - add: {err: "new expected line"}
+      - update-requirement: {id: REQ-001, formulation: listing works, detail: ...}
+      - remove-scenario: {id: SCN-002}
+      - remove-requirement: {id: REQ-003}
+
+    kind: feature                 # the human spec of every feature,
+    submission-key: feature-001   # all texts in ONE submission
+    entries:
+      - requirement: REQ-001
+        text: |
+          What the feature does, in living words: how it is
+          called, what the user sees, boundaries and errors,
+          implementation details; machine facts only as references.
+      - requirement: REQ-002
+        text: |
+          ...
+
+    kind: assert
+    submission-key: assert-001
+    scenario: SCN-004               # pin assertions to a bare row
+    assertions:
+      - {observation: exit-code, condition: fails}
+
+    kind: split
+    submission-key: split-001
+    cards:
+      - {id: CRD-002, facet: storage, scenarios: [SCN-001], files: [store]}
+      - {id: CRD-003, facet: listing, scenarios: [SCN-002, SCN-003], files: [list]}
+    contracts:
+      - {id: IFC-001, version: 1.0.0, sides: [storage, listing], surface: [store]}
+
+    kind: code
+    submission-key: code-001
+    card: CRD-002
+    files:
+      - path: store
+        content: |
+          the file text (or digest: <sha256 of content already
+          in the canon> — exactly one of the two)
+    delete: [old-file]
+
+    # Mixed form: send CHANGED files in full text, UNCHANGED files
+    # as digest references — the digests come from the machine
+    # (the FILES WRITTEN block of the accepted submission's reply);
+    # never compute a digest yourself. A code/fix delta where every
+    # file arrives by digest and nothing differs from the project
+    # (no new byte) is a pure gate re-run: nothing is applied, no
+    # counters move, gates run synchronously — the honest way to
+    # re-verify after the environment or a recipe recovered.
+
+    kind: fix
+    submission-key: fix-001
+    card: CRD-002
+    reply-to: suite                 # the gate that reported red
+    files:
+      - {path: store, content: "the repaired text"}
+
+    kind: probe                     # on deliver: spec catches up
+    submission-key: probe-001       # with stabilized code
+    seed:
+      - {path: store.json, content: "{}"}
+    commands:
+      - [notes, add, first]
+
+    kind: conventions
+    submission-key: conv-001
+    build:
+      commands: [[tool, build, "{out}", "{name}"]]
+      # recipes are plain argv — NO shell: "$" chars are literal
+      # arguments; braces are placeholders ({out}, {name}); a
+      # runnable script needs no build — [[chmod, +x, "{out}"]]
+      # is a valid one-command recipe
+      out: notes                    # the artifact: file or tree
+    types:
+      commands: [[tool, check-types, "{out}"]]
+    lint:
+      commands: [[tool, check-style, "{out}"]]
+
+    kind: amend
+    submission-key: amend-001       # the human asserting the open
+    decision: approve               # deferred edit (or reject)
+
+    kind: waive
+    submission-key: waive-001
+    rule: coverage.family           # a completeness rule only
+    target: "notes export"          # the family being waived
+    reason: the export command is planned after this cycle
+
+    kind: decision
+    submission-key: decision-001
+    add-decision: {decision: store json, rationale: one format everywhere}
+    # or fix a record without duplicating it:
+    # update-decision: {id: DEC-001, rationale: the corrected text}
+    # add-out-of-scope: {what: batch import, why: planned after this cycle}
+    # remove-out-of-scope: {what: batch import}
+
+    kind: kb
+    submission-key: kb-001
+    add: {when: [build, red], do: rerun the recipe, source: DEC-001}
+    # or: update: {id: KB-<id>, do: the corrected action}
+    # or: remove: {id: KB-<id>}
+
+Seeds and materials live in check-table rows and in scenario
+operations (kind: spec, add-scenario/update-scenario: seed,
+materials, pre) — never anywhere under run (a run element is one
+command, a seed under run is not a seed). On deliver, checks deltas that REPLACE the
+expectations of rows that have proven green are change requests
+held for a human assertion; pure ADDITIONS of new rows stay free
+(proven greens are untouched; the cycle reopens and the new rows
+run with the same submission) — a mixed delta partitions by row:
+free rows apply, the replaced rows wait as the deferred part; the
+spec channel is the same: additions and repairs of rows that never
+proved anything are free, changes to proven rows or to requirement
+boundaries are change requests. An open deferred edit resolves only
+through kind: amend (approve | reject); while it is open, other
+substantive submissions are REFUSED with the edit's key and the
+resolve path (combine your rows into one delta and submit it after
+the decision) — conflict findings (kind: lint, dimension:
+conflict) are accepted at any moment. After exit code 3 read the
+full slot: punchtape next --full (the compact diff of a plain next
+may say "unchanged").
+
+Answers to question batches ride your checks delta as "answers:"
+[{question: Q1, option: b}]. A batch closed by silence (defaults)
+still accepts a late explicit answer: the recorded default is
+upgraded to your explicit choice (an already explicit choice stands
+— the reply names it, nothing is dropped silently). An amend
+approve of a held change does NOT close the sibling question batch:
+only caller submissions spend the silence budget, machine-internal
+replays do not speak for the human. A malformed delta is answered
+with the canonical skeleton of its kind — fix by the skeleton and
+resubmit.
+A delta file MAY end with a `# TOKENS <n>` trailer line — your
+caller counter for this submission; the machine books it as the
+call's price. No trailer and `# TOKENS n/a` are equivalent and
+silent: the price is honestly "no data", never zero. The
+submission-key is optional: an omitted key is derived from the
+delta content digest (auto-…), and resubmitting the SAME content
+under any key answers IDEMPOTENT REPLAY — nothing re-applies,
+cycles and attempt counters do not grow. The caller may declare
+itself by exporting the environment variable PT_SUBMITTER (for
+example PT_SUBMITTER=hand or PT_SUBMITTER=operator): the machine
+journals the value as reported (an unverified self-declaration —
+the file channel does not distinguish callers).
+
+## Delivering code
+
+The machine runs your product only through the check rows: the runner
+materializes the surface into a clean run dir — whatever the operator
+declared as the build artifact (kind: conventions, plain commands,
+`out` names the artifact: a file or a whole tree) or, without a
+recipe, the files you submit at the command[0] paths — and runs the
+row argv as-is (surface entries resolve inside the run dir, anything
+else goes to PATH). Teach the recipe once or submit the runnable
+surface files with your code; optional types/lint commands ride the
+same delta; without them the static gates are not applied.
+
+The machine checks ARE the test suite: write no private suite, do
+not re-run the whole suite — write code, the gates report the red.
+
+After the verdict: a changed wish = new rows (or a spec delta) in
+this same instance; a new task = a new instance.
+
+Changing the expectations of a row that has proven green (after code
+started) is not yours to apply: the machine holds such a submission
+as an open amendment and a human asserts it (kind: amend) — silence
+keeps the proven expectations. Adding new rows stays free. Rows that
+prove nothing repair freely — the machine re-runs and re-probes the
+replacement on the next run (a weak replacement stays red): a row
+reported by the coverage-probe gate as green on a broken surface,
+and a row that has never been green.
+
+Never edit inside .punchtape or write project files by hand —
+everything goes through submit. The knowledge renders live INSIDE
+the instance data (.punchtape): specs/ — the human spec, one file
+per feature (index.md is the registry; what the product does, in
+living words) plus SPEC.md, SUMMARY.md and CHANGELOG.md; all
+machine-written and regenerated on every verdict — read them, do
+not edit. The working root keeps exactly one machine file: this
+AGENTS.md. The instance has two zones with
+different write rules: the curated zone (.punchtape/passport/) —
+product knowledge the machine accumulates and shows through
+`why passport` / `why diary`; and the hidden service zone — state,
+the mutation journal, the ledger, locks and cache/snapshots under
+.punchtape/cache/ (rebuilt from the journal, safe to delete). Every
+data file carries a machine header naming its writer verbs; hand
+edits are detected and refused.
+
+ACCEPTED: transaction <tx>
+
+NEXT SLOT (the full current state after this submission — no separate next call is needed):
+STAGE: spec
+STATE: requirements 0, scenarios 0; intent: Демон tick: tick <сек> — печатает строку tick каждую секунду в stdout, работает …
+SURFACE CONTRACT: every command line of a row is plain argv `<command[0]> <args...>` — command[0] resolves in order: a file already in the run dir (seed, material, earlier command's output) → the surface — with a recipe the declared artifact entry at its declared path (spell "bin/tool", not "tool"; `out: "."` puts the project files at the run-dir root; files outside the artifact do not reach the run dir; regular files only), without a recipe the project file at the command[0] path (your submitted file) → otherwise the name goes to the environment as-is); beside the surface, the seeded state files and the materials nothing else is present; long-running helpers, waits and orchestration live inside the row itself (shell one-liners); whatever a command leaves running is killed when the row ends; spell the whole user-facing call, e.g. `notes add A`
+TABLE: one row = one check. seeds — one line "<path> <content>" per state file before the run; materials — one project file path per line, copied into the run byte-for-byte (binary inputs); run — the command sequence in order, one command per element (a string "cmd args" or an argv list — no splitting; [tool, src, out] is THREE commands: one command with arguments is one element "tool src out" or the argv form [tool, src, out]): every command but the last must exit 0 (build the state by calling the tool), the last one is the asserted behavior; out/err — its exact stdout/stderr (omit to not assert, empty string to assert emptiness); rc — its exit code, 0 when omitted; timeout-sec — the row's own ceiling for long-running shapes (default 10 s); state — assertions on state files: "<path> <json>", compared structurally (json-equals; compact JSON, no space after colons), "<path> text <bytes>" — exact bytes (the value tail is content: a trailing \n from quotes or a block scalar is expected bytes, never trimmed), "<path> absent" — the file does not exist (escapes \n \t \r \\ \xNN decode in bytes; seeds take the same escapes; expectation values out/err take \xNN only — a literal backslash is \x5C, lone \n \t are rejected); volatile — bytes the wish declares unpredictable (random identifiers, timestamps): stream names (stdout/stderr) or state-file paths the machine must not compare byte-for-byte between runs (file presence stays checked; declare it on the row before code starts — later changes are a human assertion). A row with the same seeds, materials and run replaces its own earlier expectations — submit rows in parts, resubmit to fix; a row with `key:` replaces its never-green earlier versions under that key even with different seeds and run (keep the key while you iterate; a key held by a proven row goes through the change-request hold).
+ACTION: submit a checks delta: one row per behavior — every command family of the wish needs at least one row (the coverage gate refuses uncovered families by name); ambiguities for the human ride the same delta as "questions:" and return in the reply; uncertain about the FORM — run submit --check first (the same validation, no state change, a rejection costs nothing); the machine compiles canon, checks, coverage, derivatives and tracing from the table itself; requirements here are per-family drafts — re-cut them into the wish's user-facing features in living words and give each its author's description (kind: feature) BEFORE the first code submission: once code is delivered, a formulation change is a held change request, not a free edit; the human spec is part of done
+EXAMPLE:
+cat > delta.yaml <<'YAML'
+kind: checks
+submission-key: checks-002
+rows:
+  - seeds:
+      - notes.json []
+    run:
+      - notes add A
+      - notes list
+    out: "1 A"
+    rc: 0
+  - run:
+      - notes add
+    rc: 1
+    err: "`notes add` requires one argument"
+    state:
+      - notes.json {"next_id":2,"notes":[{"id":1,"text":"A"}]}
+  - run:
+      - notes new
+    rc: 0
+    volatile: [stdout]
+YAML
+punchtape submit delta.yaml
+CONTEXT:
+First spec submission. Requirements 0, scenarios 0.
+GATES ON SUBMIT: trace
+
+### step 2: submit d1.yaml
+rc=0
+ACCEPTED: transaction <tx>; gates: suite=red coverage-probe=green trace=green
+
+NEXT SLOT (the full current state after this submission — no separate next call is needed):
+STAGE: implement
+STATE: card CRD-001 (facet: whole-product), active, scenarios in card 1, attempts 0
+IMPACT (last spec change): scenarios touched 1, checks regenerated 1 (kept 0, removed 0), affected-facet slot ~<num> tokens — re-verification bills fresh checks only
+SURFACE CONTRACT: row commands are plain argv — command[0] resolves in order: a file already in the run dir → the surface — with a recipe the artifact entry at its declared path (`bin/tool`, not `tool`; `out: "."` = project files at the run-dir root; files outside the artifact stay out), without a recipe the project file at the command[0] path → otherwise PATH as-is); recipe placeholders: {out} = the declared artifact path, {name} = the alphabetically first command[0] of the check rows (one name — never the whole set; chmod the literal artifact path, and {name} is not it), shell ${...} never expands — plain commands have no shell ([sh, -c, "..."] for shell); a red recipe names its substitutions; long-running helpers and orchestration live inside the row (shell one-liners), killed when the row ends; teach the recipe once or submit the runnable surface files with your code
+НУЖНЫ КОНВЕНЦИИ (tick): по этим путям запуска ничего нет и рецепт сборки не объявлен — форму поверхности выбираете вы, машина исполнит любое объявление:
+  a. обучить рецепт сборки один раз (kind: conventions; `out` называет артефакт — файл или каталог, любая форма) — ~164 токенов один раз, открывает статические гейты (types/lint) для всех последующих прогонов (рекомендуется)
+  b. подать исполняемые файлы поверхности по названным путям вместе с кодом — без рецепта, без статических гейтов
+cat > delta.yaml <<'YAML'
+kind: conventions
+submission-key: conv-004
+build:
+  out: <path>           # optional: the surface artifact — a file
+                        # or a directory; omitted → the file at
+                        # each command[0] path
+  commands:             # plain commands, no shell; {out} = the
+                        # artifact path; {name} = the alphabetically
+                        # first command[0] of the check rows — ONE
+                        # name, not every row name and not the
+                        # artifact (chmod the literal path instead)
+    - [<tool>, <args...>, "{out}"]
+YAML
+punchtape submit delta.yaml
+RED LIST (1):
+  TST-001 SCN-001: the command is not installed in the environment: tick 60; FIX: no code is delivered yet — this is not an environment problem: deliver the code (kind: code) or teach a recipe; the row runs against the delivered surface
+COMPOSITION FREEZE AHEAD: your FIRST CODE submission freezes the spec composition — the whole table must be in place before it; until that submission re-cut freely (table, requirements, features); after it only new rows (growth) and row replacement (repair) are accepted
+ACTION: submit a code delta for card CRD-001: regenerate the whole facet from its scenarios as the surface of the SURFACE CONTRACT (measured drift: red 1 of 1, attempts 0 of 3 — repair estimate exceeds regeneration)
+EXAMPLE:
+cat > delta.yaml <<'YAML'
+kind: code
+submission-key: impl-004
+card: CRD-001
+files:
+  - path: <source file of the product>
+    content: |-
+      <the full text of the file>
+  - path: <unchanged file — reference, no resend>
+    digest: <digest from the FILES WRITTEN block of the reply>
+YAML
+punchtape submit delta.yaml
+CONTEXT:
+---
+id: SCN-001
+requirement: REQ-001
+summary: tick 60 → rc 0
+when:
+    surface: cli
+    command:
+        - tick
+        - "60"
+    stdin: null
+    timeout-sec: 10
+then:
+    - observation: exit-code
+      condition: equals
+      value: "0"
+surface-names:
+    - tick
+GATES ON SUBMIT: suite, types, lint, trace
+
+### step 3: submit d2.json
+rc=0
+ACCEPTED: transaction <tx>; gates: types=green lint=green suite=red coverage-probe=green trace=green review-diff=red
+FILES WRITTEN (1) — path digest; a later code/fix may reference the digest instead of resending the file:
+  tick <sha256>
+
+NEXT SLOT (the full current state after this submission — no separate next call is needed):
+STAGE: unchanged since your last slot (digest <digest12>; full: punchtape next --full)
+STATE: card CRD-001 (facet: whole-product), red, scenarios in card 1, attempts 0
+IMPACT (last spec change): scenarios touched 1, checks regenerated 1 (kept 0, removed 0), affected-facet slot ~<num> tokens — re-verification bills fresh checks only
+SURFACE CONTRACT: row commands are plain argv — command[0] resolves in order: a file already in the run dir → the surface — with a recipe the artifact entry at its declared path (`bin/tool`, not `tool`; `out: "."` = project files at the run-dir root; files outside the artifact stay out), without a recipe the project file at the command[0] path → otherwise PATH as-is); recipe placeholders: {out} = the declared artifact path, {name} = the alphabetically first command[0] of the check rows (one name — never the whole set; chmod the literal artifact path, and {name} is not it), shell ${...} never expands — plain commands have no shell ([sh, -c, "..."] for shell); a red recipe names its substitutions; long-running helpers and orchestration live inside the row (shell one-liners), killed when the row ends; teach the recipe once or submit the runnable surface files with your code
+RED LIST (1):
+  TST-001 SCN-001: timed out after 10s: tick 60; FIX: the command must finish within its timeout — hang is a defect of the recipe or the product
+ACTION: submit a code delta for card CRD-001: regenerate the whole facet from its scenarios as the surface of the SURFACE CONTRACT (measured drift: red 1 of 1, attempts 0 of 3 — repair estimate exceeds regeneration)
+EXAMPLE: not repeated — this slot was served before in this instance; same delta format as the earlier visit, fresh submission-key: impl-006
+CONTEXT: unchanged since your last slot (digest <digest12>; full: punchtape next --full)
+GATES ON SUBMIT: unchanged since your last slot (digest <digest12>; full: punchtape next --full)
+
+### step 4: submit d3.yaml
+rc=0
+ACCEPTED: transaction <tx>; gates: suite=red coverage-probe=red trace=green
+
+NEXT SLOT (the full current state after this submission — no separate next call is needed):
+STAGE: unchanged since your last slot (digest <digest12>; full: punchtape next --full)
+STATE: card CRD-001 (facet: whole-product), red, scenarios in card 3, attempts 0
+IMPACT (last spec change): scenarios touched 3, checks regenerated 3 (kept 0, removed 0), affected-facet slot ~<num> tokens — re-verification bills fresh checks only
+SURFACE CONTRACT: unchanged since your last slot (digest <digest12>; full: punchtape next --full)
+RED LIST (1): unchanged since your last slot (digest <digest12>; full: punchtape next --full)
+ACTION: submit a fix delta for card CRD-001: close the red list (reply-to: suite)
+EXAMPLE:
+cat > delta.yaml <<'YAML'
+kind: fix
+submission-key: fix-008
+card: CRD-001
+reply-to: suite
+files:
+  - path: <file with the problem>
+    content: |-
+      <the full corrected text of the file>
+YAML
+punchtape submit delta.yaml
+CONTEXT:
+---
+id: SCN-001
+requirement: REQ-001
+summary: tick 60 → rc 0
+when:
+    surface: cli
+    command:
+        - tick
+        - "60"
+    stdin: null
+    timeout-sec: 10
+then:
+    - observation: exit-code
+      condition: equals
+      value: "0"
+surface-names:
+    - sh
+    - tick
+...fix-cycle slice: 1 of 3 card scenarios (the red list); full cards on demand: why SCN-<n>
+GATES ON SUBMIT: unchanged since your last slot (digest <digest12>; full: punchtape next --full)
+
+### step 5: submit rm1.yaml
+rc=1
+ERROR: REQ-001: no scenarios: a requirement without a scenario is not accepted (a requirement must carry an executable check).
+Format:
+kind: spec
+submission-key: <unique string>
+operations:             # add-requirement | add-scenario | update-requirement |
+                        # update-scenario | update-assertions | remove-requirement |
+                        # remove-scenario
+  - add-requirement:
+      id: REQ-<n>
+      formulation: <one atomic requirement>
+      dependencies: []
+  - add-scenario:
+      id: SCN-<n>
+      requirement: REQ-<n>
+      summary: <scenario name>
+      seed:                 # files with content before the run; by
+        - {path: <file>, content: <bytes>}   # bytes or by digest
+        - {path: <file>, digest: <64 hex from the canon>}
+      materials:              # project files copied byte-for-byte
+        - {from: <project-relative path>}
+      pre:                    # setup argv commands (each exits 0)
+        - [<command>, <args...>]
+      when:
+        surface: cli
+        command: [<surface>, <args...>]  # command[0] = invocation path
+        stdin: null       # or <text fed to stdin>
+        timeout-sec: 10
+      then:               # compact or full form; conditions: equals |
+        - out: <exact stdout>   # contains | json-equals | json-contains |
+        - err: <exact stderr>   # absent | fails; observations: stdout |
+        - rc: 0                 # stderr | exit-code | file (path: <file>)
+        - fails:                # non-zero exit, takes no value
+        - state-is: <file> <json>  # = file json-equals
+      # prose: <why this scenario is not executable — no steps at all>
+
+### step 6: submit rm2.yaml
+rc=3
+ACCEPTED: transaction <tx>; gates: types=green lint=green suite=red coverage-probe=red trace=green review-diff=red
+
+NEXT SLOT (the full current state after this submission — no separate next call is needed):
+STAGE: implement
+ТРЕБУЕТСЯ УТВЕРЖДЕНИЕ (1 отложенных правок — деструктивных или меняющих ожидания уже прогнанных проверок):
+  - REQ-001 (a placeholder: every row proved nothing) is removed with its scenarios SCN-001
+отложенная дельта целиком (подача «spec-rm2»): выполните punchtape why amend и передайте её человеку дословно до решения — слепое утверждение не утверждение
+варианты:
+  a) approve — применить отложенную правку: подача "kind: amend, decision: approve"
+  b) reject — снять, ничего не применяется: подача "kind: amend, decision: reject" (рекомендованный дефолт; молчание снимает)
+STATE: card CRD-001 (facet: whole-product), red, scenarios in card 3, attempts 0
+IMPACT (last spec change): scenarios touched 0, checks regenerated 0 (kept 3, removed 0), affected-facet slot ~<num> tokens — re-verification bills fresh checks only
+SURFACE CONTRACT: unchanged since your last slot (digest <digest12>; full: punchtape next --full)
+RED LIST (1): unchanged since your last slot (digest <digest12>; full: punchtape next --full)
+ACTION: submit a fix delta for card CRD-001: close the red list (reply-to: suite)
+EXAMPLE: not repeated — this slot was served before in this instance; same delta format as the earlier visit, fresh submission-key: fix-010
+CONTEXT: unchanged since your last slot (digest <digest12>; full: punchtape next --full)
+GATES ON SUBMIT: unchanged since your last slot (digest <digest12>; full: punchtape next --full)
+
+### step 7: submit rm5.yaml
+rc=0
+ACCEPTED: transaction <tx>
+
+NEXT SLOT (the full current state after this submission — no separate next call is needed):
+STAGE: implement
+STATE: card CRD-001 (facet: whole-product), red, scenarios in card 3, attempts 0
+IMPACT (last spec change): scenarios touched 0, checks regenerated 0 (kept 2, removed 1), affected-facet slot ~<num> tokens — re-verification bills fresh checks only
+SURFACE CONTRACT: row commands are plain argv — command[0] resolves in order: a file already in the run dir → the surface — with a recipe the artifact entry at its declared path (`bin/tool`, not `tool`; `out: "."` = project files at the run-dir root; files outside the artifact stay out), without a recipe the project file at the command[0] path → otherwise PATH as-is); recipe placeholders: {out} = the declared artifact path, {name} = the alphabetically first command[0] of the check rows (one name — never the whole set; chmod the literal artifact path, and {name} is not it), shell ${...} never expands — plain commands have no shell ([sh, -c, "..."] for shell); a red recipe names its substitutions; long-running helpers and orchestration live inside the row (shell one-liners), killed when the row ends; teach the recipe once or submit the runnable surface files with your code
+НУЖНЫ КОНВЕНЦИИ (sh): по этим путям запуска ничего нет и рецепт сборки не объявлен — форму поверхности выбираете вы, машина исполнит любое объявление:
+  a. обучить рецепт сборки один раз (kind: conventions; `out` называет артефакт — файл или каталог, любая форма) — ~164 токенов один раз, открывает статические гейты (types/lint) для всех последующих прогонов (рекомендуется)
+  b. подать исполняемые файлы поверхности по названным путям вместе с кодом — без рецепта, без статических гейтов
+cat > delta.yaml <<'YAML'
+kind: conventions
+submission-key: conv-011
+build:
+  out: <path>           # optional: the surface artifact — a file
+                        # or a directory; omitted → the file at
+                        # each command[0] path
+  commands:             # plain commands, no shell; {out} = the
+                        # artifact path; {name} = the alphabetically
+                        # first command[0] of the check rows — ONE
+                        # name, not every row name and not the
+                        # artifact (chmod the literal path instead)
+    - [<tool>, <args...>, "{out}"]
+YAML
+punchtape submit delta.yaml
+PROBE REDS (1): rows green on a broken surface — they do not exercise the path they declare:
+  TST-003 SCN-003: green on a broken surface — does not exercise the path; repair of this row is free (replace/update/remove, no amend)
+ACTION: behavior checks are green — repair the 1 probe-red row(s) in the check table: same seeds+materials+run, expectations the path really produces (out/err/state, not rc alone); the repair is free, no human assertion, the machine re-probes the replacement
+EXAMPLE:
+cat > delta.yaml <<'YAML'
+kind: checks
+submission-key: checks-011
+rows:
+  - seeds:
+      - notes.json []
+    run:
+      - notes add A
+      - notes list
+    out: "1 A"
+    rc: 0
+  - run:
+      - notes add
+    rc: 1
+    err: "`notes add` requires one argument"
+    state:
+      - notes.json {"next_id":2,"notes":[{"id":1,"text":"A"}]}
+  - run:
+      - notes new
+    rc: 0
+    volatile: [stdout]
+YAML
+punchtape submit delta.yaml
+CONTEXT:
+---
+id: ""
+requirement: ""
+when: null
+---
+id: SCN-002
+requirement: REQ-002
+summary: sh -c ./tick & p=$!; sleep 2; kill $p 2>/dev/null → rc 0
+when:
+    surface: cli
+    command:
+        - sh
+        - -c
+        - ./tick & p=$!; sleep 2; kill $p 2>/dev/null
+    stdin: null
+    timeout-sec: 10
+then:
+    - observation: exit-code
+      condition: equals
+      value: "0"
+surface-names:
+    - sh
+    - tick
+---
+id: SCN-003
+requirement: REQ-002
+summary: sh -c sleep 12 → rc 0
+when:
+    surface: cli
+    command:
+        - sh
+        - -c
+        - sleep 12
+    stdin: null
+    timeout-sec: 15
+then:
+    - observation: exit-code
+      condition: equals
+      value: "0"
+surface-names:
+    - sh
+    - tick
+GATES ON SUBMIT: unchanged since your last slot (digest <digest12>; full: punchtape next --full)
+
+### step 8: why REQ-002
+rc=0
+id: REQ-002
+status: accepted
+formulation: команда `sh` — поведение закреплено строками таблицы проверок
+
+### step 9: submit rm4.yaml
+rc=1
+ERROR: spec: on implement only add-scenario (growth, fresh checks billed) and update-scenario (repair of a pinned form) are allowed: the rest of the composition is frozen by started code (before the first accepted code submission the composition may be re-cut freely — the stage alone does not freeze it).
+Format:
+kind: spec
+submission-key: <unique string>
+operations:             # add-requirement | add-scenario | update-requirement |
+                        # update-scenario | update-assertions | remove-requirement |
+                        # remove-scenario
+  - add-requirement:
+      id: REQ-<n>
+      formulation: <one atomic requirement>
+      dependencies: []
+  - add-scenario:
+      id: SCN-<n>
+      requirement: REQ-<n>
+      summary: <scenario name>
+      seed:                 # files with content before the run; by
+        - {path: <file>, content: <bytes>}   # bytes or by digest
+        - {path: <file>, digest: <64 hex from the canon>}
+      materials:              # project files copied byte-for-byte
+        - {from: <project-relative path>}
+      pre:                    # setup argv commands (each exits 0)
+        - [<command>, <args...>]
+      when:
+        surface: cli
+        command: [<surface>, <args...>]  # command[0] = invocation path
+        stdin: null       # or <text fed to stdin>
+        timeout-sec: 10
+      then:               # compact or full form; conditions: equals |
+        - out: <exact stdout>   # contains | json-equals | json-contains |
+        - err: <exact stderr>   # absent | fails; observations: stdout |
+        - rc: 0                 # stderr | exit-code | file (path: <file>)
+        - fails:                # non-zero exit, takes no value
+        - state-is: <file> <json>  # = file json-equals
+      # prose: <why this scenario is not executable — no steps at all>
+

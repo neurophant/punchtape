@@ -53,7 +53,6 @@ Analogy: a pump bailing water out of a hold — the ship does not become
 "anti-water", it just stays afloat. → battery of order, guarantee paid
 for in watts, external transactional state machine. I
 
-
 **Artifact** — what results from building by the recipe: a file or a
 whole tree, which the machine moves into the clean run directory as
 is. → surface, conventions, build recipe. VI, VII
@@ -323,8 +322,8 @@ the name: external transactional state machine → external state
 machine → state machine → the machine. The inversion against
 state-machine libraries (LangGraph and kin): there the machine is a
 part INSIDE the agent's application and dies with its session. The
-chiasmus slogan: "Not: a state machine inside the agent's application.
-But: the agent as an application of the state machine." Analogy: a
+chiasmus slogan: "Not a state machine inside the agent's app — the
+agent's app inside the state machine." Analogy: a
 bank versus a wallet — the bank owns the account state and processes
 transactions, the wallet is only a carrier. → inversion of ownership,
 transaction, canon. I, II
@@ -461,7 +460,7 @@ L
 
 **Latency** — the response time of the machine's verbs (p95); an
 informational gate: the duration of honest check work is a property
-of the task, not a machine defect; a failure is sustained
+of the task, not a machine defect; a failure means sustained
 non-adjacent spikes.
 
 **Ledger** — the journal of the machine's meter facts: events, wall,
@@ -475,10 +474,8 @@ probe, contour. VII
 
 M
 
-**Machine changelog** — CHANGELOG.md, the instance render of "what
-changed and why": every delivery's effects in living words, written
-next to the product at the verdict freeze and regenerated on each
-new one. V
+**Machine changelog** — see Instance changelog (the same render,
+`.punchtape/CHANGELOG.md`).
 
 **Machine-write marker** — the first line of render and data files:
 "written by the machine, hand edits are rejected"; a file without
@@ -645,7 +642,7 @@ files, description statuses, scenarios; search via `why spec
 
 **SPEC.md / SUMMARY.md** — the machine's renders of the instance's
 knowledge in `.punchtape`: the whole canon spec, and a one-page
-verdict summary (Done/Checked/Remaining/Cost) in living words.
+verdict summary (Made/Checked/Remaining/Price) in living words.
 VII
 
 **Split** — dividing the product into facets of parallel work: cards
@@ -747,8 +744,8 @@ changelog. V
 **Volatility (volatile)** — an honest declaration of
 unpredictability: which observations of the brief are declared random
 (identifiers, times) — thread names or file paths; the machine checks
-behavior but does not reconcile these bytes between runs. The presence
-of the file is strictly always. Analogy: the order number on a receipt
+behavior but does not reconcile these bytes between runs. The file's
+presence is always checked. Analogy: the order number on a receipt
 changes, but the receipt always prints. → double run. VI
 
 W

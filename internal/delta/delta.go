@@ -176,19 +176,32 @@ type Intent struct {
 	Text          string `yaml:"text"`
 }
 
+// FeatureEntry — one requirement's prose inside a batched feature
+// delta. The fields mean exactly what they mean on the single-entry
+// form of the delta itself.
+type FeatureEntry struct {
+	Requirement string `yaml:"requirement"`
+	Text        string `yaml:"text,omitempty"`
+	Ratify      bool   `yaml:"ratify,omitempty"`
+}
+
 // Feature — the author's description of a feature for the human spec:
 // prose in the living words of the wish's language (what it does, how
 // it is invoked, what the user sees, boundaries and errors,
 // implementation details; machine facts — by reference only). The
 // requirement must exist; new text removes the previous ratification —
 // changed prose awaits the operator anew. Ratify — operator
-// ratification of the current text.
+// ratification of the current text. One submission carries the texts
+// of ALL features (entries:), the whole human spec in one round trip;
+// the single requirement+text form remains valid for one feature.
+// Exactly one of the two forms per submission.
 type Feature struct {
-	Kind          string `yaml:"kind"`
-	SubmissionKey string `yaml:"submission-key"`
-	Requirement   string `yaml:"requirement"`
-	Text          string `yaml:"text,omitempty"`
-	Ratify        bool   `yaml:"ratify,omitempty"`
+	Kind          string         `yaml:"kind"`
+	SubmissionKey string         `yaml:"submission-key"`
+	Requirement   string         `yaml:"requirement"`
+	Text          string         `yaml:"text,omitempty"`
+	Ratify        bool           `yaml:"ratify,omitempty"`
+	Entries       []FeatureEntry `yaml:"entries,omitempty"`
 }
 
 // Lint — goal-lint findings: achievable, unambiguous, non-conflicting.
@@ -447,6 +460,12 @@ type CheckRow struct {
 	Rc        *int     `yaml:"rc,omitempty"`
 	State     []string `yaml:"state,omitempty"`
 	Volatile  []string `yaml:"volatile,omitempty"`
+	// TimeoutSec — the row's own timeout ceiling (seconds); unset
+	// (nil or 0) means the delivery default (limits.yaml
+	// check.timeout-default-s). Long-running shapes declare it per
+	// row instead of inheriting a ceiling their task form cannot
+	// meet.
+	TimeoutSec *int `yaml:"timeout-sec,omitempty"`
 }
 
 // RunCommand — a run element in two equal forms: a "command args"

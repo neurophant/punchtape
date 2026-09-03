@@ -21,6 +21,7 @@ var (
 	lineErrRe    = regexp.MustCompile(`line (\d+)`)
 	indicatorRe  = regexp.MustCompile(`^[@` + "`" + `|%>&*!{}[\],#]`)
 	mapValueLine = regexp.MustCompile(`^(\s*-?\s*[\w.-]+:\s)(.+)$`)
+	blockOpenRe  = regexp.MustCompile(`:\s*[|>][+-]?[0-9]*\s*$`)
 )
 
 // editDistance — Levenshtein distance for short words.
@@ -159,9 +160,35 @@ func DiagnoseYAML(text string, decodeErr error) (string, bool) {
 		return canondata.T("format.diag.flow-comma", canondata.M{"line": m[1]}), true
 	}
 	if strings.Contains(msg, "did not find expected key") {
+		// A block scalar opened near the error line — the author
+		// already writes the block form; the quoted-scalar advice
+		// does not apply (a wrong hint costs more than none), the
+		// diagnosis stays silent and the raw rejection names the line.
+		if blockScalarNearby(lines, lineNo) {
+			return "", false
+		}
 		return canondata.T("format.diag.long-scalar"), true
 	}
 	return "", false
+}
+
+// blockScalarNearby — a mapping value line ending in a block scalar
+// indicator (|, >, with chomping/keep and indent digits) within a
+// small window above the error line. The window, not the exact
+// arithmetic: scanner-reported line numbers of block-scalar breaks
+// land on the blank or dedented line, which can sit one or two lines
+// past the indicator.
+func blockScalarNearby(lines []string, lineNo int) bool {
+	start := lineNo - 3
+	if start < 1 {
+		start = 1
+	}
+	for i := start; i <= lineNo && i <= len(lines); i++ {
+		if blockOpenRe.MatchString(lines[i-1]) {
+			return true
+		}
+	}
+	return false
 }
 
 // decodeConfusedClass — the characteristic decode-error classes of a

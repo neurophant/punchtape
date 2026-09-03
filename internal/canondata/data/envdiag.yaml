@@ -9,6 +9,7 @@
 - id: exec-not-found
   diagnosis: "the command is not installed in the environment: {command}"
   fix: "install the tool into the environment or fix the recipe path — recipes run without a shell"
+  fix-no-code: "no code is delivered yet — this is not an environment problem: deliver the code (kind: code) or teach a recipe; the row runs against the delivered surface"
 - id: exec-permission
   diagnosis: "no permission to execute: {command}"
   fix: "check the execute bit and ownership of the file the command points to"

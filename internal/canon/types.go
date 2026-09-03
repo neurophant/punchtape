@@ -147,7 +147,7 @@ func (w *When) UnmarshalYAML(node *yaml.Node) error {
 		if len(fields) == 0 {
 			return fmt.Errorf("%s", canondata.T("canonvalid.error.when-empty"))
 		}
-		*w = When{Surface: "cli", Command: fields, TimeoutSec: 10}
+		*w = When{Surface: "cli", Command: fields, TimeoutSec: canondata.Limit("check.timeout-default-s")}
 		return nil
 	}
 	known := map[string]bool{"surface": true, "command": true, "stdin": true, "timeout-sec": true, "volatile": true}
@@ -195,7 +195,7 @@ type When struct {
 // Assertion — an assertion-observation through the surface. The value
 // may be a number or a string (exit code 0, for example): the decode
 // coerces any scalar to a string; the json-* semantic conditions
-// additionally parse it as JSON during validation.
+// parse it as JSON during validation as well.
 type Assertion struct {
 	Observation string `yaml:"observation"`
 	Condition   string `yaml:"condition"`

@@ -23,6 +23,8 @@ import (
 	"github.com/neurophant/punchtape/internal/canon"
 	"github.com/neurophant/punchtape/internal/canondata"
 	"github.com/neurophant/punchtape/internal/yamlio"
+
+	"gopkg.in/yaml.v3"
 )
 
 // Result — the outcome of one check's run: green/red and one reason
@@ -65,8 +67,19 @@ const (
 // the declared artifact's relative path in the project (empty — the
 // direct submission mode).
 func Run(workdir, artifact string, check canon.Check, mode Mode) Result {
+	return runWithAdvice(workdir, artifact, check, mode, false)
+}
+
+// RunNoCode — Run with the env advice routed for a not-yet-delivered
+// product: at zero code "install the tool" misleads (there is nothing
+// to install against); the advice says deliver the code.
+func RunNoCode(workdir, artifact string, check canon.Check, mode Mode) Result {
+	return runWithAdvice(workdir, artifact, check, mode, true)
+}
+
+func runWithAdvice(workdir, artifact string, check canon.Check, mode Mode, noCode bool) Result {
 	if mode == ProbeBrokenSurface {
-		return runOnce(workdir, artifact, check, true).Result
+		return runOnce(workdir, artifact, check, true, noCode).Result
 	}
 	// Run lock: one instance's check executors are serialized (a
 	// background rehearsal and live gates run one suite — the resource
@@ -89,19 +102,30 @@ func Run(workdir, artifact string, check canon.Check, mode Mode) Result {
 		return failEnv(check.ID, canondata.T("check.fail.run-dir", canondata.M{"err": err.Error()}))
 	}
 	defer os.RemoveAll(tmp)
-	first := runInDir(tmp, workdir, artifact, check, false)
+	first := runInDir(tmp, workdir, artifact, check, false, noCode)
 	if !first.Green {
+		// The last captured red run is kept in the instance's rebuilt
+		// cache (run evidence): why fragment re-plays the measured
+		// bytes of each currently red assertion, so the hand reads
+		// what the product actually printed without a probe
+		// submission. The write is bounded (excerpt discipline) and
+		// safe to lose — the cache is not a source of truth.
+		if first.ev != nil {
+			_ = persistRunEvidence(workdir, check.ID, first.ev)
+		}
 		return first.Result
 	}
 	if err := cleanDir(tmp); err != nil {
 		return failEnv(check.ID, canondata.T("check.fail.run-dir", canondata.M{"err": err.Error()}))
 	}
-	second := runInDir(tmp, workdir, artifact, check, false)
+	second := runInDir(tmp, workdir, artifact, check, false, noCode)
 	if !second.Green {
 		return second.Result
 	}
-	if diff := observationDiff(first.obs, second.obs, volatileSet(check)); diff != "" {
-		return fail(check.ID, canondata.T("check.fail.not-transient", canondata.M{"diff": diff}))
+	if diff, obs := observationDiff(first.obs, second.obs, volatileSet(check)); diff != "" {
+		return fail(check.ID, canondata.T("check.fail.not-transient", canondata.M{
+			"diff": diff, "proposal": volatileProposal(obs),
+		}))
 	}
 	return Result{CheckID: check.ID, Green: true}
 }
@@ -154,38 +178,60 @@ type runOutcome struct {
 type runResult struct {
 	Result
 	obs runOutcome
+	// ev — the captured evidence of an assertion red: what the last
+	// run measured when it reddened (nil for green and environment
+	// reds).
+	ev *RunEvidence
+}
+
+// RunEvidence — the measured bytes of the last red run of a check:
+// the failing assertion with its measured actual, the invocation's
+// exit and both streams, all in the one-line excerpt discipline.
+// Kept per check id in the rebuilt cache zone; a lost file is an
+// honest "no captured run", never a wrong answer.
+type RunEvidence struct {
+	At       time.Time `yaml:"at"`
+	Scenario string    `yaml:"scenario"`
+	Command  string    `yaml:"command"`
+	Exit     int       `yaml:"exit"`
+	Stdout   string    `yaml:"stdout"`
+	Stderr   string    `yaml:"stderr"`
+	Assert   string    `yaml:"assert"`
+	Want     string    `yaml:"want"`
+	Actual   string    `yaml:"actual"`
+	Path     string    `yaml:"path,omitempty"`
 }
 
 // runOnce — one run of a check in its own clean directory: seed,
 // setup commands, action, assertions. broken=true replaces surface
 // entry points with stubs.
-func runOnce(workdir, artifact string, check canon.Check, broken bool) runResult {
+func runOnce(workdir, artifact string, check canon.Check, broken, noCode bool) runResult {
 	release, err := acquireRunLock(workdir)
 	if err != nil {
-		return runResult{failEnv(check.ID, canondata.T("check.fail.run-lock",
-			canondata.M{"err": err.Error()})), runOutcome{}}
+		return runResult{Result: failEnv(check.ID, canondata.T("check.fail.run-lock",
+			canondata.M{"err": err.Error()}))}
 	}
 	defer release()
 	tmp, err := os.MkdirTemp("", "check-*")
 	if err != nil {
-		return runResult{failEnv(check.ID, canondata.T("check.fail.run-dir",
-			canondata.M{"err": err.Error()})), runOutcome{}}
+		return runResult{Result: failEnv(check.ID, canondata.T("check.fail.run-dir",
+			canondata.M{"err": err.Error()}))}
 	}
 	defer os.RemoveAll(tmp)
-	return runInDir(tmp, workdir, artifact, check, broken)
+	return runInDir(tmp, workdir, artifact, check, broken, noCode)
 }
 
 // runInDir — one run of a check in the given run directory dir
 // (assumed clean): the shared path of the two transience probes
 // lives here.
-func runInDir(dir, workdir, artifact string, check canon.Check, broken bool) runResult {
+func runInDir(dir, workdir, artifact string, check canon.Check, broken, noCode bool) runResult {
 	if err := applySeed(dir, workdir, check.Seed, check.Materials); err != nil {
-		return runResult{failEnv(check.ID, err.Error()), runOutcome{}}
+		return runResult{Result: failEnv(check.ID, err.Error())}
 	}
 	if check.When == nil {
-		return runResult{failEnv(check.ID, canondata.T("check.fail.no-surface")), runOutcome{}}
+		return runResult{Result: failEnv(check.ID, canondata.T("check.fail.no-surface"))}
 	}
-	r := newResolver(workdir, artifact, dir, broken)
+	r := newResolver(workdir, artifact, dir, broken, noCode)
 	// Surface names named by the table are brought into the run before
 	// the commands: references to the product from inside argv (a
 	// shell) find the files; a name without a file in the project has
@@ -204,39 +250,112 @@ func runInDir(dir, workdir, artifact string, check canon.Check, broken bool) run
 	for _, pre := range check.Pre {
 		out, reason, startFail := r.invoke(pre, nil, check.When.TimeoutSec)
 		if reason != "" {
-			return runResult{failClass(check.ID, canondata.T("check.fail.setup", canondata.M{
+			return runResult{Result: failClass(check.ID, canondata.T("check.fail.setup", canondata.M{
 				"command": strings.Join(pre, " "), "reason": reason,
 				"argv": strings.Join(pre, "]["),
-			}), startFail), runOutcome{}}
+			}), startFail)}
 		}
 		if out.exit != 0 {
-			return runResult{fail(check.ID, canondata.T("check.fail.setup-exit", canondata.M{
+			return runResult{Result: fail(check.ID, canondata.T("check.fail.setup-exit", canondata.M{
 				"command": strings.Join(pre, " "), "exit": fmt.Sprintf("%d", out.exit),
 				"argv": strings.Join(pre, "]["),
-			})), runOutcome{}}
+			}))}
 		}
 	}
 
 	obs, reason, startFail := r.invoke(check.When.Command, check.When.Stdin, check.When.TimeoutSec)
 	if reason != "" {
-		return runResult{failClass(check.ID, reason, startFail), runOutcome{}}
+		return runResult{Result: failClass(check.ID, reason, startFail)}
 	}
 	r.killGroups()
 	for _, a := range check.Then {
-		if reason := assertObservation(dir, a, obs.stdout, obs.stderr, obs.exit); reason != "" {
+		reason, actual := assertObservation(dir, a, obs.stdout, obs.stderr, obs.exit)
+		if reason != "" {
+			// A terminator-shaped divergence (the pinned bytes vs the
+			// measured ones differ by EXACTLY one trailing newline)
+			// has a computable repair: the red reason carries the
+			// copy-ready update-assertions op with the MEASURED value
+			// — a PROPOSAL; the executor submits it, the red stays red
+			// until their own submission changes it.
+			if op, ok := terminatorProposal(check.Scenario, a, obs.stdout, obs.stderr); ok {
+				reason += canondata.T("check.assert.terminator-proposal", canondata.M{"op": op})
+			}
 			invocation := strings.Join(check.When.Command, " ")
-			return runResult{fail(check.ID, canondata.T("check.fail.observed", canondata.M{
+			ev := &RunEvidence{
+				At:       time.Now().UTC(),
+				Scenario: check.Scenario,
+				Command:  invocation,
+				Exit:     obs.exit,
+				Stdout:   excerpt(obs.stdout),
+				Stderr:   excerpt(obs.stderr),
+				Assert:   a.Observation + " " + a.Condition,
+				Want:     excerpt(a.Value),
+				Actual:   excerpt(actual),
+				Path:     a.Path,
+			}
+			return runResult{Result: fail(check.ID, canondata.T("check.fail.observed", canondata.M{
 				"reason": reason, "command": invocation, "exit": fmt.Sprintf("%d", obs.exit),
 				"stdout": excerpt(obs.stdout), "stderr": excerpt(obs.stderr),
-			})), runOutcome{}}
+			})), ev: ev}
 		}
 	}
 	files, serr := snapshotFiles(dir, r.materialized, volatileSet(check))
 	if serr != nil {
-		return runResult{failEnv(check.ID, serr.Error()), runOutcome{}}
+		return runResult{Result: failEnv(check.ID, serr.Error())}
 	}
 	obs.files = files
-	return runResult{Result{CheckID: check.ID, Green: true}, obs}
+	return runResult{Result: Result{CheckID: check.ID, Green: true}, obs: obs}
+}
+
+// terminatorProposal — the copy-ready repair op when the divergence
+// is terminator-shaped: want and measured differ by EXACTLY one
+// trailing newline on a pinned stream. Byte-shape predicate, zero
+// task knowledge; the value rides in single quotes with the
+// channel's own \xNN escapes (the expectation literal layer decodes
+// them; the YAML layer passes single-quoted bytes through).
+func terminatorProposal(scenario string, a canon.Assertion, stdout, stderr string) (string, bool) {
+	if a.Condition != "equals" || (a.Observation != "stdout" && a.Observation != "stderr") {
+		return "", false
+	}
+	actual := stdout
+	if a.Observation == "stderr" {
+		actual = stderr
+	}
+	if !(actual == a.Value+"\n" || a.Value == actual+"\n") {
+		return "", false
+	}
+	return fmt.Sprintf(
+		"update-assertions: {scenario: %s, ops: [{match: {observation: %s, condition: equals, value: %s}, set: {observation: %s, condition: equals, value: %s}}]}",
+		scenario, a.Observation, yamlSingleQuoted(a.Value), a.Observation, yamlSingleQuoted(actual)), true
+}
+
+// yamlSingleQuoted — the value in single quotes with the byte
+// escapes the expectation channel itself decodes (\xNN; a literal
+// backslash is \x5C); inner single quotes double.
+func yamlSingleQuoted(v string) string {
+	var b strings.Builder
+	b.WriteByte('\'')
+	for i := 0; i < len(v); i++ {
+		c := v[i]
+		switch {
+		case c == '\'':
+			b.WriteString("''")
+		case c == '\\':
+			b.WriteString("\\x5C")
+		case c == '\n':
+			b.WriteString("\\x0A")
+		case c == '\r':
+			b.WriteString("\\x0D")
+		case c == '\t':
+			b.WriteString("\\x09")
+		case c >= 0x20 && c < 0x7F:
+			b.WriteByte(c)
+		default:
+			fmt.Fprintf(&b, "\\x%02X", c)
+		}
+	}
+	b.WriteByte('\'')
+	return b.String()
 }
 
 // applySeed — seeding a row's bytes: inline content is written as
@@ -286,14 +405,16 @@ type resolver struct {
 	artifact     string
 	dir          string
 	broken       bool
+	noCode       bool
 	materialized map[string]bool
 	groups       []*exec.Cmd
 }
 
-func newResolver(workdir, artifact, dir string, broken bool) *resolver {
+func newResolver(workdir, artifact, dir string, broken, noCode bool) *resolver {
 	return &resolver{
 		workdir: workdir, artifact: artifact,
-		dir: dir, broken: broken, materialized: map[string]bool{},
+		dir: dir, broken: broken, noCode: noCode,
+		materialized: map[string]bool{},
 	}
 }
 
@@ -425,13 +546,13 @@ func (r *resolver) invoke(command []string, stdin *string, timeoutSec int) (runO
 	cmd.Stderr = &stderr
 	timeout := time.Duration(timeoutSec) * time.Second
 	if timeout <= 0 {
-		timeout = 10 * time.Second
+		timeout = time.Duration(canondata.Limit("check.timeout-default-s")) * time.Second
 	}
 	invocation := strings.Join(command, " ")
 	if err := cmd.Start(); err != nil {
 		r.groups = r.groups[:len(r.groups)-1]
 		if class := EnvClass(err); class != "" {
-			return runOutcome{}, canondata.EnvDiag(class, canondata.M{
+			return runOutcome{}, canondata.EnvDiagAt(class, r.noCode, canondata.M{
 				"command": invocation,
 			}), true
 		}
@@ -521,18 +642,26 @@ func firstStreamDiff(a, b string) string {
 // reconciliation skips them. File presence is always strict: the
 // file sets of the two runs must match — "sometimes writes, sometimes
 // not" is not cured by volatility.
-func observationDiff(a, b runOutcome, volatile map[string]bool) string {
+// volatileProposal — the copy-ready volatile line for the differing
+// observation: a PROPOSAL the executor submits (pre-first-green it
+// is free; post-code on proven rows it stages for a human
+// assertion). The machine never declares volatile by itself.
+func volatileProposal(obs string) string {
+	return fmt.Sprintf("volatile: [%s]", obs)
+}
+
+func observationDiff(a, b runOutcome, volatile map[string]bool) (string, string) {
 	switch {
 	case a.exit != b.exit:
 		return canondata.T("check.diff.exit", canondata.M{
-			"first": fmt.Sprintf("%d", a.exit), "second": fmt.Sprintf("%d", b.exit)})
+			"first": fmt.Sprintf("%d", a.exit), "second": fmt.Sprintf("%d", b.exit)}), "exit-code"
 	case !volatile["stdout"] && a.stdout != b.stdout:
-		return canondata.T("check.diff.stdout", canondata.M{"diff": firstStreamDiff(a.stdout, b.stdout)})
+		return canondata.T("check.diff.stdout", canondata.M{"diff": firstStreamDiff(a.stdout, b.stdout)}), "stdout"
 	case !volatile["stderr"] && a.stderr != b.stderr:
-		return canondata.T("check.diff.stderr", canondata.M{"diff": firstStreamDiff(a.stderr, b.stderr)})
+		return canondata.T("check.diff.stderr", canondata.M{"diff": firstStreamDiff(a.stderr, b.stderr)}), "stderr"
 	case len(a.files) != len(b.files):
 		return canondata.T("check.diff.files-count", canondata.M{
-			"first": fmt.Sprintf("%d", len(a.files)), "second": fmt.Sprintf("%d", len(b.files))})
+			"first": fmt.Sprintf("%d", len(a.files)), "second": fmt.Sprintf("%d", len(b.files))}), ""
 	}
 	paths := make([]string, 0, len(a.files))
 	for p := range a.files {
@@ -542,16 +671,16 @@ func observationDiff(a, b runOutcome, volatile map[string]bool) string {
 	for _, p := range paths {
 		other, ok := b.files[p]
 		if !ok {
-			return canondata.T("check.diff.file-one-run", canondata.M{"path": p})
+			return canondata.T("check.diff.file-one-run", canondata.M{"path": p}), ""
 		}
 		if volatile[p] {
 			continue
 		}
 		if string(yamlio.NormalizeEOL([]byte(a.files[p]))) != string(yamlio.NormalizeEOL([]byte(other))) {
-			return canondata.T("check.diff.file-differs", canondata.M{"path": p})
+			return canondata.T("check.diff.file-differs", canondata.M{"path": p}), p
 		}
 	}
-	return ""
+	return "", ""
 }
 
 // Captured — the observable facts of one command run: codes, streams
@@ -597,7 +726,7 @@ func CaptureSeq(workdir, artifact string, seed []canon.Seed, materials []canon.M
 	if err != nil {
 		return out, err
 	}
-	r := newResolver(workdir, artifact, tmp, false)
+	r := newResolver(workdir, artifact, tmp, false, false)
 	defer r.killGroups()
 	for _, setup := range pre {
 		if _, reason, _ := r.invoke(setup, nil, timeoutSec); reason != "" {
@@ -626,6 +755,42 @@ func CaptureSeq(workdir, artifact string, seed []canon.Seed, materials []canon.M
 		out.Files[path] = content
 	}
 	return out, nil
+}
+
+// runEvidencePath — the run evidence file of the instance: the
+// rebuilt cache zone (not a source of truth, safe to delete).
+func runEvidencePath(workdir string) string {
+	return filepath.Join(canon.Dir(workdir), "cache", "run-evidence.yamll")
+}
+
+// persistRunEvidence — merge one check's captured red run into the
+// evidence file: read-modify-write under the run lock (all runs
+// serialize on it), one entry per check id — the LAST red run.
+func persistRunEvidence(workdir, checkID string, ev *RunEvidence) error {
+	all := map[string]*RunEvidence{}
+	if raw, err := os.ReadFile(runEvidencePath(workdir)); err == nil {
+		_ = yaml.Unmarshal(raw, &all)
+	}
+	all[checkID] = ev
+	data, err := yaml.Marshal(all)
+	if err != nil {
+		return err
+	}
+	return yamlio.WriteAtomic(runEvidencePath(workdir), data)
+}
+
+// LoadRunEvidence — the captured red run of one check id (nil — none
+// captured: green checks and environment reds leave nothing).
+func LoadRunEvidence(workdir, checkID string) *RunEvidence {
+	all := map[string]*RunEvidence{}
+	raw, err := os.ReadFile(runEvidencePath(workdir))
+	if err != nil {
+		return nil
+	}
+	if err := yaml.Unmarshal(raw, &all); err != nil {
+		return nil
+	}
+	return all[checkID]
 }
 
 // snapshotFiles — a map relative path → content for the directory's
@@ -680,13 +845,25 @@ func snapshotFiles(dir string, materialized, volatile map[string]bool) (map[stri
 // output is cut. The red reason must stay one line.
 func excerpt(s string) string {
 	s = strings.TrimSpace(strings.ReplaceAll(s, "\n", "; "))
+	s = yamlio.EscapeControls(s)
 	if s == "" {
 		return "<empty>"
 	}
 	if len(s) > 160 {
-		s = s[:160] + "..."
+		return trimPartialEscape(s[:160]) + "..."
 	}
 	return `"` + s + `"`
+}
+
+// trimPartialEscape — a truncated window must not end inside a \xNN
+// escape: the stump of a cut sequence reads as garbage bytes. A
+// complete sequence (or no sequence) at the cut is left as is.
+func trimPartialEscape(s string) string {
+	i := strings.LastIndex(s, "\\x")
+	if i >= 0 && len(s)-i < 4 {
+		return s[:i]
+	}
+	return s
 }
 
 // copyTree copies a directory tree preserving relative paths and
@@ -737,11 +914,13 @@ func copyFileKeepMode(src, dst string) error {
 	return os.WriteFile(dst, data, info.Mode().Perm())
 }
 
-// assertObservation returns an empty string when the assertion
-// holds, otherwise one reason line with the fact. Text file
-// comparisons run on normalized copies (cross-OS; bytes-equals —
-// exact bytes per the declared contract.
-func assertObservation(tmp string, a canon.Assertion, stdout, stderr string, exitCode int) string {
+// assertObservation returns an empty reason when the assertion
+// holds, otherwise one reason line with the fact and the measured
+// value of the observation (empty for the existence-only classes —
+// there is nothing measured to show). Text file comparisons run on
+// normalized copies (cross-OS; bytes-equals — exact bytes per the
+// declared contract.
+func assertObservation(tmp string, a canon.Assertion, stdout, stderr string, exitCode int) (string, string) {
 	var actual string
 	normFile := func(v string) string {
 		if a.Observation != "file" {
@@ -760,29 +939,29 @@ func assertObservation(tmp string, a canon.Assertion, stdout, stderr string, exi
 		data, err := os.ReadFile(filepath.Join(tmp, filepath.FromSlash(a.Path)))
 		if err != nil {
 			if a.Condition == "not-exists" || a.Condition == "absent" {
-				return ""
+				return "", ""
 			}
 			if a.Condition == "exists" {
-				return canondata.T("check.assert.file-missing", canondata.M{"path": a.Path})
+				return canondata.T("check.assert.file-missing", canondata.M{"path": a.Path}), ""
 			}
-			return fmt.Sprintf("file %s: %s", a.Path, err)
+			return fmt.Sprintf("file %s: %s", a.Path, err), ""
 		}
 		if a.Condition == "exists" {
-			return ""
+			return "", ""
 		}
 		if a.Condition == "not-exists" || a.Condition == "absent" {
-			return canondata.T("check.assert.file-exists", canondata.M{"path": a.Path})
+			return canondata.T("check.assert.file-exists", canondata.M{"path": a.Path}), ""
 		}
 		actual = string(data)
 	default:
-		return canondata.T("check.assert.observation-unknown", canondata.M{"observation": a.Observation})
+		return canondata.T("check.assert.observation-unknown", canondata.M{"observation": a.Observation}), ""
 	}
 	switch a.Condition {
 	case "contains":
 		if !strings.Contains(normFile(actual), normFile(a.Value)) {
 			return canondata.T("check.assert.not-contains", canondata.M{
-				"observation": a.Observation, "value": fmt.Sprintf("%q", a.Value), "actual": brief(actual),
-			})
+				"observation": a.Observation, "value": fmt.Sprintf("%q", a.Value), "actual": measured(a.Observation, actual),
+			}), actual
 		}
 	case "absent":
 		// Streams: absent ≡ equals "" — the output must be empty.
@@ -790,50 +969,64 @@ func assertObservation(tmp string, a canon.Assertion, stdout, stderr string, exi
 		// absent does not reach here.
 		if strings.TrimSpace(actual) != "" {
 			return canondata.T("check.assert.not-empty", canondata.M{
-				"observation": a.Observation, "actual": brief(actual),
-			})
+				"observation": a.Observation, "actual": measured(a.Observation, actual),
+			}), actual
 		}
 	case "fails":
 		// exit-code: any non-zero code; no specific code is pinned.
 		if actual == "0" {
-			return canondata.T("check.assert.zero", canondata.M{"observation": a.Observation})
+			return canondata.T("check.assert.zero", canondata.M{"observation": a.Observation}), actual
 		}
 	case "equals":
-		wantEq, gotEq := strings.TrimSpace(normFile(a.Value)), strings.TrimSpace(normFile(actual))
+		// Byte-for-byte against the pin as stored: a stream's trailing
+		// terminator is part of the pinned bytes, not formatting to be
+		// forgiven. The pin rides verbatim from the table; a product
+		// differing by one byte is red. (contains is the lenient
+		// channel; json-equals the structural one.)
+		wantEq, gotEq := normFile(a.Value), normFile(actual)
 		if wantEq != gotEq {
 			return canondata.T("check.assert.not-equal", canondata.M{
-				"observation": a.Observation, "value": fmt.Sprintf("%q", a.Value), "actual": brief(actual),
+				"observation": a.Observation, "value": fmt.Sprintf("%q", a.Value), "actual": measured(a.Observation, actual),
 				"diff": divergenceLine(wantEq, gotEq),
-			})
+			}), actual
 		}
 	case "json-equals":
 		if reason := assertJSONEquals(a, actual); reason != "" {
-			return reason
+			return reason, actual
 		}
 	case "bytes-equals":
 		// The file's exact bytes: no trimming — trailing newlines and
 		// other byte invariants of textual states are checked as is.
 		if actual != a.Value {
 			return canondata.T("check.assert.bytes-differ", canondata.M{
-				"path": a.Path, "actual": brief(actual), "diff": divergenceLine(a.Value, actual),
-			})
+				"path": a.Path, "actual": measured(a.Observation, actual), "diff": divergenceLine(a.Value, actual),
+			}), actual
 		}
 	case "json-contains":
 		if reason := assertJSONContains(a, actual); reason != "" {
-			return reason
+			return reason, actual
 		}
 	case "exists", "not-exists":
 		// handled in the file branch
 	default:
-		return canondata.T("check.assert.condition-unknown", canondata.M{"condition": a.Condition})
+		return canondata.T("check.assert.condition-unknown", canondata.M{"condition": a.Condition}), ""
 	}
-	return ""
+	return "", ""
 }
 
 // assertJSONEquals — semantic equality: both sides are parsed as
 // JSON and compared structurally. Key order, whitespace and number
 // notation (1 vs 1.0) do not matter; array element order does: it is
 // part of the state, not the formatting.
+// measured — the raw measured bytes for an observation's red reason:
+// file observations carry the excerpt budget, streams their brief.
+func measured(observation, actual string) string {
+	if observation == "file" {
+		return excerpt(actual)
+	}
+	return brief(actual)
+}
+
 func assertJSONEquals(a canon.Assertion, actual string) string {
 	want, err := parseJSON(a.Value)
 	if err != nil {
@@ -844,7 +1037,7 @@ func assertJSONEquals(a canon.Assertion, actual string) string {
 	got, err := parseJSON(actual)
 	if err != nil {
 		return canondata.T("check.assert.json-invalid", canondata.M{
-			"observation": a.Observation, "err": err.Error(), "actual": brief(actual),
+			"observation": a.Observation, "err": err.Error(), "actual": measured(a.Observation, actual),
 		})
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -871,7 +1064,7 @@ func assertJSONContains(a canon.Assertion, actual string) string {
 	got, err := parseJSON(actual)
 	if err != nil {
 		return canondata.T("check.assert.json-invalid", canondata.M{
-			"observation": a.Observation, "err": err.Error(), "actual": brief(actual),
+			"observation": a.Observation, "err": err.Error(), "actual": measured(a.Observation, actual),
 		})
 	}
 	if !jsonContains(got, want) {
@@ -960,11 +1153,13 @@ func divergenceLine(want, got string) string {
 		len(want), len(got), at, window(want), window(got))
 }
 
-// brief squeezes a fact into a readable line for feedback.
+// brief squeezes a fact into a readable line for feedback. Escaped
+// the same way as every text surface: the line stays valid text over
+// any measured bytes.
 func brief(s string) string {
-	s = strings.TrimSpace(s)
+	s = yamlio.EscapeControls(strings.TrimSpace(s))
 	if len(s) > 80 {
-		return s[:80] + "…"
+		return trimPartialEscape(s[:80]) + "…"
 	}
 	if s == "" {
 		return "<empty>"
