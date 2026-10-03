@@ -389,7 +389,7 @@ REPLAY without re-application.
 
 ```mermaid
 flowchart TB
-    F[file | stdin] --> V[auto-repair + validation]
+    F["file | stdin"] --> V[auto-repair + validation]
     V -->|format error| R[refusal: one line + skeleton]
     V -->|duplicate by key/digest| RP[IDEMPOTENT REPLAY]
     V --> OK[apply: journal → effects → canon]
@@ -403,7 +403,7 @@ computable views of the canon and the ledger (see "why topics").
 
 ```mermaid
 flowchart LR
-    W[why topic | ID] --> M{topic or entity?}
+    W["why topic | ID"] --> M{topic or entity?}
     M -->|topic| V[computable view: canon/ledger/passport]
     M -->|ID| K[card: canonical marshal of the entity]
 ```
@@ -558,7 +558,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    R[recipe | command files] --> S[surface] --> D[surface digest]
+    R["recipe | command files"] --> S[surface] --> D[surface digest]
 ```
 
 **coverage (w-coverage)** — command families without an executable
@@ -645,7 +645,7 @@ rewrite the facet from scratch instead of patching.
 
 ```mermaid
 flowchart LR
-    D[deep red >50% | 2nd attempt] --> G[rewrite the facet whole]
+    D["deep red >50% | 2nd attempt"] --> G[rewrite the facet whole]
 ```
 
 **rerun (w-rerun)** — a slot concept: a submission whose content has
@@ -671,7 +671,7 @@ allowed.
 
 ```mermaid
 flowchart LR
-    I[why <ID>] --> C[canonical marshal of the whole entity]
+    I["why <ID>"] --> C[canonical marshal of the whole entity]
 ```
 
 ### Stages and verdict (10)
@@ -699,7 +699,7 @@ requirement without a scenario does not exist.
 ```mermaid
 flowchart LR
     T[checks table] -->|spec-complete| A[ac-compile]
-    Q[open question batch | draft-review] -.->|hold| T
+    Q["open question batch | draft-review"] -.->|hold| T
 ```
 
 **ac-compile (st-ac)** — compiling acceptance: not one skeleton
@@ -875,7 +875,7 @@ reference from FILES WRITTEN.
 
 ```mermaid
 flowchart LR
-    F[files: text | digest reference] --> D[kind: code]
+    F["files: text | digest reference"] --> D[kind: code]
     D --> W[write + FILES WRITTEN: path → digest]
 ```
 
@@ -919,7 +919,7 @@ rule stops blocking but stays visible in the verdict.
 
 ```mermaid
 flowchart LR
-    R[rule: coverage.family | feature.doc] --> D[kind: waive + reason]
+    R["rule: coverage.family | feature.doc"] --> D[kind: waive + reason]
     D --> V[visible in the verdict, not blocking]
 ```
 
@@ -928,7 +928,7 @@ decisions with justifications.
 
 ```mermaid
 flowchart LR
-    X[operator decision] --> D[kind: decision] --> L[DEC- | out-of-scope]
+    X[operator decision] --> D[kind: decision] --> L["DEC- | out-of-scope"]
 ```
 
 **kb (d-kb)** — knowledge "when X do Y" with a source and
@@ -982,7 +982,7 @@ match exactly one current observation.
 
 ```mermaid
 flowchart LR
-    M[match: exactly one observation] --> S[set | drop | capture | add]
+    M[match: exactly one observation] --> S["set | drop | capture | add"]
 ```
 
 **Idempotency** — the submission key or content digest; a repeat
@@ -1009,7 +1009,7 @@ principle: the full text of the changed file is the only form.
 
 ```mermaid
 flowchart LR
-    F[FILES WRITTEN: path → digest] --> N[next submission: text | digest]
+    F[FILES WRITTEN: path → digest] --> N["next submission: text | digest"]
     N -->|not one new byte| R[RERUN: gates synchronous, no application]
 ```
 
@@ -1042,7 +1042,7 @@ match exactly one current observation.
 
 ```mermaid
 flowchart LR
-    M[match: exactly one observation] --> S[set | drop | capture | add]
+    M[match: exactly one observation] --> S["set | drop | capture | add"]
 ```
 
 **detail block (sp-detail)** — a filled boundary block must be
@@ -1199,7 +1199,7 @@ undeclared recipe — not checked (no green deception).
 
 ```mermaid
 flowchart LR
-    R[types recipe] --> G[green | red with a reason]
+    R[types recipe] --> G["green | red with a reason"]
     N[no recipe] --> H[an honest 'not checked']
 ```
 
@@ -1209,7 +1209,7 @@ conventions era.
 
 ```mermaid
 flowchart LR
-    R[lint recipe] --> G[green | red with a reason]
+    R[lint recipe] --> G["green | red with a reason"]
     G -->|3 green in a row| T[retired until a new era]
 ```
 
@@ -1297,7 +1297,7 @@ reds are the environment) / code (everything else).
 flowchart LR
     K[quarantine] --> V[verdict reached]
     V --> Q[a question to the human: escalation]
-    K --> G[gap class: canon | environment | code]
+    K --> G["gap class: canon | environment | code"]
 ```
 
 ### Seeds and materials (1)
@@ -1500,7 +1500,7 @@ quarantine; only an explicit, live human choice.
 
 ```mermaid
 flowchart LR
-    C[open conflict | quarantine] --> E[code 4: a living choice]
+    C["open conflict | quarantine"] --> E[code 4: a living choice]
 ```
 
 **A batch closed by one answer (a-batch)** — the whole question pack
@@ -1633,7 +1633,7 @@ re-applying effects.
 
 ```mermaid
 flowchart LR
-    R[rehearsal | live gates] --> L[run-lock: one suite]
+    R["rehearsal | live gates"] --> L[run-lock: one suite]
     W[writer] --> M[marker + lastgood manifest]
     M -->|failure| A[completion by re-application]
 ```
@@ -1659,7 +1659,7 @@ shell. A red recipe names its substitutions in the diagnosis.
 flowchart LR
     R[recipe command] --> O["{out} → artifact path"]
     R --> N["{name} → alphabetically first command[0]"]
-    R --> S["${...} — not a placeholder, no shell]"
+    R --> S["${...} — not a placeholder, no shell"]
 ```
 
 **The intent router (e-router)** — everyday phrases to verbs; the
