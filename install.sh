@@ -12,9 +12,10 @@ fi
 REPO="$(cd "$(dirname "$0")" && pwd)"
 echo "building punchtape from $REPO ..."
 cd "$REPO"
-VER="$(git describe --tags --abbrev=0 2>/dev/null || echo v0.2.0)"
-VER="${VER#v}"
-go build -buildvcs=false -ldflags "-X github.com/neurophant/punchtape/internal/cli.Version=$VER" -o punchtape ./cmd/punchtape
+# The version rides the source (internal/cli/cli.go, the AGENTS §4
+# ritual); no -X override — a tag-derived stamp would disagree with
+# the canon the binary carries.
+go build -buildvcs=false -o punchtape ./cmd/punchtape
 
 DEST="${HOME}/.local/bin"
 mkdir -p "$DEST"
@@ -26,7 +27,8 @@ esac
 echo "installed: $DEST/punchtape"
 # a smoke test in a temporary directory: next opens an instance in
 # cwd — never run it from the repository root (a ghost instance)
-smoke="$(mktemp -d)"
+mkdir -p "$HOME/.experiments/tmp"
+smoke="$(mktemp -d "$HOME/.experiments/tmp/install-smoke.XXXXXX")"
 ( cd "$smoke" && "$DEST/punchtape" next >/dev/null 2>&1 ) || true
 rm -rf "$smoke"
 echo "done. Try: mkdir demo && cd demo && punchtape next"

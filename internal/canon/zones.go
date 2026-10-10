@@ -1,33 +1,24 @@
 // Instance zones: .punchtape has two zones with different write
-// rights — the curator zone (the product passport: conventions and
-// boundaries; future kb and diary kinds — the same zone) and the
-// hidden service zone (state, the mutation journal, the ledger,
-// locks, cache and snapshots), plus the canon zone — the spec IR,
-// the machine protocol of the current work. The model is the single
+// rights — the canon zone (the corpus: one collection, the atoms)
+// and the hidden service zone (state, the mutation journal, the
+// ledger, locks, cache and snapshots). The model is the single
 // structural source: the writer (the effect whitelist, the
 // reconciliation discipline, the integrity walk) asks it; separate
 // path lists do not live in the code (zero mirrors inside the
 // mechanics). Everything is written only by core verbs; the zone
-// rules distinguish write mechanics, not the executor's right — the
-// executor has no write right anywhere.
+// rules distinguish write mechanics, not the executor's right —
+// the executor has no write right anywhere.
 package canon
 
 import (
 	"strings"
-
-	"github.com/neurophant/punchtape/internal/canondata"
 )
 
 // Instance zone identifiers.
 const (
-	// ZoneCanon — the spec IR: requirements, scenarios, checks,
-	// cards, contracts, fixtures. Journaled+manifest: writer
-	// transactions, reconciliation at open.
+	// ZoneCanon — the corpus: the behavior atoms. Journaled+manifest:
+	// writer transactions, reconciliation at open.
 	ZoneCanon = "canon"
-	// ZonePassport — the curator zone: conventions/environment and the
-	// product's boundary registry; rendered to the human as why
-	// topics. Journaled+manifest.
-	ZonePassport = "passport"
 	// ZoneService — the hidden service zone: state, the mutation
 	// journal, the ledger, locks, cache and snapshots. state —
 	// journaled+manifest; the journal and ledger are append-only; the
@@ -57,19 +48,13 @@ type instanceZone struct {
 	Write  string
 }
 
-// zones — the zone registry. The passport is declared before the
-// service directories: parsing goes by first match, so the curator
-// zone is not covered by a foreign rule.
+// zones — the zone registry.
 var zones = []instanceZone{
 	{ID: ZoneCanon, Write: WriteJournaled, Prefix: []string{
-		"canon/requirements/", "canon/scenarios/", "canon/checks/",
-		"canon/cards/", "canon/contracts/",
-	}},
-	{ID: ZonePassport, Write: WriteJournaled, Prefix: []string{
-		"passport/",
+		"canon/atoms/",
 	}},
 	{ID: ZoneService, Write: WriteJournaled, Prefix: []string{
-		"state.yaml",
+		"state.yaml", "checkpoints/", "verdicts/",
 	}},
 	{ID: ZoneService, Write: WriteAppend, Prefix: []string{
 		"journal.yamll", "ledger.yamll",
@@ -106,43 +91,36 @@ func ZoneWriteRule(rel string) (string, bool) {
 	return "", false
 }
 
-// Collections — the canon collections from the zone model: the
-// single list (the read walk and reconciliation keep no mirror of
-// their own).
-func Collections() []string {
+// zoneDirs — a zone's directory prefixes (the trailing-slash form)
+// as paths; nil — no such zone in the model.
+func zoneDirs(id string) []string {
 	for _, z := range zones {
-		if z.ID != ZoneCanon {
-			continue
+		if z.ID == id {
+			out := make([]string, 0, len(z.Prefix))
+			for _, p := range z.Prefix {
+				out = append(out, strings.TrimSuffix(p, "/"))
+			}
+			return out
 		}
-		out := make([]string, 0, len(z.Prefix))
-		for _, p := range z.Prefix {
-			out = append(out, strings.TrimSuffix(p, "/"))
-		}
-		return out
 	}
 	return nil
 }
 
+// Collections — the canon collections from the zone model: the
+// single list (the read walk and reconciliation keep no mirror of
+// their own). Coupled consumers of this derivation: the writer's
+// reconciliation scan walks exactly these directories, and Init's
+// skeleton mkdir list (store.go) mirrors them by hand — a zone-model
+// edit that renames or adds a canon prefix must carry the skeleton
+// with it; TestZoneModel pins the derived list so the drift is
+// caught.
+func Collections() []string { return zoneDirs(ZoneCanon) }
+
 // JournaledPath — whether a path is written by writer transactions
-// under the manifest: the canon, passport and state. The journal and
-// ledger are written by the writer itself, bypassing effects
-// (append-only); the cache is rebuilt.
+// under the manifest: the canon and state. The journal and ledger
+// are written by the writer itself, bypassing effects (append-only);
+// the cache is rebuilt.
 func JournaledPath(rel string) bool {
 	rule, ok := ZoneWriteRule(rel)
 	return ok && rule == WriteJournaled
-}
-
-// MachineHeader — the manifest header of an instance data file: it
-// names the core verbs that write the file and the ban on manual
-// edits. The first line of the file and part of a transaction
-// effect's content — the journal and the manifest see the same text;
-// the "file = journal" invariant does not diverge.
-func MachineHeader(writers string) string {
-	return canondata.T("store.file-header", canondata.M{"writers": writers})
-}
-
-// CacheHeader — the header of a rebuilt cache: a service value, not
-// data; corruption and deletion are safe via recomputation.
-func CacheHeader() string {
-	return canondata.T("store.cache-header")
 }

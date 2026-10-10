@@ -1,0 +1,34 @@
+error.birth-no-phrase: |2-
+  ERROR: birth carries the task phrase: run next "<the task's words>" — an instance is born bound to its task, never free-floating.
+error.no-instance: |2-
+  ERROR: no instance: run next in the working directory first.
+error.no-verb: |2-
+  ERROR: {verb}: no such verb. Verbs: next, submit, report, spec.
+error.unknown-flag: |2-
+  unknown flag {flag} — the surface is: --quiet --delta --run-after --since --check
+error.since-no-value: |2-
+  unknown flag --since without its verdict: name it as --since vN.
+error.since-report-only: |2-
+  the --since flag rides report only: punchtape report [--since vN].
+error.check-no-value: |2-
+  unknown flag --check without its document: name it as --check <file>.
+error.check-spec-only: |2-
+  the --check flag rides the spec verb only: punchtape spec --check <file>.
+error.spec-surface: |2-
+  the spec verb takes exactly one flag — the dry validator: punchtape spec --check <file>.
+error.report-surface: |2-
+  report takes --since vN only — the slot surface modes ride next and submit.
+error.submit-no-file: |2-
+  ERROR: submit: name the door file path — .punchtape/inbox/current.txt.
+check.pass: |2-
+  PASS — the document passes the door's form validation; the door takes it as is (write these bytes into .punchtape/inbox/current.txt and submit).
+fail: |2-
+  FAIL: {err}.
+fail.reading: |2-
+  FAIL: reading {source}: {err}.
+fail.workdir: |2-
+  FAIL: working directory: {err}.
+next.contract-inject: |2-
+  THE WORKING CONTRACT — AGENTS.md in full (the same file sits in the work root; read it now, work by it):
+next.contract-ref: |2-
+  CONTRACT: AGENTS.md in your tree (unchanged; sha256 {sha})

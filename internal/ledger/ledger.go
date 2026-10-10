@@ -13,25 +13,25 @@ import (
 	"sort"
 	"time"
 
-	"gopkg.in/yaml.v3"
-
-	"github.com/neurophant/punchtape/internal/canon"
+	"github.com/neurophant/punchtape/internal/fsport"
 	"github.com/neurophant/punchtape/internal/yamlio"
 )
 
-// Entry — one journal record. Artifact and tokens are pointers not
-// for beauty: null means "not measured", which is also a fact and
-// must not disappear from the file.
+// Entry — one journal record. Artifact and reply bytes are
+// pointers not for beauty: null means "not measured", which is also a
+// fact and must not disappear from the file.
 type Entry struct {
-	Event    string            `yaml:"event"`
-	Stage    string            `yaml:"stage"`
-	Artifact *string           `yaml:"artifact"`
-	WallMs   int64             `yaml:"wall-ms"`
-	Calls    int64             `yaml:"calls"`
-	Tokens   *int64            `yaml:"tokens"`
-	Details  map[string]string `yaml:"details"`
-	At       time.Time         `yaml:"recorded-at"`
-	Start    time.Time         `yaml:"-"` // measurement start; Append computes the wall time from it
+	Event    string  `yaml:"event"`
+	Stage    string  `yaml:"stage"`
+	Artifact *string `yaml:"artifact"`
+	WallMs   int64   `yaml:"wall-ms"`
+	Calls    int64   `yaml:"calls"`
+	// ReplyBytes — the length of the machine's reply in bytes (the
+	// next/submit verbs); null — the event measures no reply.
+	ReplyBytes *int64            `yaml:"reply-bytes"`
+	Details    map[string]string `yaml:"details"`
+	At         time.Time         `yaml:"recorded-at"`
+	Start      time.Time         `yaml:"-"` // measurement start; Append computes the wall time from it
 }
 
 // NewEntry starts a record: fixes the time and starts the
@@ -64,7 +64,7 @@ func (l *Ledger) TornTail() *yamlio.TornTail { return l.torn }
 // quarantined by the next write.
 func Open(path string) (*Ledger, error) {
 	l := &Ledger{path: path}
-	data, err := os.ReadFile(path)
+	data, err := fsport.Bind.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return l, nil
@@ -95,18 +95,14 @@ func decodeFrame(fr []byte) (Entry, error) {
 		return Entry{}, errors.New("record cut mid-line")
 	}
 	var e Entry
-	dec := yaml.NewDecoder(bytes.NewReader(fr))
-	dec.KnownFields(true)
-	if err := dec.Decode(&e); err != nil {
+	if err := yamlio.DecodeDoc(fr, &e); err != nil {
 		return e, err
 	}
 	if e.Event == "" || e.At.IsZero() {
 		return e, errors.New("record missing its anchors")
 	}
-	remarshaled, err := yaml.Marshal(&e)
-	if err != nil {
-		return e, err
-	}
+	// Entry is plain scalar/slice/time data: marshal cannot fail
+	remarshaled, _ := yamlio.Marshal(&e)
 	if !bytes.Equal(remarshaled, fr) {
 		return e, errors.New("record does not round-trip byte-exact")
 	}
@@ -124,12 +120,10 @@ func (l *Ledger) Append(e Entry) error {
 	if e.WallMs == 0 && !e.Start.IsZero() {
 		e.WallMs = time.Since(e.Start).Milliseconds()
 	}
-	doc, err := yaml.Marshal(e)
-	if err != nil {
-		return fmt.Errorf("encode entry: %w", err)
-	}
+	// Entry is plain scalar/slice/time data: marshal cannot fail
+	doc, _ := yamlio.Marshal(e)
 
-	if err := os.MkdirAll(filepath.Dir(l.path), 0o755); err != nil {
+	if err := fsport.Bind.MkdirAll(filepath.Dir(l.path)); err != nil {
 		return fmt.Errorf("dir %s: %w", filepath.Dir(l.path), err)
 	}
 	// A torn tail heals on the write path (the writer holds the
@@ -141,22 +135,12 @@ func (l *Ledger) Append(e Entry) error {
 			return err
 		}
 	}
-	// The manifest header is the first line of a new file: the
-	// ledger is written by core verbs; it is not edited by hand.
-	head := []byte(nil)
-	if _, err := os.Stat(l.path); os.IsNotExist(err) {
-		head = []byte(canon.MachineHeader("next, submit, why") + "\n")
-	}
-	f, err := os.OpenFile(l.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return fmt.Errorf("open %s: %w", l.path, err)
-	}
-	defer f.Close()
-	if _, err := f.Write(append(append(head, []byte("---\n")...), doc...)); err != nil {
+	// A new file starts straight with the first frame separator:
+	// the ledger is written by core verbs and never edited by hand;
+	// YAML carries no comment header — machine authorship is a fact
+	// of the format contract, not a line in the file.
+	if err := fsport.Bind.AppendFile(l.path, append([]byte("---\n"), doc...)); err != nil {
 		return fmt.Errorf("write to %s: %w", l.path, err)
-	}
-	if err := f.Sync(); err != nil {
-		return fmt.Errorf("fsync %s: %w", l.path, err)
 	}
 
 	l.entries = append(l.entries, e)
@@ -168,7 +152,7 @@ func (l *Ledger) Append(e Entry) error {
 // never edit) is restored; the sidecar keeps the torn bytes as
 // evidence with the diagnosis.
 func (l *Ledger) repair() error {
-	data, err := os.ReadFile(l.path)
+	data, err := fsport.Bind.ReadFile(l.path)
 	if err != nil {
 		return fmt.Errorf("repair read %s: %w", l.path, err)
 	}
@@ -180,21 +164,10 @@ func (l *Ledger) repair() error {
 	off := yamlio.FrameOffset(preamble, frames, l.torn.Good)
 	torn := data[min(off, len(data)):]
 	q := l.path + ".torn"
-	qf, err := os.OpenFile(q, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return fmt.Errorf("quarantine %s: %w", q, err)
-	}
-	if _, err := fmt.Fprintf(qf, "# quarantined %s: %s\n", time.Now().UTC().Format(time.RFC3339), l.torn.Error()); err != nil {
-		qf.Close()
-		return fmt.Errorf("quarantine %s: %w", q, err)
-	}
-	if len(torn) > 0 {
-		if _, err := qf.Write(torn); err != nil {
-			qf.Close()
-			return fmt.Errorf("quarantine %s: %w", q, err)
-		}
-	}
-	if err := qf.Close(); err != nil {
+	var sidecar []byte
+	sidecar = fmt.Appendf(sidecar, "# quarantined %s: %s\n", time.Now().UTC().Format(time.RFC3339), l.torn.Error())
+	sidecar = append(sidecar, torn...)
+	if err := fsport.Bind.AppendFile(q, sidecar); err != nil {
 		return fmt.Errorf("quarantine %s: %w", q, err)
 	}
 	if err := yamlio.WriteAtomic(l.path, yamlio.Rebuild(preamble, good)); err != nil {
@@ -253,15 +226,4 @@ func (l *Ledger) P95WallMs(event string) int64 {
 	sort.Slice(xs, func(i, j int) bool { return xs[i] < xs[j] })
 	rank := (95*len(xs) + 99) / 100 // ceil(0.95·n), always ≥1 for n≥1
 	return xs[rank-1]
-}
-
-// TokensByStage — token sums by stage; null is not counted.
-func (l *Ledger) TokensByStage() map[string]int64 {
-	out := make(map[string]int64)
-	for _, e := range l.entries {
-		if e.Tokens != nil {
-			out[e.Stage] += *e.Tokens
-		}
-	}
-	return out
 }

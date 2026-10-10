@@ -8,11 +8,10 @@
 package engine
 
 import (
-	"os"
 	"path/filepath"
 
-	"github.com/neurophant/punchtape/internal/canon"
 	"github.com/neurophant/punchtape/internal/canondata"
+	"github.com/neurophant/punchtape/internal/fsport"
 	"github.com/neurophant/punchtape/internal/yamlio"
 )
 
@@ -24,7 +23,7 @@ type digestEntry struct {
 }
 
 // digestCacheFile — cache files: slash paths from the project root.
-// yaml.v3 Marshal sorts map keys — the file is deterministic.
+// The YAML writer sorts map keys — the file is deterministic.
 type digestCacheFile struct {
 	Files map[string]digestEntry `yaml:"files"`
 }
@@ -43,7 +42,7 @@ type digestCache struct {
 func (e *Engine) digestOf(rel string) (string, bool) {
 	c := e.theDigestCache()
 	abs := filepath.Join(e.Workdir, filepath.FromSlash(rel))
-	info, err := os.Stat(abs)
+	info, err := fsport.Bind.Stat(abs)
 	if err != nil {
 		delete(c.entries, rel)
 		c.dirty = true
@@ -52,7 +51,7 @@ func (e *Engine) digestOf(rel string) (string, bool) {
 	if en, ok := c.entries[rel]; ok && en.MTimeNs == info.ModTime().UnixNano() && en.Size == info.Size() {
 		return en.Digest, true
 	}
-	data, err := os.ReadFile(abs)
+	data, err := fsport.Bind.ReadFile(abs)
 	if err != nil {
 		return "", false
 	}
@@ -79,12 +78,9 @@ func (e *Engine) flushDigestCache() {
 		c.entries = map[string]digestEntry{}
 	}
 	cf := digestCacheFile{Files: c.entries}
-	data, err := yamlio.Marshal(cf)
-	if err != nil {
-		return
-	}
-	data = append([]byte(canon.CacheHeader()+"\n"), data...)
-	if err := yamlio.WriteAtomic(filepath.Join(e.Store.Root(), "cache", "file-digests.yamll"), data); err != nil {
+	// The cache file is plain data: marshal cannot fail
+	data, _ := yamlio.Marshal(cf)
+	if err := yamlio.WriteAtomic(filepath.Join(e.Store.Root(), "cache", "file-digests.yaml"), data); err != nil {
 		return
 	}
 	c.dirty = false
@@ -98,9 +94,9 @@ func (e *Engine) theDigestCache() *digestCache {
 		return e.digestCache
 	}
 	c := &digestCache{entries: map[string]digestEntry{}}
-	if data, err := os.ReadFile(filepath.Join(e.Store.Root(), "cache", "file-digests.yamll")); err == nil {
+	if data, err := fsport.Bind.ReadFile(filepath.Join(e.Store.Root(), "cache", "file-digests.yaml")); err == nil {
 		var cf digestCacheFile
-		if err := yamlio.DecodeStrict(data, &cf); err == nil && cf.Files != nil {
+		if err := yamlio.DecodeDoc(data, &cf); err == nil && cf.Files != nil {
 			c.entries = cf.Files
 		}
 	}

@@ -1,0 +1,45 @@
+# The report verb's canon texts: the operator's
+# table of observable behavior, rendered from the stored canon runs —
+# nothing re-runs. Machine protocol lines (base keys only).
+head: |2-
+  REPORT — the observed behavior of the case: stored runs only, nothing re-ran (run the suite for fresh measurements)
+head.door: |2-
+  REPORT — the observed behavior (door view): atom counters and the red rows in full; the full table of every row: punchtape report --full
+door.atom: |2-
+  {id} {name} — rows {rows}: green {green}, red {red}, never {never}
+door.red.header: |2-
+  red rows ({count}):
+door.green.counter: |2-
+  green rows: {count} (canon: report --full)
+head.state: |2-
+  stage: {stage}; verdict: {verdict}; acceptance: digest {digest} ({green} of {total} rows green)
+head.state.no-verdict: |2-
+  stage: {stage}; no verdict frozen yet
+head.no-rows: |2-
+  no behaviors yet — the case carries no rows
+rows.header: |2-
+  rows ({count}):
+row: |2-
+  {label} [{standing}] run: {run} | want: {want} | got: {got} | ran-at {at}
+got.fresh: |2-
+  rc {rc}, out {out}
+got.red: |2-
+  {reason}
+got.never: |2-
+  never ran
+since.head: |2-
+  REPORT since {verdict} — what moved after that frozen verdict (stored facts, nothing re-ran)
+since.changed: |2-
+  changed since {verdict} ({count}):
+since.new: |2-
+  new since {verdict} ({count}):
+since.measured: |2-
+  measured since {verdict} — the definition stands, the run moved ({count}):
+since.retired: |2-
+  retired since {verdict} ({count}):
+since.retired.line: |2-
+  {label} (was {outcome})
+since.none: |2-
+  nothing moved since {verdict}
+error.no-verdict: |2-
+  ERROR: no verdict {verdict} — the case carries verdict {latest}.

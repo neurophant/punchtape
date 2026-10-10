@@ -23,10 +23,7 @@ node_modules/
 # raw platform rollout logs and per-call snapshot artifacts: heavy
 # and redundant for proof — the committed ledger plus the platform
 # session DB are the provable metric source (owner's remote hygiene
-# rule; the history was cleaned of these classes once,
-# before the v0.2.0 tag; the raw-rollout.jsonl name joined the class
-# at the second pre-tag cleaning — it had slipped past the name list
-# of the first one)
+# rule; these artifact classes never enter commits)
 **/evidence/**/raw/
 **/evidence/**/raw-ops/
 **/evidence/**/raw-judge/
@@ -51,8 +48,10 @@ node_modules/
 **/evidence/**/task/solo-product/coverage-build/
 **/evidence/**/task/solo-product/build/
 
-# the owner's private working area (never enters commits)
-/private/
+# the owner's handoff area: dated working documents, never enters
+# commits (the owner's word: handoffs live in ./handoffs, dated;
+# outside git)
+/handoffs/
 
 # agent tool work areas (session-local, never enters commits)
 .kilo/
@@ -67,3 +66,11 @@ node_modules/
 # python bytecode (campaigns/tools)
 __pycache__/
 *.pyc
+
+# the python test environment: the venv itself never enters
+# commits; its pinned dependency closure lives in requirements-dev.txt
+/.venv/
+/.zcodeignore
+.pytest_cache/
+.coverage
+.coverage.*

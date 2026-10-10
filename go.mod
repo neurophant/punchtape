@@ -2,4 +2,4 @@ module github.com/neurophant/punchtape
 
 go 1.26.0
 
-require gopkg.in/yaml.v3 v3.0.1
+require github.com/goccy/go-yaml v1.19.2

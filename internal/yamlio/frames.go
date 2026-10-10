@@ -9,16 +9,17 @@ import (
 // append writes a "---" separator line at column zero before its
 // YAML document (the writer's invariant), so the stream splits into
 // document frames without parsing. Marshaled documents never carry a
-// column-zero "---" line of their own (block scalars are indented,
-// flow scalars are single-line) — the split is exact.
+// column-zero "---" line of their own (multi-line string values ride
+// double-quoted escapes — a newline never starts a line) — the split
+// is exact.
 
 // separator — one document frame's opening line.
 var separator = []byte("---\n")
 
 // SplitFrames splits a journal stream into its preamble (the lines
-// before the first separator: the machine header comment) and the
-// document frames, frame bytes without the separator line. A stream
-// with no separator line is all preamble (zero records).
+// before the first separator) and the document frames, frame bytes
+// without the separator line. A stream with no separator line is
+// all preamble (zero records).
 func SplitFrames(data []byte) (preamble []byte, frames [][]byte) {
 	var pre [][]byte
 	var cur []byte

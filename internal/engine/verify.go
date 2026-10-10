@@ -1,12 +1,15 @@
-// Verification factory: gates are executed by the machine's run
-// transaction after the agent's delta is applied. The agent knows
-// about gates only as a list in the slot; executing a gate by the
-// agent is forbidden.
+// Row execution: a run submission executes ALL rows of ALL behaviors
+// inside its own transaction — the build (when the spec declares
+// one) first, then the rows in the live work tree, the tree identity
+// control around them, the checkpoint and the outcomes in one
+// journal entry. The agent knows the outcome as a table in the
+// reply; executing a row by the agent itself is forbidden.
 package engine
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -16,1096 +19,461 @@ import (
 	"github.com/neurophant/punchtape/internal/canon"
 	"github.com/neurophant/punchtape/internal/canondata"
 	"github.com/neurophant/punchtape/internal/checks"
-	"github.com/neurophant/punchtape/internal/compiler"
-	"github.com/neurophant/punchtape/internal/journal"
+	"github.com/neurophant/punchtape/internal/execport"
+	"github.com/neurophant/punchtape/internal/fsport"
 	"github.com/neurophant/punchtape/internal/ledger"
 	"github.com/neurophant/punchtape/internal/yamlio"
 )
 
-// The repair attempts budget per card: exhausted — quarantine, there
-// are no eternal loops.
-
-// Ceremony rent: an advisory gate that has not changed outcomes for
-// at least three runs (all green) is retired — a ceremony pays rent
-// by its influence, not by habit. Stop-condition gates (suite, trace,
-// review-diff) are not retireable: they compute readiness.
-
-// rentEligible — gates participating in rent: advisory static checks
-// and the probe; their red outcome is caught further down the
-// pipeline (surface build, the red list), so retiring does not blind
-// the stop condition.
-var rentEligible = map[string]bool{
-	"types": true, "lint": true, "coverage-probe": true,
-}
-
-// retireGates retires gates that have not influenced outcomes: at
-// least gateRentRuns runs in the ledger, all green. Retiring is a
-// transaction: recorded in state and in the ledger.
-func (e *Engine) retireGates(b *builder) {
-	// Recipe rent window: types/lint evidence is valid only in the
-	// era of the current recipe — a conventions change (apply
-	// kind=conventions) opens a new window; green runs of the previous
-	// recipe prove no rent for the new one.
-	convEra := -1
-	entries := e.Ledger.All()
-	for i, en := range entries {
-		if en.Event == "apply" && en.Details["kind"] == "conventions" {
-			convEra = i
-		}
-	}
-	runs, reds := map[string]int{}, map[string]int{}
-	for i, en := range entries {
-		if en.Event != "gate" {
-			continue
-		}
-		name := en.Details["name"]
-		if name == "" {
-			continue
-		}
-		if convEra >= 0 && i < convEra && (name == "types" || name == "lint") {
-			continue
-		}
-		runs[name]++
-		if en.Details["outcome"] != "green" {
-			reds[name]++
-		}
-	}
-	retired := map[string]bool{}
-	for _, name := range b.state.RetiredGates {
-		retired[name] = true
-	}
-	for name := range rentEligible {
-		if retired[name] || runs[name] < canondata.Limit("gate.rent-runs") || reds[name] > 0 {
-			continue
-		}
-		retired[name] = true
-		b.state.RetiredGates = append(b.state.RetiredGates, name)
-		le := ledger.NewEntry("gate-retire", b.state.Stage)
-		le.Details = map[string]string{"name": name, "runs": fmt.Sprintf("%d", runs[name])}
-		_ = e.Ledger.Append(le)
-	}
-}
-
-// gateRetired — the gate is retired by rent in the instance state.
-func gateRetired(state canon.State, name string) bool {
-	for _, g := range state.RetiredGates {
-		if g == name {
-			return true
-		}
-	}
-	return false
-}
-
-// Delta kind names on the machine side.
-const (
-	deltaKindRun         = "run" // machine transaction that runs the gates
-	deltaKindCode        = "code"
-	deltaKindFix         = "fix"
-	deltaKindSpec        = "spec"
-	deltaKindChecks      = "checks"
-	deltaKindAssert      = "assert"
-	deltaKindProbe       = "probe"
-	deltaKindConventions = "conventions"
-	deltaKindAmend       = "amend"
-)
-
-// gateOutcome — one gate's outcome for the ledger.
-type gateOutcome struct {
-	name, reason string
-	green        bool
-}
-
-// gateTx — the machine run transaction.
-type gateTx struct {
-	parent string          // parent transaction (the submission that caused the runs)
-	gates  []gateOutcome   // gate outcomes
-	ran    map[string]bool // check ids this transaction actually ran
-}
-
-// ranMark — record a check id as run in this transaction (the scope
-// marker's witness: a red check NOT in the set is standing, not
-// this submission's verdict).
-func (g *gateTx) ranMark(id string) {
-	if g.ran == nil {
-		g.ran = map[string]bool{}
-	}
-	g.ran[id] = true
-}
-
-func (g *gateTx) outcome(name string, green bool, reason string) {
-	g.gates = append(g.gates, gateOutcome{name: name, green: green, reason: reason})
-}
-
-// compileChecks rebuilds the check set after a spec change: the
-// touched is regenerated, the untouched is not rewritten, the
-// orphaned is deleted. Fresh and changed checks are remembered for
-// the run — only the touched is re-checked, not the whole instance.
-func (b *builder) compileChecks() error {
-	scns := make([]canon.Scenario, 0, len(b.scns))
-	for _, id := range sortedIDs(b.scns) {
-		scns = append(scns, b.scns[id])
-	}
-	existing := make([]canon.Check, 0, len(b.checks))
-	for _, id := range sortedIDs(b.checks) {
-		existing = append(existing, b.checks[id])
-	}
-	plan, err := compiler.Sync(scns, existing)
-	if err != nil {
-		return rejection("spec", err.Error())
-	}
-	// Spec invariant: one run — one set of expectations. Two scenarios
-	// with the same seed and command sequence but different
-	// expectations are unexecutable by construction — caught before
-	// code.
-	if cols := runCollisions(b.scns); len(cols) > 0 {
-		return rejection("spec", canondata.T("submit.reject.run-collision", canondata.M{
-			"rows": strings.Join(cols, "; "),
-		}))
-	}
-	// Change estimate: touched scenarios and regenerated checks are
-	// counted here — before the recompile, not after.
-	touchedScns := 0
-	for _, id := range b.touched {
-		if _, ok := b.scns[id]; ok {
-			touchedScns++
-		}
-	}
-	b.state.Impact = &canon.Impact{
-		ScenariosTouched:  touchedScns,
-		ChecksRegenerated: len(plan.Put),
-		ChecksKept:        len(plan.Keep),
-		ChecksRemoved:     len(plan.Remove),
-	}
-	for _, c := range plan.Put {
-		if err := b.putCheck(c); err != nil {
-			return err
-		}
-		b.freshChecks = append(b.freshChecks, c.ID)
-	}
-	for _, id := range plan.Remove {
-		delete(b.checks, id)
-		b.effects = append(b.effects, journal.Effect{
-			Path: canonFile("checks", id), Delete: true,
+// runRows — the run transaction's execution stage: the pre-run tree
+// snapshot, the build, then every STALE row of every atom (in atom
+// id order, the atom's row order inside) — a row whose green stands
+// at unchanged inputs does not re-run (the content-addressed memo);
+// the post-run tree identity control, the checkpoint. Outcomes land
+// in the atom records of the same transaction. The reply table is
+// accumulated in b.runTable. A failing substrate is executed into
+// env reds — the run cannot fail.
+func (b *builder) runRows() {
+	e := b.e
+	// The run's snapshots carry THIS submission's build-ignore
+	// declaration (the builder's state, not the committed one): the
+	// ignore that arrives with the repair covers the repair's own
+	// tree identity control.
+	ckp, subErr := e.snapshotTreeIgnores(b.state.BuildIgnore)
+	b.lastCkp = ckp
+	notRun := ""
+	if subErr != nil {
+		notRun = subErr.Error()
+	} else if berr := e.runBuild(); berr != nil {
+		notRun = canondata.T("gates.not-run-cause-build", canondata.M{
+			"output": berr.Error(),
 		})
+		b.buildFailed = notRun
 	}
-	return nil
-}
-
-func (b *builder) putCheck(c canon.Check) error {
-	data, err := yamlio.Marshal(c)
-	if err != nil {
-		return fmt.Errorf("system failure: %w", err)
+	env := checks.RunEnv{
+		InputDir: inputDirOf(e.Workdir),
+		InboxDir: filepath.Join(e.Workdir, ".punchtape", "inbox"),
 	}
-	b.checks[c.ID] = c
-	b.effects = append(b.effects, journal.Effect{
-		Path: canonFile("checks", c.ID), Content: machineFile(data),
-	})
-	return nil
-}
-
-// runAfterSubmit decides which gates to run after a submission and
-// returns a one-line summary for the reply to the agent: the cycle's
-// outcome is visible from the reply itself, no separate next is
-// needed for the outcome. chargeReds is the set of behaviorally red
-// checks before a code/fix submission: only the code/fix gates may
-// charge budget attempts, the other paths get nil and do not touch
-// the counter.
-func (e *Engine) runAfterSubmit(kind, cardID, parentTx string, freshChecks []string, chargeReds map[string]bool) (string, error) {
-	switch kind {
-	case deltaKindCode, deltaKindFix:
-		return e.gatesForCode(cardID, parentTx, chargeReds)
-	case deltaKindConventions:
-		// The recipe arrived for finished code (requested over a red
-		// surface) — the gates of all cards restart at once:
-		// conventions without a run prove nothing, a card without its
-		// own run would keep a stale red "does not build", and at
-		// deliver all cards are green — re-proving them is the
-		// restoration of trust after invalidation.
-		if !e.codeStarted() {
-			return "", nil
-		}
-		cards, err := e.Store.Cards()
-		if err != nil {
-			return "", err
-		}
-		summary := ""
-		for _, c := range cards {
-			if c.Status == canon.CardQuarantine || !e.cardHasRunChecks(c) {
-				// a card without a single run — there has been no code yet:
-				// running its gates would paint "does not build" on work
-				// that has not started
+	var redLines []string
+	for _, id := range sortedIDs(b.atoms) {
+		atom := b.atoms[id]
+		for i := range atom.Rows {
+			label := canon.RowLabel(id, i+1)
+			// The memoization gate: a green result with an unchanged
+			// definition and unchanged input digests stands — the row
+			// does not re-run (a failed build cannot borrow it: only the
+			// rows that would run pay for the build). A row the patch's
+			// run section names executes WHATEVER its freshness: the
+			// explicit request is a measurement, not a repair.
+			if notRun == "" && !b.forceRun[label] && b.rowFresh(atom.Rows[i]) {
+				b.keptRows++
 				continue
 			}
-			one, err := e.gatesForCode(c.ID, parentTx, nil)
-			if err != nil {
-				return "", err
-			}
-			if summary == "" || one == summary {
-				summary = one
+			if notRun != "" {
+				// The run did not happen for this row: the "not run"
+				// mark is a run-level refusal (env), not behavior.
+				reason := canondata.T("gates.suite-not-run", canondata.M{
+					"cause": notRun,
+				})
+				atom.Rows[i].Outcome, atom.Rows[i].Reason = canon.RowRed, reason
+				atom.Rows[i].EnvFail = true
+				redLines = append(redLines, tableLine(label, reason))
+				b.ranRows++
 				continue
 			}
-			summary = summary + "; " + one
-		}
-		if summary != "" {
-			summary = canondata.T("gates.conventions-reproof") + "\n" + summary
-		}
-		return summary, nil
-	case deltaKindSpec, deltaKindChecks, deltaKindAssert, deltaKindAmend:
-		if len(freshChecks) == 0 {
-			// Sticky red: a red outcome lives in the canon until a
-			// live run; background rehearsal does not update the canon.
-			// A spec submission with no fresh lines while checks are
-			// red triggers a card replay — a fresh outcome, not a
-			// wasted code submission.
-			if cardID := e.cardWithRedChecks(); cardID != "" {
-				return e.gatesForCode(cardID, parentTx, nil)
+			b.ranRows++
+			// The row's own tree mode (tree: unchanged): the snapshot
+			// before its run, the comparison after it — a row-scoped
+			// identity the whole-run control cannot see (a
+			// write-then-delete pair inside one suite reconciles at the
+			// end, but not per row).
+			var modeCkp *Checkpoint
+			if atom.Rows[i].Tree == canon.TreeModeUnchanged {
+				if ckp2, serr := e.snapshotTreeIgnores(b.state.BuildIgnore); serr == nil {
+					modeCkp = ckp2
+				}
 			}
-			return "", nil
-		}
-		return e.gatesForFreshChecks(freshChecks, parentTx)
-	case deltaKindProbe:
-		// a probe is an observation, not gates: the machine has nothing
-		// to check, it has something to offer with the next slot
-		st, err := e.Store.State()
-		if err != nil {
-			return "", nil
-		}
-		det, failed := 0, 0
-		for _, p := range st.Probes {
-			switch {
-			case p.Failed:
-				failed++
-			case p.Deterministic:
-				det++
-			}
-		}
-		return canondata.T("gates.probed", canondata.M{
-			"kept":          strconv.Itoa(len(st.Probes)),
-			"deterministic": strconv.Itoa(det),
-			"not":           strconv.Itoa(len(st.Probes) - det - failed),
-			"failed":        strconv.Itoa(failed),
-		}), nil
-	default:
-		return "", nil
-	}
-}
-
-// runCheckOut — a check run in normal mode.
-func runCheckNormal(e *Engine, check canon.Check) checks.Result {
-	return e.runCheck(check, checks.Normal)
-}
-
-// gatesForCode — the full gate set after code/fix: types/lint by
-// conventions recipes, suite for the card through the surface,
-// coverage-probe, trace, review in both directions; quarantine on an
-// exhausted attempts budget. chargeReds — behaviorally red lines
-// before the submission (nil on all paths except code/fix): an
-// attempt is charged after the run and only to a surviving red.
-func (e *Engine) gatesForCode(cardID, parentTx string, chargeReds map[string]bool) (string, error) {
-	g := &gateTx{parent: parentTx}
-	b := newBuilder(e, mustState(e))
-	if err := b.load(); err != nil {
-		return "", err
-	}
-	card, ok := b.cards[cardID]
-	if !ok {
-		return "", nil
-	}
-
-	// Ceremony rent: retirement is computed before this transaction's
-	// run, retired gates are not run.
-	e.retireGates(b)
-
-	// types and lint are static gates by conventions recipes; building
-	// is their concern, suite answers only for runs through the
-	// surface. Red static reasons become card blockers: they are not
-	// visible in the red check list, the slot must carry them itself.
-	// The honest working time of recipes (build + static gates) is the
-	// same run work as for checks: counted in runs-ms, the latency
-	// line subtracts it from the submission wall (the budget counts
-	// overhead only).
-	gateStarted := time.Now()
-	static := e.staticGates(b, card)
-	e.lastSubmitRunsMs += time.Since(gateStarted).Milliseconds()
-	redLines := []string{}
-	blockers := []string{}
-	typesRed := false
-	for _, oc := range static {
-		if gateRetired(b.state, oc.Name) {
-			continue
-		}
-		g.outcome(oc.Name, oc.Green || !oc.Applied, oc.Reason)
-		if oc.Applied && !oc.Green {
-			line := fmt.Sprintf("%s: %s", oc.Name, oc.Reason)
-			redLines = append(redLines, line)
-			blockers = append(blockers, line)
-			if oc.Name == "types" {
-				typesRed = true
-			}
-		}
-	}
-
-	// Outcome freshness: running a surface that failed statics or the
-	// build is pointless — its outcomes are unreliable. Red types or
-	// a recipe failure leaves the card's checks "not run" (a run
-	// refusal, not behavior): old reds are not inherited, such a run
-	// eats no behavioral budget.
-	suiteReady := !typesRed
-	if suiteReady {
-		if err := e.buildSurfaces(b, card); err != nil {
-			line := canondata.T("gates.surface-build", canondata.M{"err": err.Error()})
-			redLines = append(redLines, line)
-			blockers = append(blockers, line)
-			suiteReady = false
-		}
-	}
-
-	// suite: run the card's checks through the surface. A finished
-	// background rehearsal report of the same digest replaces the run —
-	// the agent has already seen these outcomes in a previous
-	// submission's reply, there is no point repeating the race; the
-	// background work's wall time goes into the ledger by the machine.
-	allChecks := make([]canon.Check, 0, len(b.checks))
-	for _, id := range sortedIDs(b.checks) {
-		allChecks = append(allChecks, b.checks[id])
-	}
-	var replay *BgReport
-	if suiteReady {
-		if d, ok := surfaceDigest(e, allChecks); ok {
-			replay, _ = LoadBgReport(e.Workdir, d)
-		}
-	}
-	// A live run takes precedence over rehearsal: the stop marker —
-	// before the first acquisition of the run lock (the rehearsal
-	// finishes the current check and exits, waiting for its end is not
-	// required).
-	stopRehearsal(e.Workdir)
-	greenChecks := []canon.Check{}
-	suiteRed := []string{}
-	for _, scnID := range card.Scenarios {
-		check, ok := b.checks["TST-"+idNumSuffix(scnID)]
-		if !ok {
-			continue
-		}
-		if !suiteReady {
-			// The run did not happen: the "not run" mark is a run-level
-			// refusal (env), not behavior. Old reds are not inherited:
-			// this line's outcome is about this submission.
-			cause := canondata.T("gates.not-run-cause-types")
-			if !typesRed {
-				cause = canondata.T("gates.not-run-cause-build")
-			}
-			reason := canondata.T("gates.suite-not-run", canondata.M{"cause": cause})
-			check.Outcome, check.Reason = canon.CheckRed, reason
-			check.EnvFail = true
-			redLines = append(redLines, fmt.Sprintf("%s %s: %s", check.ID, check.Scenario, reason))
-			if err := b.putCheck(check); err != nil {
-				return "", err
-			}
-			continue
-		}
-		var res checks.Result
-		started := time.Now()
-		// replayed or live — either way THIS transaction ran the check
-		g.ranMark(check.ID)
-		if replay != nil {
-			green, reason, env, hit := replay.bgReplayOutcome(check)
-			if hit {
-				res = checks.Result{CheckID: check.ID, Green: green, Reason: reason, Env: env}
-			} else {
-				res = runCheckNormal(e, check)
-			}
-		} else {
-			res = runCheckNormal(e, check)
-		}
-		e.lastSubmitRunsMs += time.Since(started).Milliseconds()
-		if res.Green {
-			check.Outcome, check.Reason = canon.CheckGreen, ""
-			check.Proven = true
-			check.EnvFail = false
-			greenChecks = append(greenChecks, check)
-		} else {
-			check.Outcome, check.Reason = canon.CheckRed, res.Reason
-			check.EnvFail = res.Env
-			redLines = append(redLines, fmt.Sprintf("%s %s: %s", check.ID, check.Scenario, res.Reason))
-			if !res.Env {
-				suiteRed = append(suiteRed, fmt.Sprintf("%s %s: %s", check.ID, check.Scenario, res.Reason))
-			}
-		}
-		if err := b.putCheck(check); err != nil {
-			return "", err
-		}
-	}
-	// Counting after the run: an attempt is a barren repair cycle. The
-	// submission changed files (chargeReds is set only for code/fix)
-	// and the suite actually ran — the attempt grows only if a red
-	// line that lived before the submission stayed red and behavioral.
-	// It went green or was replaced by another line — progress: the
-	// counter resets; "three in a row" barren repairs is a truth about
-	// the code, not about the environment.
-	if chargeReds != nil && suiteReady {
-		survived := false
-		for _, scnID := range card.Scenarios {
-			check, ok := b.checks["TST-"+idNumSuffix(scnID)]
-			if ok && chargeReds[check.ID] && check.Outcome == canon.CheckRed && !check.EnvFail {
-				survived = true
-				break
-			}
-		}
-		if survived {
-			card.Attempts++
-		} else {
-			card.Attempts = 0
-		}
-	}
-	suiteGreen := len(redLines) == 0 && len(greenChecks) > 0
-	g.outcome("suite", suiteGreen, strings.Join(redLines, "; "))
-
-	// coverage-probe: a green check must go red on a broken surface,
-	// otherwise it does not run the declared path. A probe retired by
-	// rent is not run. The probe outcome is written into every check:
-	// a pin-red line proves nothing — repairing it (replacement,
-	// edit, deletion) is free, without human assertion.
-	probeRed := []string{}
-	if !gateRetired(b.state, "coverage-probe") {
-		for _, check := range greenChecks {
-			started := time.Now()
-			res := e.runCheck(check, checks.ProbeBrokenSurface)
-			e.lastSubmitRunsMs += time.Since(started).Milliseconds()
+			res := checks.Run(e.Workdir, label, atom.Rows[i], env)
 			if res.Green {
-				check.Pin = canon.PinRed
-				probeRed = append(probeRed, canondata.T("gates.probe-red", canondata.M{
-					"id": check.ID, "scn": check.Scenario,
-				}))
+				atom.Rows[i].Outcome, atom.Rows[i].Reason = canon.RowGreen, ""
+				atom.Rows[i].EnvFail = false
 			} else {
-				check.Pin = canon.PinGreen
+				atom.Rows[i].Outcome, atom.Rows[i].Reason = canon.RowRed, res.Reason
+				atom.Rows[i].EnvFail = res.Env
+				redLines = append(redLines, tableLine(label, res.Reason))
 			}
-			if err := b.putCheck(check); err != nil {
-				return "", err
+			if modeCkp != nil {
+				if paths, merr := e.treeMovedPathsIgnores(modeCkp, b.state.BuildIgnore); merr == nil && paths != "" {
+					reason := canondata.T("gates.tree-moved-row", canondata.M{"paths": paths})
+					atom.Rows[i].Outcome, atom.Rows[i].Reason = canon.RowRed, reason
+					atom.Rows[i].EnvFail = true
+					redLines = append(redLines, tableLine(label, reason))
+				}
 			}
+			b.recordMemo(&atom.Rows[i], ckp, res)
 		}
+		b.putAtom(atom)
 	}
-	g.outcome("coverage-probe", len(probeRed) == 0, strings.Join(probeRed, "; "))
-	redLines = append(redLines, probeRed...)
-	e.lastSubmitChecks = len(card.Scenarios) + len(greenChecks)
-
-	// trace: every executable scenario linked to a check.
-	scns := make([]canon.Scenario, 0, len(b.scns))
-	for _, id := range sortedIDs(b.scns) {
-		scns = append(scns, b.scns[id])
-	}
-	missing := missingLinksLocal(scns, b.checks)
-	g.outcome("trace", len(missing) == 0, canondata.T("gates.missing-links", canondata.M{
-		"links": strings.Join(missing, ", "),
-	}))
-
-	// review-diff: declared-but-not-done (reds) and
-	// done-but-not-declared (fictitious greenness — from the probe).
-	g.outcome("review-diff", len(redLines) == 0, strings.Join(redLines, "; "))
-
-	typesLintGreen := !typesRed
-	for _, oc := range static {
-		if oc.Applied && !oc.Green {
-			typesLintGreen = false
-		}
-	}
-	allGreen := suiteGreen && typesLintGreen && len(probeRed) == 0
-	card.Blockers = blockers
-	switch {
-	case allGreen:
-		card.Status = canon.CardGreen
-	case card.Attempts >= canondata.Limit("card.attempts-budget") && len(suiteRed) > 0:
-		// Quarantine — only on a red behavioral finale: the attempts
-		// budget guards behavioral repair cycles. Weak pins
-		// (coverage-probe), statics and build with an exhausted budget
-		// keep the card in progress — they are fixed by the spec
-		// (update-scenario, free) and clean code, not by new behavior.
-		card.Status = canon.CardQuarantine
-		card.Gap = e.gapClass(b, card)
-		ql := ledger.NewEntry("quarantine", b.state.Stage)
-		ql.Details = map[string]string{
-			"card": card.ID, "gap": card.Gap,
-			"attempts": fmt.Sprintf("%d", card.Attempts),
-		}
-		_ = e.Ledger.Append(ql)
-	default:
-		card.Status = canon.CardRed
-	}
-	if err := b.putCard(card); err != nil {
-		return "", err
-	}
-	// Convergence of parallel facets: at the moment the last card goes
-	// green, the machine runs the full suite of all cards — a
-	// neighbor's edit that broke someone else's behavior reddens the
-	// card owning the scenario. One card — nothing to converge, no
-	// ceremony.
-	summary := summarizeGates(g, b)
-	if replay != nil {
-		summary += "; " + replay.bgSummaryLine()
-		le := ledger.NewEntry("gate", mustState(e).Stage)
-		le.WallMs = replay.WallMs
-		green := true
-		for _, c := range replay.Checks {
-			if c.Outcome != canon.CheckGreen {
-				green = false
-				break
-			}
-		}
-		le.Details = map[string]string{
-			"name": "suite", "scope": "background", "outcome": boolGreen(green),
-			"checks": fmt.Sprintf("%d", len(replay.Checks)),
-		}
-		_ = e.Ledger.Append(le)
-	}
-	if allGreen && len(b.cards) > 1 {
-		if reds := e.convergenceRun(b, cardID); len(reds) > 0 {
-			summary += "; " + canondata.T("gates.convergence-red", canondata.M{
-				"reds": strings.Join(reds, "; "),
-			})
-		}
-	}
-	// Acceptance moment: all cards closed — the full check set is
-	// finalized on this instance state, the digest signs it.
-	e.acceptanceNote(b)
-	// Passport: machine trust transitions in the same transaction —
-	// the anchor is the run transaction's hash, the same one that
-	// goes into the journal.
-	gateTx := yamlio.Digest([]byte("gate:" + parentTx))
-	if err := b.passportProof(card, gateTx, allGreen); err != nil {
-		return "", err
-	}
-	if err := e.commitGates(b, g, parentTx); err != nil {
-		return "", err
-	}
-	return summary, nil
-}
-
-// convergenceRun — the full acceptance suite over all cards except the
-// freshly run one (its checks are just green on the current code). A
-// red check of another card returns it to work: the status honestly
-// goes red, the red list lands in its slot. The run is a machine
-// ledger fact with scope=convergence.
-func (e *Engine) convergenceRun(b *builder, skipCard string) []string {
-	var reds []string
-	ran := 0
-	for _, cardID := range sortedIDs(b.cards) {
-		if cardID == skipCard {
-			continue
-		}
-		card := b.cards[cardID]
-		for _, scnID := range card.Scenarios {
-			check, ok := b.checks["TST-"+idNumSuffix(scnID)]
-			if !ok || check.Outcome != canon.CheckGreen {
-				continue
-			}
-			ran++
-			started := time.Now()
-			res := e.runCheck(check, checks.Normal)
-			e.lastSubmitRunsMs += time.Since(started).Milliseconds()
-			if res.Green {
-				continue
-			}
-			check.Outcome, check.Reason = canon.CheckRed, res.Reason
-			check.EnvFail = res.Env
-			if err := b.putCheck(check); err != nil {
-				continue
-			}
-			reds = append(reds, fmt.Sprintf("%s %s: %s", check.ID, check.Scenario, res.Reason))
-		}
-	}
-	for _, cardID := range sortedIDs(b.cards) {
-		if cardID == skipCard {
-			continue
-		}
-		card := b.cards[cardID]
-		if card.Status != canon.CardGreen {
-			continue
-		}
-		for _, scnID := range card.Scenarios {
-			if c, ok := b.checks["TST-"+idNumSuffix(scnID)]; ok && c.Outcome == canon.CheckRed {
-				card.Status = canon.CardRed
-				_ = b.putCard(card)
-				break
-			}
-		}
-	}
-	e.lastSubmitChecks += ran
-	le := ledger.NewEntry("gate", mustState(e).Stage)
-	le.Details = map[string]string{
-		"name": "suite", "scope": "convergence", "outcome": boolGreen(len(reds) == 0),
-	}
-	if len(reds) > 0 {
-		le.Details["reason"] = firstLineStr(strings.Join(reds, "; "))
-	}
-	_ = e.Ledger.Append(le)
-	return reds
-}
-
-// summarizeGates — a one-line summary of the run transaction:
-// name=outcome in fixed order. This line is the gates' entire trace
-// in the agent's context; the details live in the ledger.
-func summarizeGates(g *gateTx, b *builder) string {
-	byName := map[string]gateOutcome{}
-	for _, o := range g.gates {
-		byName[o.name] = o
-	}
-	// The scope marker: the suite verdict names THIS transaction's
-	// runs; red checks the transaction never touched are standing
-	// reds, and the headline must not read as "all green" while they
-	// stand (the reply said suite=green next to an untouched
-	// red).
-	standing := 0
-	if b != nil {
-		for id, c := range b.checks {
-			if c.Outcome == canon.CheckRed && !g.ran[id] {
-				standing++
-			}
-		}
-	}
-	order := []string{"types", "lint", "suite", "coverage-probe", "trace", "review-diff"}
-	parts := make([]string, 0, len(order))
-	for _, name := range order {
-		o, ok := byName[name]
-		if !ok {
-			continue
-		}
-		verdict := "red"
-		if o.green {
-			verdict = "green"
-		}
-		if name == "suite" && standing > 0 {
-			verdict += canondata.T("submit.reply.gates-scope", canondata.M{
-				"count": fmt.Sprintf("%d", standing),
-			})
-		}
-		parts = append(parts, name+"="+verdict)
-	}
-	return strings.Join(parts, " ")
-}
-
-// gatesForFreshChecks — run only the fresh/changed checks after a
-// spec edit: re-checking is proportional to the edit, not to the
-// instance.
-func (e *Engine) gatesForFreshChecks(ids []string, parentTx string) (string, error) {
-	g := &gateTx{parent: parentTx}
-	b := newBuilder(e, mustState(e))
-	if err := b.load(); err != nil {
-		return "", err
-	}
-	// A live run takes precedence over rehearsal (see gatesForCode).
-	stopRehearsal(e.Workdir)
-	var reds []string
-	probeRed := []string{}
-	for _, id := range ids {
-		check, ok := b.checks[id]
-		if !ok {
-			continue
-		}
-		g.ranMark(id)
-		started := time.Now()
-		res := e.runCheck(check, checks.Normal)
-		e.lastSubmitRunsMs += time.Since(started).Milliseconds()
-		if res.Green {
-			check.Outcome, check.Reason = canon.CheckGreen, ""
-			check.Proven = true
-			check.EnvFail = false
-		} else {
-			check.Outcome, check.Reason = canon.CheckRed, res.Reason
-			check.EnvFail = res.Env
-			reds = append(reds, fmt.Sprintf("%s %s: %s", check.ID, check.Scenario, res.Reason))
-		}
-		if err := b.putCheck(check); err != nil {
-			return "", err
-		}
-	}
-	g.outcome("suite", len(reds) == 0, strings.Join(reds, "; "))
-
-	// The probe of fresh and replaced checks: a replaced line must
-	// prove the path no worse than the original — the pin is
-	// re-checked on every fresh run line; without this the verdict
-	// would see a non-proving line replace another without a
-	// re-check.
-	if !gateRetired(b.state, "coverage-probe") {
-		for _, id := range ids {
-			check, ok := b.checks[id]
-			if !ok || check.Outcome != canon.CheckGreen {
-				continue
-			}
-			started := time.Now()
-			res := e.runCheck(check, checks.ProbeBrokenSurface)
-			e.lastSubmitRunsMs += time.Since(started).Milliseconds()
-			if res.Green {
-				check.Pin = canon.PinRed
-				probeRed = append(probeRed, canondata.T("gates.probe-red", canondata.M{
-					"id": check.ID, "scn": check.Scenario,
-				}))
-			} else {
-				check.Pin = canon.PinGreen
-			}
-			if err := b.putCheck(check); err != nil {
-				return "", err
-			}
-		}
-	}
-	g.outcome("coverage-probe", len(probeRed) == 0, strings.Join(probeRed, "; "))
-
-	// A red fresh check reopens the owning card: the card's status is
-	// a projection of its checks' outcomes; a green card with a red
-	// check is a desync.
-	ownerOf := map[string]string{}
-	for _, cardID := range sortedIDs(b.cards) {
-		for _, scnID := range b.cards[cardID].Scenarios {
-			ownerOf[scnID] = cardID
-		}
-	}
-	for _, id := range ids {
-		check, ok := b.checks[id]
-		if !ok || check.Outcome != canon.CheckRed {
-			continue
-		}
-		cardID, ok := ownerOf[check.Scenario]
-		if !ok {
-			continue
-		}
-		card := b.cards[cardID]
-		if card.Status == canon.CardGreen {
-			card.Status = canon.CardRed
-			if err := b.putCard(card); err != nil {
-				return "", err
-			}
-		}
-	}
-	// Mirror image: a red card without red checks and static blockers
-	// is green — status is a projection of outcomes, and a spec repair
-	// with correct behavior closes the cycle without a wasted code
-	// submission. A pin-red check does not hold a card green: the
-	// line proves nothing, the probe must be green. An active card
-	// goes green on fully checked green coverage: unchecked work does
-	// not close itself (pure growth at deliver goes this way — the
-	// additions are run, the outcome projection closes the card).
-	for _, cardID := range sortedIDs(b.cards) {
-		card := b.cards[cardID]
-		if card.Status != canon.CardRed && card.Status != canon.CardActive {
-			continue
-		}
-		if card.Status == canon.CardActive && len(card.Scenarios) == 0 {
-			continue
-		}
-		red := false
-		seen := 0
-		for _, scnID := range card.Scenarios {
-			if c, ok := b.checks["TST-"+idNumSuffix(scnID)]; ok {
-				seen++
-				if c.Outcome == canon.CheckRed || c.Pin == canon.PinRed {
-					red = true
-					break
+	// The tree identity control: a digest after the run must equal
+	// the one before it outside the ignores. A tree that moved under
+	// its own measurement makes this transaction's greens non-proof:
+	// they flip env-red with the moved paths, the suite reddens, the
+	// acceptance cannot fire on a moving tree.
+	if subErr == nil {
+		if moved := e.treeMovedDuringIgnores(ckp, b.state.BuildIgnore); moved != "" {
+			redLines = append(redLines, tableLine("tree", moved))
+			for _, id := range sortedIDs(b.atoms) {
+				atom := b.atoms[id]
+				flipped := false
+				for i := range atom.Rows {
+					if atom.Rows[i].Outcome != canon.RowGreen {
+						continue
+					}
+					atom.Rows[i].Outcome, atom.Rows[i].Reason = canon.RowRed, moved
+					atom.Rows[i].EnvFail = true
+					flipped = true
+				}
+				if flipped {
+					b.putAtom(atom)
 				}
 			}
 		}
-		if card.Status == canon.CardActive && seen != len(card.Scenarios) {
-			continue
+	}
+	e.lastSubmitChecks = b.ranRows
+	// The suite line first, one line per red row after (the measured
+	// values ride inside the reasons). The kept count names the
+	// memoization: rows that did not re-run because nothing they
+	// stand on moved.
+	if b.ranRows > 0 || b.keptRows > 0 {
+		total := b.ranRows + b.keptRows
+		line := ""
+		if len(redLines) == 0 {
+			if b.keptRows > 0 && b.ranRows > 0 {
+				line = canondata.T("gates.suite-green-kept", canondata.M{
+					"rows": strconv.Itoa(total), "ran": strconv.Itoa(b.ranRows),
+					"kept": strconv.Itoa(b.keptRows),
+				})
+			} else if b.keptRows > 0 {
+				line = canondata.T("gates.suite-green-allkept", canondata.M{
+					"rows": strconv.Itoa(total), "kept": strconv.Itoa(b.keptRows),
+				})
+			} else {
+				line = canondata.T("gates.suite-green", canondata.M{
+					"rows": strconv.Itoa(total),
+				})
+			}
+		} else if b.keptRows > 0 {
+			line = canondata.T("gates.suite-red-kept", canondata.M{
+				"rows": strconv.Itoa(total), "red": strconv.Itoa(len(redLines)),
+				"ran": strconv.Itoa(b.ranRows), "kept": strconv.Itoa(b.keptRows),
+			})
+		} else {
+			line = canondata.T("gates.suite-red", canondata.M{
+				"rows": strconv.Itoa(total), "red": strconv.Itoa(len(redLines)),
+			})
 		}
-		if !red && len(card.Blockers) == 0 {
-			card.Status = canon.CardGreen
-			if err := b.putCard(card); err != nil {
-				return "", err
+		b.runTable = append(b.runTable, line)
+		budget := canondata.Limit("slot.list-budget")
+		shown := redLines
+		if len(shown) > budget {
+			shown = shown[:budget]
+		}
+		b.runTable = append(b.runTable, shown...)
+		if len(redLines) > len(shown) {
+			b.runTable = append(b.runTable, canondata.T("slot.list.more", canondata.M{
+				"count": strconv.Itoa(len(redLines) - len(shown)),
+			}))
+		}
+	}
+	// The checkpoint of the run: the tree the outcomes stand on is
+	// fixed in the same transaction as the outcomes themselves.
+	if subErr == nil {
+		b.checkpointEffect(ckp, "")
+	}
+}
+
+// ratifyPredicate — the ratification is a SIGNATURE, not a run: it
+// never executes a row or the build. It signs exactly when the
+// recorded green still stands — every row fresh at unchanged inputs
+// and the surface digest equal to the digest of the last green run
+// (the acceptance moment). Anything stale closes the door with the
+// names; the honest route back is a plain run.
+func (b *builder) ratifyPredicate() error {
+	var stale []string
+	for _, id := range sortedIDs(b.atoms) {
+		atom := b.atoms[id]
+		for i, row := range atom.Rows {
+			label := canon.RowLabel(id, i+1)
+			switch {
+			case row.Outcome == canon.RowRed:
+				stale = append(stale, label+" — "+canondata.T("gates.ratify-stale.red"))
+			case !row.Memoized():
+				stale = append(stale, label+" — "+canondata.T("gates.ratify-stale.never"))
+			case row.Inputs != b.rowInputTokens(row):
+				stale = append(stale, label+" — "+canondata.T("gates.ratify-stale.inputs"))
 			}
 		}
 	}
-
-	// trace after every delta: an executable scenario linked to a check.
-	scns := make([]canon.Scenario, 0, len(b.scns))
-	for _, id := range sortedIDs(b.scns) {
-		scns = append(scns, b.scns[id])
+	if len(stale) > 0 {
+		return rejection("ratify", canondata.T("gates.ratify-stale", canondata.M{
+			"count": strconv.Itoa(len(stale)),
+			"rows":  budgetJoin(stale),
+		}))
 	}
-	missing := missingLinksLocal(scns, b.checks)
-	g.outcome("trace", len(missing) == 0, canondata.T("gates.missing-links", canondata.M{
-		"links": strings.Join(missing, ", "),
-	}))
-	e.lastSubmitChecks = len(ids)
-	// The acceptance moment happens here too: a spec edit that closed
-	// all cards finalizes the set on the current instance.
-	e.acceptanceNote(b)
-	if err := e.commitGates(b, g, parentTx); err != nil {
-		return "", err
+	last := lastAcceptanceEntry(b.e)
+	if last == nil {
+		return rejection("ratify", canondata.T("gates.ratify-no-green"))
 	}
-	return summarizeGates(g, b), nil
-}
-
-// cardWithRedChecks — the first card with a red check: a red outcome
-// in the canon requires a fresh run (status is a projection of
-// outcomes). Empty string — there are no reds.
-func (e *Engine) cardWithRedChecks() string {
-	cards, err := e.Store.Cards()
-	if err != nil {
-		return ""
-	}
-	chk, err := e.Store.Checks()
-	if err != nil {
-		return ""
-	}
-	redByScn := map[string]bool{}
-	for _, c := range chk {
-		if c.Outcome == canon.CheckRed {
-			redByScn[c.Scenario] = true
-		}
-	}
-	for _, card := range cards {
-		for _, scnID := range card.Scenarios {
-			if redByScn[scnID] {
-				return card.ID
-			}
-		}
-	}
-	return ""
-}
-
-// reopenAutorun — auto re-verification of a rolled-back cycle: a
-// change that touched neither the surface nor the check set since the
-// acceptance moment (conflict closure, wish withdrawal) requires no
-// code resubmission — the machine runs the gates with its own run
-// transaction. Drift (the set changed) returns an empty string: a
-// new cycle is the agent's work.
-func (e *Engine) reopenAutorun(parentTx string) (string, error) {
-	if drifted, _, _ := e.acceptanceDrift(); drifted {
-		return "", nil
-	}
-	cards, err := e.Store.Cards()
-	if err != nil {
-		return "", nil
-	}
-	for _, c := range cards {
-		if c.Status == canon.CardActive || c.Status == canon.CardRed {
-			return e.gatesForCode(c.ID, parentTx, nil)
-		}
-	}
-	return "", nil
-}
-
-// missingLinksLocal — connectivity over the builder's projections.
-func missingLinksLocal(scns []canon.Scenario, checks map[string]canon.Check) []string {
-	linked := map[string]bool{}
-	for _, c := range checks {
-		linked[c.Scenario] = true
-	}
-	var out []string
-	for _, sc := range scns {
-		if compiler.DegreeOf(sc).Level == compiler.DegreeExecutable && !linked[sc.ID] {
-			out = append(out, sc.ID)
-		}
-	}
-	return out
-}
-
-// buildSurfaces brings the surface to readiness: the operator-declared
-// artifact (file or tree — the operator decides the surface kind, the
-// machine executes the recipe once for the whole surface), or, without
-// a recipe, direct submission — a file named after the command,
-// submitted by a delta; the right to execute is a property of the
-// record.
-func (e *Engine) buildSurfaces(b *builder, card canon.Card) error {
-	names := map[string]bool{}
-	for _, scnID := range card.Scenarios {
-		sc, ok := b.scns[scnID]
-		if ok && sc.When != nil && len(sc.When.Command) > 0 {
-			names[sc.When.Command[0]] = true
-		}
-	}
-	sorted := make([]string, 0, len(names))
-	for name := range names {
-		sorted = append(sorted, name)
-	}
-	sort.Strings(sorted)
-	if len(sorted) == 0 {
-		return nil
-	}
-	conv, err := e.Store.Conventions()
+	// The signature's ground: the surface as it stands now must be
+	// the surface the last green run accepted. The snapshot is an
+	// observation, not a run's checkpoint — nothing is persisted.
+	ckp, err := b.e.snapshotTreeIgnores(b.state.BuildIgnore)
 	if err != nil {
 		return err
 	}
-	if conv != nil && conv.Build != nil {
-		// One recipe for the whole surface: the artifact is declared,
-		// command names resolve inside it at run time. The recipe's
-		// working time is honest verification work: counted in
-		// runs-ms.
-		shown := conv.Build.Out
-		if shown == "" {
-			shown = sorted[0]
-		}
-		buildStarted := time.Now()
-		buildErr := e.runBuildRecipe(conv.Build, sorted[0])
-		e.lastSubmitRunsMs += time.Since(buildStarted).Milliseconds()
-		if buildErr != nil {
-			return fmt.Errorf("%s", canondata.T("gates.build", canondata.M{
-				"name": shown, "err": oneLineInfo(buildErr.Error()),
-			}))
-		}
-		return nil
-	}
-	for _, name := range sorted {
-		out := filepath.Join(e.Workdir, filepath.FromSlash(name))
-		// The right to execute is a property of the record, not the
-		// code: the agent-submitted surface runs without a manual
-		// chmod after every submission (the input copy in the run
-		// directory is executable anyway).
-		if info, err := os.Stat(out); err == nil && !info.IsDir() && info.Mode()&0o111 == 0 {
-			if err := os.Chmod(out, info.Mode()|0o111); err != nil {
-				return fmt.Errorf("chmod %s: %s", name, err)
+	b.lastCkp = ckp
+	digest := shortHex(ckp.Digest)
+	if last.Details["digest"] != digest {
+		reason := canondata.T("gates.ratify-drift.digests", canondata.M{
+			"old": last.Details["digest"], "new": digest,
+		})
+		if before := b.e.checkpointOfDigest(last.Details["digest"]); before != nil {
+			if paths := diffPaths(before, ckp); len(paths) > 0 {
+				reason = canondata.T("gates.ratify-drift", canondata.M{
+					"old": last.Details["digest"], "new": digest,
+					"paths": budgetJoin(paths),
+				})
 			}
 		}
+		return rejection("ratify", reason)
 	}
+	rows := 0
+	for _, id := range sortedIDs(b.atoms) {
+		rows += len(b.atoms[id].Rows)
+	}
+	b.runTable = append(b.runTable, canondata.T("gates.ratify-signed", canondata.M{
+		"rows": strconv.Itoa(rows), "digest": digest,
+	}))
 	return nil
 }
 
-// surfaceArtifact — the operator-declared surface artifact from
-// conventions (file or directory, a path in the project); an empty
-// string — no artifact declared: the surface is submitted directly, a
-// file named after the command.
-// runCheck — a gate/probe run with the env advice routed by the
-// delivered-code state: at zero code "install the tool" misleads
-// (nothing is delivered to install against); the advice says
-// deliver the code.
-func (e *Engine) runCheck(check canon.Check, mode checks.Mode) checks.Result {
-	if e.codeStarted() {
-		return checks.Run(e.Workdir, e.surfaceArtifact(), check, mode)
+// budgetJoin — the list items joined, capped by the reply budget
+// with the honest "+N more" tail.
+func budgetJoin(items []string) string {
+	budget := canondata.Limit("slot.list-budget")
+	shown := items
+	if len(shown) > budget {
+		shown = shown[:budget]
 	}
-	return checks.RunNoCode(e.Workdir, e.surfaceArtifact(), check, mode)
+	line := strings.Join(shown, "; ")
+	if len(items) > len(shown) {
+		line += fmt.Sprintf(" (+%d more)", len(items)-len(shown))
+	}
+	return line
 }
 
-func (e *Engine) surfaceArtifact() string {
-	conv, err := e.Store.Conventions()
-	if err != nil || conv == nil || conv.Build == nil {
-		return ""
+// checkpointOfDigest — the stored checkpoint carrying the given
+// short digest, walked from the newest: the file list the acceptance
+// moment measured. nil — no stored snapshot matches (an externally
+// pruned zone): the drift still refuses, without path names.
+func (e *Engine) checkpointOfDigest(short string) *Checkpoint {
+	state, err := e.Store.State()
+	if err != nil {
+		return nil
 	}
-	return conv.Build.Out
-}
-
-// staticGates — types and lint by conventions recipes: an undeclared
-// recipe is a "not applied" gate (a soft empty-start status). A gate
-// retired by rent is not executed at all and does not enter the
-// outcomes — its red does not exist. Command placeholders are the
-// same as in the build: {name} is the card's surface name, {out} is
-// the artifact path (gate recipe out → build out → surface name).
-func (e *Engine) staticGates(b *builder, card canon.Card) []toolOutcome {
-	conv, err := e.Store.Conventions()
-	if err != nil || conv == nil {
-		return []toolOutcome{{Name: "types", Green: true}, {Name: "lint", Green: true}}
-	}
-	timeout := canondata.Limit("conventions.gate-timeout-s")
-	name := e.surfaceName(b, card)
-	gateOut := func(rec *canon.Recipe) string {
-		outRel := ""
-		switch {
-		case rec != nil && rec.Out != "":
-			outRel = rec.Out
-		case conv.Build != nil && conv.Build.Out != "":
-			outRel = conv.Build.Out
-		default:
-			outRel = name
-		}
-		return filepath.Join(e.Workdir, filepath.FromSlash(outRel))
-	}
-	res := []toolOutcome{}
-	for _, g := range []struct {
-		n   string
-		rec *canon.Recipe
-	}{{"types", conv.Types}, {"lint", conv.Lint}} {
-		if gateRetired(b.state, g.n) {
+	for seq := state.Counters["CKP"]; seq > 0; seq-- {
+		data, err := fsport.Bind.ReadFile(filepath.Join(e.Workdir,
+			filepath.FromSlash(checkpointFileName(seq))))
+		if err != nil {
 			continue
 		}
-		res = append(res, gateFromRecipe(e.Workdir, g.n, name, g.rec, gateOut(g.rec), timeout))
-	}
-	return res
-}
-
-// surfaceName — the card's surface name: command[0] of its scenarios
-// (with several, the first alphabetically, as in surface building);
-// without commands — the declared artifact; otherwise the neutral
-// "out".
-func (e *Engine) surfaceName(b *builder, card canon.Card) string {
-	names := map[string]bool{}
-	for _, scnID := range card.Scenarios {
-		if sc, ok := b.scns[scnID]; ok && sc.When != nil && len(sc.When.Command) > 0 {
-			names[sc.When.Command[0]] = true
+		var ckp Checkpoint
+		if yamlio.DecodeDoc(data, &ckp) != nil {
+			continue
 		}
-	}
-	sorted := make([]string, 0, len(names))
-	for n := range names {
-		sorted = append(sorted, n)
-	}
-	sort.Strings(sorted)
-	if len(sorted) > 0 {
-		return sorted[0]
-	}
-	if a := e.surfaceArtifact(); a != "" {
-		return a
-	}
-	return "out"
-}
-
-// journalEntryRun — the skeleton of a service run's machine
-// transaction.
-func journalEntryRun(submissionKey string) journal.Entry {
-	return journal.Entry{
-		Transaction:   yamlio.Digest([]byte("run:" + submissionKey)),
-		SubmissionKey: submissionKey,
-		DeltaKind:     deltaKindRun,
-		RecordedAt:    time.Now().UTC(),
-	}
-}
-
-// commitGates commits the run transaction: effects, journal, ledger,
-// stage advancement.
-func (e *Engine) commitGates(b *builder, g *gateTx, parentTx string) error {
-	b.advance()
-	if b.processErr != nil {
-		return b.processErr
-	}
-	entry := journal.Entry{
-		Transaction:   yamlio.Digest([]byte("gate:" + parentTx)),
-		SubmissionKey: "gate-" + shortHex(parentTx),
-		DeltaKind:     deltaKindRun,
-		WallMs:        0,
-		RecordedAt:    time.Now().UTC(),
-		Effects:       b.effects,
-	}
-	if err := e.commit(entry); err != nil {
-		return fmt.Errorf("gate transaction: %w", err)
-	}
-	stage := mustState(e).Stage
-	for _, o := range g.gates {
-		le := ledger.NewEntry("gate", stage)
-		le.Details = map[string]string{"name": o.name, "outcome": boolGreen(o.green)}
-		if !o.green && o.reason != "" {
-			le.Details["reason"] = firstLineStr(o.reason)
-		}
-		if err := e.Ledger.Append(le); err != nil {
-			return err
+		if shortHex(ckp.Digest) == short {
+			return &ckp
 		}
 	}
 	return nil
 }
 
-func boolGreen(b bool) string {
-	if b {
-		return "green"
+// diffPaths — the paths whose identity differs between two snapshots
+// (added, replaced or removed alike; sorted).
+func diffPaths(before, after *Checkpoint) []string {
+	had := map[string]string{}
+	for _, f := range before.Files {
+		had[f.Path] = f.SHA256
 	}
-	return "red"
+	var moved []string
+	for _, f := range after.Files {
+		old, ok := had[f.Path]
+		delete(had, f.Path)
+		if !ok || old != f.SHA256 {
+			moved = append(moved, f.Path)
+		}
+	}
+	for p := range had {
+		moved = append(moved, p)
+	}
+	sort.Strings(moved)
+	return moved
 }
 
-func firstLineStr(s string) string {
-	if i := strings.IndexByte(s, '\n'); i >= 0 {
-		return s[:i]
+// acceptanceNote — the acceptance moment: all atoms green (a
+// transaction that ran nothing finalizes nothing — a full-fresh
+// ratification signs without re-running, that is its point) and no
+// failed build finalize the full row set on this tree, the digest
+// signs it.
+func (b *builder) acceptanceNote(ckp *Checkpoint) {
+	if ckp == nil || len(b.atoms) == 0 || b.buildFailed != "" {
+		return
 	}
-	return s
+	if b.ranRows == 0 && !b.ratifying {
+		return
+	}
+	// One acceptance per tree digest: a full-fresh ratification signs
+	// the tree the last green run already accepted — the moment is
+	// recorded once, the snapshot carries it.
+	digest := shortHex(ckp.Digest)
+	if b.ranRows == 0 {
+		if last := lastAcceptanceEntry(b.e); last != nil && last.Details["digest"] == digest {
+			return
+		}
+	}
+	green := 0
+	total := 0
+	for _, id := range sortedIDs(b.atoms) {
+		if !b.atoms[id].Green() {
+			return
+		}
+		green++
+		total += len(b.atoms[id].Rows)
+	}
+	le := ledger.NewEntry("gate", mustState(b.e).Stage)
+	le.Details = map[string]string{
+		"name": "suite", "scope": "acceptance", "outcome": "green",
+		"digest": digest,
+		"green":  strconv.Itoa(total),
+		"checks": strconv.Itoa(total),
+	}
+	if b.keptRows > 0 {
+		le.Details["kept"] = strconv.Itoa(b.keptRows)
+	}
+	_ = b.e.Ledger.Append(le)
 }
 
-func oneLineInfo(s string) string {
-	s = strings.ReplaceAll(s, "\n", "; ")
-	if len(s) > 400 {
-		s = s[:400] + "…"
+// tableLine — one red row's line of the reply table.
+func tableLine(label, reason string) string {
+	return "  " + label + ": " + reason
+}
+
+// inputDirOf — the instance's input directory (the sibling of the work
+// root): seeds copy their from-input bytes from there.
+func inputDirOf(workdir string) string {
+	return filepath.Join(workdir, "..", "input")
+}
+
+// runBuild — the spec's build command once in the live tree before
+// the rows: rc must be 0 within the mechanism's build ceiling. An
+// empty build — nothing to build (the tree runs as is). What the
+// build leaves outside build-ignore reddens the run as a tree that
+// moved during the run — build artifacts are the ignores' business.
+func (e *Engine) runBuild() error {
+	state, err := e.Store.State()
+	if err != nil {
+		return err
 	}
-	return s
+	if len(state.Build) == 0 {
+		return nil
+	}
+	timeout := canondata.Limit("build.timeout-s")
+	d := time.Duration(timeout) * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), d)
+	defer cancel()
+	exit, output, timedOut, err := execport.Bind.Combined(ctx, state.Build, e.Workdir, d)
+	switch {
+	case err != nil:
+		return err
+	case timedOut:
+		return errors.New(canondata.EnvDiag("command-timeout", canondata.M{
+			"sec":     strconv.Itoa(timeout),
+			"command": strings.Join(state.Build, " "),
+		}))
+	case exit != 0:
+		text := oneLineInfo(string(output))
+		if text == "" {
+			text = fmt.Sprintf("exit %d", exit)
+		}
+		return errors.New(text)
+	}
+	return nil
+}
+
+// treeMovedDuring — the live-tree identity control by reading: a
+// fresh snapshot after the run, compared with the pre-run one (both
+// exclude .punchtape and build-ignore — the ignores are the only
+// allowed garbage, the build outputs of the project). A tree that
+// moved under its own measurement makes the run's outcomes
+// non-proof; the line names the diverged paths.
+func (e *Engine) treeMovedDuring(before *Checkpoint) string {
+	state, err := e.Store.State()
+	if err != nil {
+		state = canon.State{}
+	}
+	return e.treeMovedDuringIgnores(before, state.BuildIgnore)
+}
+
+// treeMovedDuringIgnores — the post-run control under the same
+// ignores the pre-run snapshot used.
+func (e *Engine) treeMovedDuringIgnores(before *Checkpoint, buildIgnore []string) string {
+	line, err := e.treeMovedPathsIgnores(before, buildIgnore)
+	if err != nil {
+		return canondata.T("gates.tree-moved-live", canondata.M{"paths": err.Error()})
+	}
+	if line == "" {
+		return ""
+	}
+	return canondata.T("gates.tree-moved-live", canondata.M{"paths": line})
+}
+
+// treeMovedPathsIgnores — the diverged-paths line of the tree
+// identity control ("" — the tree stood); the caller wraps it in its
+// own vocabulary (the run control, the row's own tree mode). The
+// error is the control's own failure (an unreadable tree).
+func (e *Engine) treeMovedPathsIgnores(before *Checkpoint, buildIgnore []string) (string, error) {
+	after, err := e.snapshotTreeIgnores(buildIgnore)
+	if err != nil {
+		return "", err
+	}
+	had := map[string]string{}
+	for _, f := range before.Files {
+		had[f.Path] = f.SHA256
+	}
+	var moved []string
+	for _, f := range after.Files {
+		old, ok := had[f.Path]
+		delete(had, f.Path)
+		if !ok || old != f.SHA256 {
+			moved = append(moved, f.Path)
+		}
+	}
+	for p := range had {
+		moved = append(moved, p)
+	}
+	if len(moved) == 0 {
+		return "", nil
+	}
+	sort.Strings(moved)
+	shown := moved
+	if len(shown) > canondata.Limit("slot.list-budget") {
+		shown = shown[:canondata.Limit("slot.list-budget")]
+	}
+	line := strings.Join(shown, ", ")
+	if len(moved) > len(shown) {
+		line += fmt.Sprintf(" (+%d more)", len(moved)-len(shown))
+	}
+	return line, nil
 }
 
 func mustState(e *Engine) canon.State {
@@ -1116,217 +484,17 @@ func mustState(e *Engine) canon.State {
 	return st
 }
 
-// idNumSuffix returns the numeric tail of an identifier: SCN-001 → 001.
-func idNumSuffix(id string) string {
-	for i := 0; i < len(id); i++ {
-		if id[i] == '-' {
-			return id[i+1:]
-		}
+func oneLineInfo(s string) string {
+	s = strings.ReplaceAll(s, "\n", "; ")
+	if len(s) > 400 {
+		s = s[:400] + "…"
 	}
-	return id
+	return s
 }
 
-// runCollisions — a provable contradiction of lines: two scenarios
-// with the same run (seed + commands) that have incompatible
-// expectations, or a self-contradiction of a single set. Different
-// observation angles of one run (stdout and a state file) are not a
-// contradiction — both can hold together. Line identity
-// (seed+materials+commands) already distinguishes different seeds: an
-// honest "one command, different seeds" pair does not become a
-// collision; the verdict names the COMMAND and the OBSERVATION of the
-// contradiction — canon identifiers are not visible to the agent, a
-// blind "SCN-009" is not fixable.
-func runCollisions(scns map[string]canon.Scenario) []string {
-	byRun := map[string][]string{}
-	for _, id := range sortedIDs(scns) {
-		key := scenarioKey(scns[id])
-		if key == "" {
-			continue
-		}
-		byRun[key] = append(byRun[key], id)
+func boolGreen(b bool) string {
+	if b {
+		return "green"
 	}
-	var out []string
-	for _, key := range sortedIDs(byRun) {
-		ids := byRun[key]
-		for _, id := range ids {
-			if target := selfContradictionOn(scns[id].Then); target != "" {
-				out = append(out, collisionLine(scns[id],
-					canondata.T("checktable.collision.self", canondata.M{"target": target})))
-			}
-		}
-		for i, id := range ids {
-			for _, other := range ids[i+1:] {
-				if target := setsContradictionOn(scns[id].Then, scns[other].Then); target != "" {
-					out = append(out, collisionLine(scns[id],
-						canondata.T("checktable.collision.cross", canondata.M{"target": target})))
-				}
-			}
-		}
-	}
-	return out
-}
-
-// collisionLine — the verdict line for the agent: the run command and
-// the essence of the contradiction; the line is recognized by the
-// command, not by an internal ID.
-func collisionLine(sc canon.Scenario, reason string) string {
-	return canondata.T("checktable.collision.run", canondata.M{
-		"when": strings.Join(sc.When.Command, " "), "reason": reason,
-	})
-}
-
-// contradictionTarget — the observation and path of a pair of
-// incompatible exact expectations (values are not printed: the
-// observation and the command are enough to find the line and see
-// both values in the canon).
-func contradictionTarget(x, y canon.Assertion) string {
-	target := x.Observation
-	if x.Path != "" {
-		target += " " + x.Path
-	}
-	return target
-}
-
-// exactConditions — exact equality conditions: different values with
-// matching observation/condition/path are incompatible. Containment
-// and existence are compatible with anything — there is no provable
-// contradiction, the machine does not guess.
-var exactConditions = map[string]bool{
-	"equals": true, "bytes-equals": true, "json-equals": true,
-}
-
-// setsContradictionOn — the observation of an incompatible pair of
-// expectations from two sets of one run; an empty string — no
-// contradiction.
-func setsContradictionOn(a, b []canon.Assertion) string {
-	for _, x := range a {
-		if !exactConditions[x.Condition] {
-			continue
-		}
-		for _, y := range b {
-			if x.Observation == y.Observation && x.Condition == y.Condition &&
-				x.Path == y.Path && x.Value != y.Value {
-				return contradictionTarget(x, y)
-			}
-		}
-	}
-	return ""
-}
-
-// selfContradictionOn — the observation of a set's self-contradiction:
-// two incompatible exact expectations inside one scenario.
-func selfContradictionOn(then []canon.Assertion) string {
-	for i, x := range then {
-		if !exactConditions[x.Condition] {
-			continue
-		}
-		for _, y := range then[i+1:] {
-			if x.Observation == y.Observation && x.Condition == y.Condition &&
-				x.Path == y.Path && x.Value != y.Value {
-				return contradictionTarget(x, y)
-			}
-		}
-	}
-	return ""
-}
-
-// gapClass — deterministic classification of the quarantine gap from
-// machine facts: canon — a detectable contradiction of spec lines,
-// environment — all of the card's red checks are environment/launch
-// refusals (not behavior: the machine classified them by refusal
-// source), code — everything else. The honesty boundary: canon
-// unexecutability without a contradiction is machine-indistinguishable
-// from a code error — "code" means "everything the machine can check
-// has converged; the rest is the executor". A missing surface/recipe
-// is the environment class: it does not end in quarantine (such reds
-// eat no behavior budget), an honest red with a diagnosis and FIX
-// stays red.
-func (e *Engine) gapClass(b *builder, card canon.Card) string {
-	if len(runCollisions(b.scns)) > 0 {
-		return canon.GapCanon
-	}
-	red, envRed := 0, 0
-	for _, scnID := range card.Scenarios {
-		check, ok := b.checks["TST-"+idNumSuffix(scnID)]
-		if !ok || check.Outcome != canon.CheckRed {
-			continue
-		}
-		red++
-		if check.EnvFail {
-			envRed++
-		}
-	}
-	if red > 0 && red == envRed {
-		return canon.GapEnvironment
-	}
-	return canon.GapCode
-}
-
-// acceptanceNote — the acceptance moment: a transaction closed all
-// cards, the full check set is finalized on a specific instance
-// state. The digest of the surface and of all check definitions is
-// the moment's signature: verdict freezing reconciles the current
-// instance against it, on divergence the verdict is not frozen.
-func (e *Engine) acceptanceNote(b *builder) {
-	if len(b.cards) == 0 {
-		return
-	}
-	for _, c := range b.cards {
-		if c.Status != canon.CardGreen && c.Status != canon.CardQuarantine {
-			return
-		}
-	}
-	all := make([]canon.Check, 0, len(b.checks))
-	for _, id := range sortedIDs(b.checks) {
-		all = append(all, b.checks[id])
-	}
-	green, red := 0, 0
-	for _, c := range all {
-		switch c.Outcome {
-		case canon.CheckGreen:
-			green++
-		case canon.CheckRed:
-			red++
-		}
-	}
-	digest, files, skipped, surfaceOK := surfaceSignature(e, all)
-	le := ledger.NewEntry("gate", b.state.Stage)
-	le.Details = map[string]string{
-		"name": "suite", "scope": "acceptance",
-		"outcome": boolGreen(red == 0 && len(all) > 0 && green == len(all)),
-		"digest":  shortHex(digest),
-		"checks":  fmt.Sprintf("%d", len(all)),
-		"green":   fmt.Sprintf("%d", green),
-		"red":     fmt.Sprintf("%d", red),
-	}
-	// An acceptance that could not see the surface (no verifiable
-	// signature at the moment) is named in the ledger: an empty digest
-	// is a measurement gap, never a side to compare against.
-	if !surfaceOK {
-		le.Details["surface"] = "absent"
-	}
-	// The signature's exact terms ride along: the files it stands on
-	// and the command names that signed nothing
-	// (interpreter/system-tool rows whose argv named no project
-	// file) — the acceptance fact carries its own measurement gap.
-	if len(skipped) > 0 {
-		sort.Strings(skipped)
-		le.Details["surface-skipped"] = strings.Join(skipped, ",")
-	}
-	if len(files) > 0 {
-		sort.Strings(files)
-		le.Details["surface-files"] = strings.Join(files, ",")
-	}
-	// Env doctor before acceptance: a probe of the recipes'
-	// environment. A missing tool reddens acceptance with a FIX hint —
-	// acceptance does not pass silently on an environment where the
-	// recipes cannot run; a green probe is recorded as a fact (env-ok),
-	// no silence about it.
-	if missing := e.envDoctor(); len(missing) > 0 {
-		le.Details["outcome"] = "red"
-		le.Details["env"] = strings.Join(missing, ",")
-	} else {
-		le.Details["env-ok"] = "yes"
-	}
-	_ = e.Ledger.Append(le)
+	return "red"
 }

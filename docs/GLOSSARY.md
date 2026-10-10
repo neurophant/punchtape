@@ -5,781 +5,724 @@ word or expression that appears in the machine's operation, output,
 and documents and might be unclear. Principle: if the user MIGHT not
 understand it, they will not, and it must be here. Every term — a
 definition in plain language plus an example or an analogy; → marks
-related terms; a Roman numeral marks a section of docs/ARCHITECTURE.md.
-Freshness rule: a new system concept appears only together
-with its glossary line.
+related terms; `reference/<topic>.md` names the machine's own
+shipped doc on the subject (the same texts the instance regenerates
+into `.punchtape/reference/`). Freshness rule: a new system concept
+appears only together with its glossary line.
 
-**.punchtape** — the hidden instance directory: state, canon,
-passport, renders, journal, ledger, cache. VII
+The machine's own vocabulary is small and closed: the document kinds
+(spec, run), the behavior ids and row labels (`B1`, `B1/2`), the
+reply lines (STAGE, INBOX, CONTRACT, CHANGED, ACTION, VERDICT,
+RED LIST). Everything below explains that vocabulary and the world
+around it. What died with the model change died everywhere: the
+passport, the trace channel, the
+amendments-and-questions machinery, the numbered inbox sets and the
+submission-key ritual are gone from the machine and from this
+dictionary.
 
-**.yamll** — a file that is a stream of YAML documents (journal,
-ledger): records are append-only, one per entry. VII
+**.punchtape** — the hidden instance directory: the machine's zone
+(canon atoms, checkpoints, verdict snapshots, the door, the service
+zone — state, journal, ledger, locks, cache, renders). Never edited
+by hand. → instance, write zone.
+
+**.yamll** — a file that is a stream of YAML document frames
+(journal, ledger): records are append-only, one `---`-separated
+document per entry.
 
 A
 
-**Acceptance (acceptance point)** — a ledger record with the digest of
-the surface and of the definitions of all checks, taken when every
-card is green/quarantined; further drift downgrades the verdict. VI
+**Acceptance (acceptance moment)** — the transaction in which every
+behavior of the corpus stands green on this tree: it lands in the
+ledger as a gate record (suite, scope acceptance) with the
+green/total counts and the pre-run tree digest, and the verdict's
+acceptance line names it —
+`acceptance: PASS on tree <digest> (N/N rows green)`. One moment
+per tree digest: a full-fresh ratification signs the tree the last
+green run already accepted. A tree that moves after it is drift.
+→ checkpoint, drift, pure re-run, verdict.
 
-**AGENTS.md (self-doc)** — the only machine file in the root of the
-working directory: the executor's full input contract; written by the
-machine.
+**Agent** — who does the work: the LLM that reads the slot,
+authors the spec document, writes the code directly in the work
+tree, and drives the task to the verdict. The machine never writes
+code — the agent writes it, byte for byte, outside the machine. →
+executor, work tree.
 
-**Agnosticism (total and clean, toward everything)** — the machine
-knows and assumes nothing external: neither product, nor stack, nor
-environment — no daemons, no protocols, no ports, no vocabularies of
-environment operations. Observables are argv/stdout/stderr/exit
-code/files; operations are running commands and moving bytes.
-Everything concrete is instance data and human decisions. Analogy: a
-deaf notary — records only what is seen, without guessing what the
-client came FOR. → surface, seed, materials. II, VIII
+**AGENTS.md (the working contract)** — the only machine file in the
+root of the working directory: the agent's full input contract,
+written by the machine at birth and injected in full into the first
+next's reply; a root without it has no instance yet. The contract
+law: the birth records the contract's own sha256, every later slot
+carries the one-line reference on it, and the full contract renders
+again the moment the tree's copy is gone or changed. If the
+repository carried its own AGENTS.md, the file is COMBINED — the
+machine contract first and always prevailing, the repository's
+rules preserved verbatim below the tail boundary.
+→ birth, contract line, renders.
 
-**Amend (deferred amendment)** — a change to proven expectations held
-for human approval: shown verbatim with a plan; approve applies it,
-reject lifts it, silence is the conservative default. A blind approval
-is not an approval. VI
+**Agnosticism (total, toward everything)** — the machine knows and
+assumes nothing external: neither product, nor stack, nor
+environment — and nothing about tasks, domains or roles. The
+observables are argv/stdout/stderr/exit code/files; the operations
+are running commands and moving bytes. The project's shape is the
+agent's business. Analogy: a deaf notary — records only what is seen,
+without guessing what the client came FOR. → black box, live tree.
 
-**amend** — see Amend (deferred amendment).
+**Answers** — the `answers:` field of the submission document:
+parsed and honestly refused — no question batch can be open in this
+machine generation, and an answer without a question is noise, not
+silence. Kept in the grammar so an old habit fails loudly, not
+silently. → document.
 
 **Anti-entropy effect** — the machine's measurable action against
 uncertainty of meaning: locally, entropy can only be lowered by work
 (a heat pump: the machine pumps uncertainty out of the delivery loop
-and dissipates what was paid into watts — tokens, double runs); the
+and dissipates what was paid into watts — tokens, measured runs); the
 bill is not for erasing bits (Landauer) but for search and
 measurement; part of the entropy is not erased but moves into an
-explicit auditable form (question → default → decision log); order is
-stored up (a battery of order). NOT the system's name, but its effect.
-Analogy: a pump bailing water out of a hold — the ship does not become
-"anti-water", it just stays afloat. → battery of order, guarantee paid
-for in watts, external transactional state machine. I
+explicit auditable form (row expectations, measured reds, the
+journal); order is stored up (a battery of order). NOT the system's
+name, but its effect. → battery of order.
 
-**Artifact** — what results from building by the recipe: a file or a
-whole tree, which the machine moves into the clean run directory as
-is. → surface, conventions, build recipe. VI, VII
-
-**Assertion** — a typed expectation of an observation: {observation,
-condition, value}: stdout equals "…", exit-code fails, file
-json-equals…. VI
-
-**Attempt budget** — how many times IN A ROW a card may survive a
-barren repair cycle (three) before going to quarantine. A cycle is
-barren when the submission changed files, the suite really ran, and
-the red line that was red before the submission stayed red; progress
-(it went green, or another line took its place) resets the counter.
-It counts behavior, not environment failures and not typos: a run over
-an unreliable surface is marked "not run" and eats no budget. Analogy:
-three defective parts in a row — the crew is pulled off; a defect
-every other part — each one gets investigated. → card, quarantine,
-env-fail. VI
-
-**Attention (attention wall)** — the count of human time: questions,
-choices, silent defaults, and idle minutes; measured by the ledger
-(question → choice events). → question batch, ledger. VI
-
-**Autopilot (driver)** — a way of working where the machine itself
-turns the loop "slot → external executor → submission", without a
-human behind every iteration. The human still answers questions. →
-slot, executor, fanout. V
+**Atom (behavior)** — one unit of behavior of the corpus: the agent's
+short id, a living name, the mandatory prose, and the check rows
+with the machine's record of their last run (outcome, reason,
+env-fail, the freshness memo) — one canon file per behavior,
+carrying its own record digest. The atom is the unit of the
+verdict: green when all its rows are green.
+`reference/grammar.md`. → corpus, freshness, prose, row.
 
 B
 
-**backfill** — closing the gaps of the past: observations without a
-scenario are proposed as checks-table rows from what was actually
-observed. VI
+**Backfill (the round-trip of the corpus)** — bringing an EXISTING
+tree under the machine: birth by next in the existing directory, the
+spec authored against the code that already exists, then a run
+executes the rows against the ORIGINAL tree — green means the spec
+matches the code; a mismatch is a backfill finding (a red row with
+the measured values: the row is repaired or the code is). No
+separate verb exists; the round-trip is the same single run the
+machine always does. Analogy: surveying an old house by measuring
+it, not by asking the tenants. → acceptance, checkpoint.
 
-**Battery of order** — canon plus a green verdict as order in store:
-regression re-runs are paid for in advance, fixes are free in the
-sense of checking. The first delivery is expensive (pumping out
-uncertainty), the next ones nearly free (battery discharge). Analogy:
-a charged battery — it pulls not because it is burning fuel right now,
-but because the charge is already paid for. → anti-entropy effect,
-verdict. I
+**Battery of order** — the corpus plus a green verdict as order in
+store: regression re-runs are paid for in advance, edits are free in
+the sense of checking (a pure re-run costs one submission). The
+first delivery is expensive (pumping out uncertainty), the next ones
+nearly free (battery discharge). → anti-entropy effect, verdict.
 
-**bg-suite** — a background rehearsal: a separate process runs the
-whole suite over the surface digest while the hand prepares the next
-submission; the live run matters more. VI
+**Bill** — a verdict line: machine wall, verb calls. → verdict.
 
-**Bill** — a verdict line: wall, verb invocations, tokens (or an
-honest "no data"). VI
+**Birth** — creating the instance: `punchtape next "<brief>"` in a
+fresh directory — writes AGENTS.md beside the instance, injects the
+full contract into the reply's head, and fixes the brief and its
+language in the state in the same transaction (the brief is NOT a
+submission). A repeated birth phrase is an honest refusal: the brief
+is not edited through rebirth. → brief, instance, next.
 
 **Black box** — the principle: the machine sees the product only
-through its surface (argv, streams, exit code, files); the internals
-are not its level. II
+through its commands (argv, streams, exit code, files); the
+internals are not its level. It never sees the code at all — not one
+byte of it passes through the machine. → agnosticism.
 
-**Boundary** — a requirement as a unit of trust in the passport: it
-carries a trust-ladder status and run verdicts. Analogy: a boundary
-stone: while the land is untouched it stands; touch it — it gets
-measured out again. → passport, trust ladder. VI
+**Brief** — the human's want, verbatim, in living language; fixed
+once at the instance's birth by `next "<brief>"` and stored in the
+state (the state field is still named `wish`); the origin line of
+the verdict and the summary quote it. Not a submission: the birth
+phrase cannot be re-edited, a repeated birth is an honest refusal.
+→ birth, language.
 
-**Brief ambiguity** — an unresolved choice in the requirements (a
-file name, a value's shape, a default…): by the campaign rule it is
-closed in the brief BEFORE launch; a question from a run = a defect
-of the brief.
+**Build** — the document's optional build declaration (argv): runs
+once in the live tree before the rows of every run submission; rc
+must be 0 within 300 s. A present declaration replaces the previous
+one; `[]` clears it. `reference/environment.md`. → build-ignore,
+run (the kind).
 
-**Build recipe** — the conventions' commands that turn the project
-into an artifact; one for the whole surface; timeout 300 s. VI
+**Build-ignore** — the document's ignore globs: paths of the work
+tree outside the accounted surface (build outputs, caches). A
+pattern ending in `/` excludes a directory prefix; a plain pattern
+matches the relative path or any file name (the gitignore habit).
+`.punchtape` is excluded unconditionally. The remainder is the
+product the digest signs. → digested surface, tree moved.
 
-**Byte capture by the machine** — fixing an expectation by intent:
-the executor says what changes and why, while the new bytes are
-measured by the machine running the delivered product; the change
-waits for human approval with "was → measured". Nobody types bytes by
-hand. Analogy: calibrating scales with a weight, not by eye. → amend.
-VI
-
-**Bytes-equals** — comparing files by exact bytes, without
-normalization: trailing newlines are part of the contract. → semantic
-comparisons. VI
+**Bytes sample** — the `bytes: file://NAME` reference of a row: a
+sample file lying next to the door in `.punchtape/inbox/`; stdout
+must equal its bytes exactly — the only binary expectation form.
+→ door, row.
 
 C
 
-**Cache** — a rebuildable service zone `.punchtape/cache`: slots,
-verdicts, digests, rehearsal reports; not a source of truth, safe to
-delete. VII
-
-**Canon** — the single source of truth about an instance:
-requirements, scenarios, checks, cards, contracts; everything else is
+**Canon** — the single source of truth about an instance: the
+behavior atoms. Everything else (spec.md, the summary, the slot) is
 a computable view of the canon. Analogy: a score against a
-performance: it can be played many times, written once. VII
+performance: it can be played many times, written once.
 
 **Canon data** — the texts of all surfaces and the numeric thresholds
 embedded as data into the binary (not into the code); editing a text
-means releasing a new version. → delivery binary. V
+means releasing a new version. → delivery binary.
 
 **Canon schema (schema-version)** — the data-format version of an
 instance: a binary older than the data means an honest refusal;
-instances are not versioned by machine releases. VIII
+instances are not versioned by machine releases. The current schema
+(9) is the wholly procedural row grammar — the witness probe staged
+through the door, the launch/tree modes composing with every head;
+a schema-8 instance honestly refuses to open.
 
-**Card (CRD)** — an implementation assignment: a facet of the product,
-the scenarios it closes, and exclusive ownership of files; attempts,
-status, blockers. Analogy: a work order to a crew: what to do and
-which walls to own. → split, contract. VI
+**Ceremony meter** — the reply bytes the hand paid, summed by
+render family over the ledger's verb entries: contract (the
+full-contract replies — the birth injection and the anti-tamper
+re-render), spec (the intake slots), report (the work-stage slots),
+door-echo (the submit acks). Deterministic arithmetic over recorded
+facts; printed in SUMMARY.md's price block. → ledger, thin ack.
 
-**change request** — a request to change what is proven: a plan of the
-effect (cards, contracts, stage) waits for human approval. VI
+**Changed list (CHANGED)** — the implement slot's list of the rows
+whose standing moved since the LAST slot, retirements included — the
+door law: only what moved, never the whole corpus (the full table is
+the report's `--full`). The delta mode is the same list alone.
+→ slot, surface modes.
 
-**Check (TST)** — an executable scenario expanded by the compiler:
-seed → backgrounds → setup → action → assertions; written only by the
-compiler, never by hand. VI
+**Checkpoint** — a digest snapshot of the digested surface: the file
+set plus a per-file sha256, one digest over sorted `path\0hash`
+lines, written as `checkpoints/ckp-<seq>.yaml` in the SAME
+transaction as the run's outcomes — the tree the outcomes stand on
+is fixed with them. → acceptance, digested surface, tree moved.
 
-**Checks table** — the executor's interface to the spec: rows of
-"seed + backgrounds + commands + expectations of the last one"; the
-machine compiles it into the canon itself. The main authoring path.
-VI
+**Contract line** — the slot's CONTRACT line: the one-line reference
+on the birth sha while the tree's AGENTS.md digests to the birth
+record; the FULL contract bytes again the moment the copy is gone or
+changed (anti-tamper, not an option). → AGENTS.md.
 
-**Choice point (code 3)** — the state when the machine needs a human
-answer: a question batch or a held amendment; the loop is not
-blocked, silence means defaults. → escalation. IV
-
-**CLI/IDE/API (envelopes)** — the forms of invoking the executor: a
-terminal session, a pair of files, strict JSON; the envelope is
-translated, the slot never is.
-
-**Closed loop** — the machine's cybernetic meaning: wish → check →
-double run → verdict — the chain does not break, the result returns
-into the work. Vibe coding is an open loop: write and pray. Analogy:
-heating with a thermostat versus a fireplace — the thermostat senses
-and corrects, the fireplace just burns. → anti-entropy effect,
-external transactional state machine. I
-
-**Compatibility (compatibility matrix)** — what has been measured
-about environments (GOOS/GOARCH); the unmeasured is honestly "not
-measured", silence is forbidden.
-
-**Compositeness (machine question)** — the machine's question when a
-checks table drives two or more different products (different
-command[0]): split into tasks or keep as one; silence means the
-recommendation "one product". VI
-
-**Composition freeze (COMPOSITION FREEZE)** — the first code
-submission fixes the composition of the spec: from then on, new rows
-(growth) and replacement of existing rows (repair) are lawful, while
-changing proven rows takes human approval. Analogy: an order goes to
-production — the blueprint is sealed; blueprint edits only by change
-request. → change request, proven. VI
-
-**Contract (IFC)** — a frozen boundary between facets of parallel
-work: a shared observable asset (a state file, a convention) in
-surface terms; the version only grows. VI
-
-**Conventions** — the instance's knowledge about the product's
-environment: the build recipe (commands + artifact), optional static
-checks (types, lint) with {out}/{name} placeholders ({name} is ONE
-name: the alphabetically first of the rows' command[0]; a shell
-variable ${...} is not a placeholder — recipe commands run without a
-shell). Decided by the operator. → surface.
-
-**Conventions era** — the window since the last recipe change: the
-rent of the static gates (types/lint) is counted anew in a new era. →
-gate rent.
-
-**CONVENTIONS NEEDED** — a block of the first implement slot when the
-surfaces cannot be resolved: names under which nothing executes, and
-the choice of the surface form (teach a build recipe — the
-recommendation — or submit executable files at the named paths). VI
-
-**Converge (convergence)** — a verdict line about the convergence of
-the repair cycle: how many fix cycles, the worst card by attempts,
-quarantines. VI
-
-**Cost gate** — the economics gate: ceremony overhead tokens against
-task tokens, a 10% ceiling; without a meter it has no right to go
-red.
-
-**Coverage** — completeness gaps: families of the wish's commands
-without an executable scenario; the gate names them one by one. VI
-
-**Coverage probe** — a check of a check: a green row must go red on a
-broken surface (a stub over a really existing surface entry; PATH
-names are not substituted); if it did not go red, it checks nothing
-(pin-red). Analogy: a test of the test: a sensor that does not notice
-an unplugged instrument is not a sensor. VI
+**Corpus** — the behavior atoms of an instance, the product's
+specification as data: green when every atom is green, the verdict's
+ground. → atom, canon.
 
 D
 
-**Decision log (DEC-)** — the operator's accumulated decisions with
-rationale: "we decided so, because". → knowledge. VI
+**Delivery binary** — the compiled machine with its canon data
+embedded (`go:embed`): one point of truth for the texts — the file
+in the source tree, in the binary, in the instance. → canon data.
 
-**Default (recommended)** — the answer option the machine applies on
-human silence; always marked in the question; a late explicit answer
-upgrades the silent choice to an explicit one. → question batch,
-silence. VI
+**Diagnosis line** — the one-line refusal of a rejected submission:
+it names the entity (`behaviors[1]`, `B1/2`, `delta`, `patch`) and
+the reason; the draft stays in the door for the rework. The form is
+taught by the door's template and `reference/grammar.md`. → door,
+form errors are loud.
 
-**Delivery binary** — a single punchtape executable; inside it — both
-the code and all the canon-data texts; the version is stamped in at
-build. → canon data, version. VII
+**Digest** — a short fingerprint of content (SHA-256; the short form
+in replies is 12 characters, the verdict signature is 16): same
+bytes — same digest, different bytes — almost certainly a different
+digest. The machine reconciles the world by digests, not by bytes;
+digest values exist only in machine replies — never compute one
+yourself. Analogy: the fingerprint of a file.
 
-**Delta** — one submission from the agent: YAML of one kind (wish,
-checks table, code, fix…), possibly with a token tail. Analogy: one
-step-letter in the correspondence with the machine. VI
+**Digested surface** — the accounted product: the work tree minus
+`.punchtape/` minus the build-ignore globs. The sibling `input/`
+directory sits outside the work dir and is never digested. The tree
+digest of the verdict covers exactly this. → build-ignore,
+checkpoint.
 
-**Delta skeleton** — the canonical sample of the correct shape of a
-delta kind; attached to a refusal on a form error: the machine teaches
-the format by construction. VI
+**Door** — THE submission file: `.punchtape/inbox/current.txt`, the
+only path submit accepts (any other path is refused with the wanted
+one named — the door is impermeable). The machine prefills it from
+the embedded template when missing; after an accepted, non-replayed
+submission it is rewritten back to the blank template; a rejection
+leaves the draft. Byte samples and witness probes lie next to it.
+→ document, submit, template catch.
 
-**Derivatives (derive)** — the auto-expanded suite: from each scenario
-the machine deterministically derives variants (empty state, restart,
-zero/minus/neighbors of numbers, removing the seed key; budget 8) and
-checks robustness.
+**Document (the submission document)** — the one YAML-shaped text
+the agent writes into the door: two kinds (spec, run), one grammar —
+the FIRST spec is the full table (behaviors with prose and rows, an
+optional build declaration, optional ignore globs); every later
+submission is a patch by row address (the full table never rides
+twice; the deliberate full rewrite carries `full-replace: true`).
+Two spellings of one content are one content (the machine keys by
+the content digest). `reference/grammar.md`.
+→ door, kind, patch.
 
-**Digest** — a short fingerprint of content (SHA-256; the
-human-readable short form is 12 characters, the verdict signature is
-16): same bytes — same digest, different bytes — almost certainly a
-different digest. The machine reconciles the world by digests, not by
-bytes. Analogy: the fingerprint of a file. VII
-
-**Double-compile** — the release gate: a fresh twin instance receives
-the same spec from the canon and a second executor; the sets of
-scenarios must match, and all checks must go green in both. Analogy:
-rebuilding a house from the same blueprints with another crew — the
-result must be the same. VI
-
-**Double run (transience)** — every check runs twice in the same run
-directory path, wiped clean between attempts; observations must match
-byte for byte; randomness is caught, not accepted. → volatility.
-
-**Draft (spec draft)** — a cheap spec from an auxiliary executor: it
-becomes the spec only after explicit acceptance by the hand.
-
-**Drift** — an instance's divergence from the acceptance point (the
-surface files changed after the verdict). A drift claim needs two
-signatures — the one recorded at acceptance and a measurable current
-one, both computed through the same normalization; an acceptance
-that could not measure a signature is named as such, never compared
-against. Drift downgrades the verdict to NOT-READY and is named
-honestly. → acceptance, verdict, freshness contour. VI
+**Drift** — the tree moved after the acceptance moment: the verdict
+re-snapshots the CURRENT tree (an observation, not a journal record)
+and D' ≠ D is the machine-visible red line — the acceptance line
+names it, a READY is downgraded to NOT-READY, and re-verification
+needs a run on the current tree (the pure re-run driver exists
+exactly for this). A drift claim needs TWO signatures: an acceptance
+that could not see the surface or an unmeasurable one says nothing
+— a false drift does not reach the verdict. → acceptance,
+pure re-run, verdict.
 
 E
 
-**env-fail** — the red of an environment/launch failure (tool missing,
-launch timeout): not behavior, eats no attempt budget. → environment
-diagnostics. VI
+**env-fail** — the red of an environment or launch failure (a tool
+missing, a start failure, a launch timeout, a broken build):
+classified by the diagnostics registry and marked not-behavior. A
+red row is a red row nonetheless — the release is not proven until
+the substrate holds. → environment diagnostics.
 
-**Environment diagnostics (env doctor, envdiag)** — a deterministic
-classification of environment failures: no tool, no permission, a
-timeout, no artifact — each with a hint. A red environment reddens
-acceptance. → env-fail, acceptance. VI
+**Environment diagnostics (env doctor)** — a deterministic
+classification of environment failures: each class renders a
+diagnosis plus a FIX hint from the registry (canon data). →
+env-fail.
 
-**Escalation (code 4)** — an open conflict of requirements or a
-quarantine: only an explicit, live human choice; silence never
-resolves it. IV
-
-**Executor** — the hand's LLM agent: reads the slot, writes deltas,
-drives the task to the verdict; one executor per task. II
-
-**Executor environment (task world)** — the environment the executor
-works in: the stack, the tools, the stack's linters in PATH (the
-campaign rule). VI
-
-**External state machine** — see external transactional state machine
-(the second level of the name).
-
-**External transactional state machine** — punchtape's category: the
-machine stands OUTSIDE the agent's application and owns the task's
-state for good (canon, journal, digests, replay); the agent is a
-peripheral and can only propose transactions (submissions), which are
-accepted whole or refused without a change of state. Four levels of
-the name: external transactional state machine → external state
-machine → state machine → the machine. The inversion against
-state-machine libraries (LangGraph and kin): there the machine is a
-part INSIDE the agent's application and dies with its session. The
-chiasmus slogan: "Not a state machine inside the agent's app — the
-agent's app inside the state machine." Analogy: a
-bank versus a wallet — the bank owns the account state and processes
-transactions, the wallet is only a carrier. → inversion of ownership,
-transaction, canon. I, II
+**Executor** — the agent: an older spelling of the same role, kept
+by the machine's code comments; both spellings name the one who does
+the work. → agent.
 
 F
 
-**Fanout** — parallel waves of the autopilot: active and red cards go
-to their executors at the same time; applying deltas stays
-sequential — there is one writer. → autopilot. V
+**Form (the form law)** — the one-line source of a row's formal
+choices (`form:`): a row that pins formal surface — a nonzero rc, or
+an exact (non-contains) out/err/state text — without a citation is
+a FORM DECISION UNRESOLVED: the spec lands, the ack names the rows,
+and the run door stays closed until each pin carries its source line
+(the brief/prereg phrase it quotes, or the operator's one-line
+decision as `form: "op(<date>): <decision>"`). The machine never
+judges the citation's content — presence is the whole mechanism.
+→ row.
 
-**fanout** — see Fanout.
+**Form errors are loud** — the machine never auto-repairs a
+submission's form: a decode failure or a validation refusal is one
+diagnosis line; the draft stays in the door. The only surviving
+hint is the kind head (an unknown kind one or two edits from exactly
+one known kind gets it named). → diagnosis line.
 
-**Feature** — a requirement in the human sense: what the product can
-do; the name is the phrasing, the behavior is the scenarios, the
-description is the human spec's prose. VI
+**Freshness (the content-addressed memo)** — a green row's standing
+at unchanged inputs: the row's recorded memo (`ran-at`, `ran-tree`,
+`inputs`, `ran-rc`, `ran-out`) keys its result to the digests of the
+files its command names in the work tree — plus its from-input
+seeds' sources, its byte sample, its witness probe and the declared
+build. Nothing moved — the row does not re-run (a kept green); a
+named input moved — the row is stale and re-runs; a red row always
+re-runs. The standings vocabulary: green fresh / green stale / red /
+never. → row, suite.
 
-**Feature prose (kind: feature)** — the author's description of a
-feature in living words: what it does, how it is invoked, what is
-visible, boundaries and errors; a new text waits for ratification
-anew. An empty description holds the verdict at NOT-READY: the human
-spec is part of "done", not a decoration. → waive. VI
+**from-input** — the seed source form: a copy of a file of the
+instance's input directory (the sibling `input/` of the work root)
+into the work tree, file-to-file, for the row's duration; the
+file's existence is checked at intake. → seed.
 
-**Feature statuses** — the living words of requirements in the human
-spec: draft, accepted, delivered, quarantined, cancelled. VI
+**from-run** — the state-expectation form that compares a file after
+the row byte-for-byte with a file the run itself produced — for
+expectations that ARE run artifacts. → row, state check.
 
-**FILES WRITTEN** — the response block of an accepted code/fix
-submission: the paths and digests of the files written; the source of
-digest references for the following submissions (digests are copied
-verbatim, not recomputed by hand). VI
-
-**Format auto-repair** — deterministic repair of purely typographical
-submission errors (a tab in an indent, an unclosed quote, a doubled
-token tail, a typo in a known field, up to two edits). It never
-repairs semantics. Analogy: autocorrect in an editor that does not
-change the meaning of words. → submission, delta skeleton. VI
-
-**fragment (why fragment)** — a scenario's observations as a ready
-YAML block for surgical match edits: the canon hands out its own bytes
-as data.
-
-**Freshness contour** — reconciling the passport with reality before
-work: if files or conventions have moved away from the verdicts — the
-slot carries a CONTOUR line. Analogy: an "expired" stamp on a
-certificate. VI
+**full-replace (the deliberate rewrite hatch)** — the explicit mark
+that a FULL behaviors document is a conscious act, not an accident:
+the door refuses an implicit full re-submission after the first
+accepted spec (the table never rides twice — the economy law); with
+`full-replace: true` it is taken, the ack counts "old N rows -> new
+M rows" and the event rides the ledger. Never composes with a
+patch. → patch.
 
 G
 
-**Gap class** — the classification of a quarantine gap: canon — a
-contradiction between spec rows; environment — all the reds are the
-environment; code — everything else. VI
-
-**Gate** — the machine's checkpoint for a submission: statics
-(types/lint), a suite run, a coverage probe, trace, review-diff,
-cost, latency (informational), double-compile. A red gate is not an
-opinion, but a named reason. → gate rent. VI
-
-**Gate rent** — retiring the types/lint/coverage-probe gates after
-three runs without a single red in the current conventions era:
-trust without rechecking until the world changes; a recipe change
-returns types/lint to duty (a new conventions era). The stop-gates
-(suite, trace, review-diff) cannot be rented. → gate, conventions
-era. VI
-
-**Guarantee paid for in watts** — the formula of the machine's
-economics: cheap measurable heat (the tokens of double runs, metered
-runs) buys expensive unmeasurable uncertainty (freedom to interpret
-the brief). The field confirmed it: 50/50 machine verdicts against
-22% strict byte convergence for a solo run. → anti-entropy effect.
-I
-
-H
-
-**handoff** — a computable handover of a session: the instance's
-facts and a ready continuation prompt; nothing is stored. VI
-
-**Healer phrases** — the machine's ready answers to predictable agent
-failures (for example, a repeated submission key). VI
-
-**Hold** — the state of an open deferred amendment: a submission that
-changes proven expectations waits for human approval (kind: amend);
-silence preserves the proven expectations. → amend. VI
-
-**Hypotheses** — the registry of hypotheses about changes to the
-delivery canon: change, hypothesis, metric, window, baseline, outcome
-(open/confirmed/refuted). Visible via `why hypotheses`. VI
+**Gate** — a named machine check of a stage transition (spec-
+accepted, ratify-green, spec-resubmitted): the runner walks the
+stage exits while the gates pass; a gate is a mechanic, never an
+opinion. The run's own checks show as the suite line and the tree
+control. → stages, suite.
 
 I
 
-**Idempotency (deja-vu defense)** — the same submission (by key or by
-content digest) is not applied twice: the answer IDEMPOTENT REPLAY,
-the counters do not grow. → submission. VI, VIII
-
-**impact** — the reverse index "file → boundaries": what an edit will
-touch, before the edit; a slot line when the spec changes. VI
+**Idempotency (deja-vu defense)** — the same document content is not
+applied twice: the answer IDEMPOTENT REPLAY with the original
+transaction id, the corpus does not change, the counters do not
+grow. The machine derives its own submission key from the content
+digest — a spec's key also carries the corpus the document implies
+(the same document against the corpus it describes is a repeat;
+against a different corpus it is a new version), a patch is its own
+content — the agent invents no keys. One exception by design: the
+pure re-run driver. → pure re-run.
 
 **Instance** — one task of the machine: a directory with the product,
-the AGENTS.md self-doc, and the hidden state `.punchtape`. It lives
-with its own binary. II, VII
-
-**Instance changelog** — `.punchtape/CHANGELOG.md`: the diff of the
-task's life from the journal — what changed and why; written by the
-machine at every verdict. VII
-
-**Intent router** — a translator of everyday phrases into verbs: "what
-next" → next, "price" → why price; not a single match — the phrase is
-treated as a product wish; two different matches — a menu for the
-human, the machine does not resolve an ambiguity. VI
-
-**Inversion of ownership** — the essence of the difference from
-state-machine libraries: there, the agent's application owns the
-machine (inside, it dies with the session); here the machine stands
-outside, it owns the state, and the agent is a peripheral. "External"
-= "the owner". → external transactional state machine. I, II
+the AGENTS.md working contract, and the hidden state `.punchtape`.
+→ .punchtape.
 
 J
 
 **Journal (transactions)** — an append-only stream of the applied
-deltas with their effects (what was written/deleted, and where); all
-state is always derivable from it; files damaged by hand are restored
-from it. Analogy: a flight recorder — the fact is written first, the
-world second. → ledger, manifest. VII
+transactions with their effects (the birth's brief transaction
+included); all state is always derivable from it; files damaged by
+hand are restored from it. A frame cut mid-write does not blind the
+machine: the intact records load, the torn tail is quarantined to a
+sidecar. The entries carry the retired-row frames and the version
+numbers of the spec they created and the verdict they froze. No code
+ever enters it — the agent's code lives in the working root.
+Analogy: a flight recorder — the fact is written first, the world
+second. → ledger, writer monopoly.
 
 K
 
-**kb (knowledge base)** — "when X, do Y" records with a source and
-the replacement of stale ones; deterministic matching of triggers
-against the context.
+**Kind** — the submission document's `kind:` head, exactly two
+values: spec (the state of the case; nothing runs) and run
+(execution). The kind decides what the machine does with the
+document, not which fields it has. → document, run (the kind), spec
+(the kind).
 
-**Knowledge** — the accumulated wisdom of an instance: the decision
-log, the out-of-scope list, the kb knowledge base. Visible via `why
-knowledge`. VI
+**Knowledge render** — the machine-written human-readable files
+inside the instance: `SUMMARY.md` (the one-page verdict summary, in
+the brief's language) and `spec.md` (the current spec render). The
+reference library — `.punchtape/reference/` — is maintained at every
+open (regenerated when the canon head changed). Read them, do not
+edit them. → renders.
 
 L
 
-**Latency** — the response time of the machine's verbs (p95); an
-informational gate: the duration of honest check work is a property
-of the task, not a machine defect; a failure means sustained
-non-adjacent spikes.
+**Language** — the brief's language, detected once at birth by the
+deterministic script detector (≥30% Han → zh, else ≥30% Cyrillic →
+ru, else en) and recorded on the instance; it steers the HUMAN
+render (the summary; the prose is the agent's own language by
+construction). The machine protocol itself is English.
 
-**Ledger** — the journal of the machine's meter facts: events, wall,
-invocations, tokens ("null" = honestly not measured). Analogy: a
-counter at a machine tool — it does not do the work itself, but
-without it you will not see where the downtime is. → journal. VII
+**Ledger** — the journal of the machine's meter facts: events (verb,
+apply, gate, heal), wall, calls, reply bytes with the reply's
+render family (the ceremony meter's ground), the rejection reason,
+PT_SUBMITTER as reported. Analogy: a counter at a machine tool — it
+does not do the work itself, but without it you will not see where
+the downtime is. → journal.
 
-**Ledger events** — the kinds of facts: verb, apply, gate, executor,
-question, choice, answer-upgrade, waive, quarantine, gate-retire,
-probe, contour. VII
+**Live tree** — the run world: rows run in the work tree itself,
+zero copies — cwd is the work dir, PATH is the system PATH, no
+wrappers and no containers. A digest is read before the run and one
+after: outside the ignores they must name the same surface. A
+launch's execute right is a grant for the row's duration, folded
+back at its end. `reference/environment.md`. → digested surface,
+seed, tree moved.
 
 M
 
-**Machine changelog** — see Instance changelog (the same render,
-`.punchtape/CHANGELOG.md`).
-
-**Machine-write marker** — the first line of render and data files:
-"written by the machine, hand edits are rejected"; a file without
-the marker is human, untouchable. VII
-
-**Manifest (lastgood)** — the list of files with digests after the
-last successful write; the reconciliation at opening catches manual
-edits.
-
-**Manual edits** — changing the machine's files by hand: detected by
-reconciliation against the manifest, refused with an honest refusal;
-everything goes through submissions. VIII
-
-**Materials** — the project's files moved into the run directory byte
-for byte under the same paths: binary inputs are not relayed by hand.
-→ seed. VI
+**Measured value** — what a red row's reason carries: the exit code
+got versus wanted, the expectation and the measured stream with an
+excerpt, a window of bytes around a divergence; a terminator-shaped
+divergence (a trailing newline, a missing line break) additionally
+carries a copy-ready expectation PROPOSAL — the measured bytes to
+paste into the row when the code is the truth. → red list.
 
 N
 
-**next** — the verb that reads the current slot; the default after the
-first read is the contextual diff (the ACTION line always in full),
-`next --full` prints the whole slot; in an empty directory it creates
-an instance and prints the self-doc. IV
+**next** — the verb that reads the current slot; in a fresh
+directory `next "<brief>"` births the instance (writes AGENTS.md,
+injects the contract, fixes the brief) and answers with the first
+slot; a bare next answers with the slot alone. → birth, slot.
 
-**NEXT SLOT:** — the prefix of an accepted submission's response: the
-next slot is already in the response, a separate next is not needed.
-→ slot, submission. VI
-
-O
-
-**Out-of-scope** — the list of what the product deliberately does not
-do, with reasons; instance knowledge. → knowledge. VI
+**NEXT SLOT** — the slot render an accepted submission's follow-up
+`punchtape next` returns (the same render as a bare next; the
+submission's own reply is the thin ack — transaction, bytes,
+gates, the measured one-liners — and carries no slot). → slot.
 
 P
 
-**Pain journal** — the mechanical journal of troubles: refused
-submissions, repeated keys, red cycles, quarantines, approval needs;
-each pain gets a diagnosis and a workaround from the catalog. Analogy:
-a machine-tool failure log — the process is fixed by it, instead of
-being surprised anew every time. → retrospective. VI
+**PATH launch** — a command[0] name with no slash that no tree file
+answers: the machine hands it to the environment as is, and the
+environment searches the path. OS level, zero product knowledge. A
+name with a slash is a tree path; a bare tree file is launched
+through its tree path. `reference/environment.md`.
 
-**Passport** — the accumulated knowledge about the product's
-boundaries: trust-ladder statuses, run verdicts, conventions,
-inventory. A computable view of the canon. → boundary. VI
+**Patch (the sparse submission)** — the later document's shape: the
+change only, addressed by the row labels the machine prints
+(BEHAVIOR-ID/N): `replace` (new row bytes at the address, in place),
+`add` (rows to the END of their table; a new id opens the behavior),
+`remove` (rows retired), `run` (rows to execute now, fresh or not),
+`prose` (the verdict-gate text replacement). One address — one
+operation; addresses read the corpus at the patch's arrival; the
+same patch bytes again are an honest replay. The machine EXPANDS
+the patch into the full document a re-submission would have been —
+the canon bytes of both paths are identical by construction.
+→ document, full-replace, idempotency.
 
-**PATH launch** — a command[0] name not found among the surface
-entries: the machine hands it to the environment as is, and the
-environment searches the path. OS level, zero product knowledge. →
-surface entry. VI
+**Procedural modes** — the row's runner disciplines, composing with
+every head: `launch: nonet` (the launch happens inside a fresh
+network-less namespace — nothing is wrapped around the command, the
+network simply is not there; a host that cannot raise the namespace
+answers an honest environment red) and `tree: unchanged` (the
+row-scoped tree identity control). Mechanics, not meaning: whatever
+a mode is FOR lives in the probe or the row's own expectations.
+→ tree moved, typed heads.
 
-**probe** — formalizing observed invocations into spec rows at
-release: the spec catches up with code that has stabilized. VI
-
-**Prose** — the spec's unmeasurable remainder: what matters in words,
-but has no scenario; lives in the canon, visible in the spec and the
-verdict, not compiled into checks. VI
-
-**Proven** — "has gone green at least once": protection of
-expectations from post-code weakening; a row that has proven nothing
-is repaired freely. VI
+**Prose (behavior prose)** — the author's description of a behavior
+in living words: what it is, how it is invoked, what is visible,
+boundaries and errors. MANDATORY at the form level — a behavior
+without prose does not validate; the human spec is part of "done",
+not a decoration. → atom.
 
 **PT_SUBMITTER** — a voluntary self-declaration of the calling side
-via the environment; logged "as reported", without trust. VI
+via the environment; journaled "as reported", without trust.
 
-Q
-
-**Quarantine** — an honest stop of a card after three behaviorally
-red attempts, with the gap classified; it reaches the verdict, and
-the verdict asks the human. Analogy: a defect on the warehouse shelf —
-not thrown away, but set out for review. → attempt budget.
-
-**Question batch** — a package of clarifications for the human (up to
-three); one answer closes all of them; silence applies the
-recommended defaults; answered questions go into the echo of choices
-(CLARIFIED) and are not asked again; the structured input shows "what
-I understood" (the wish verbatim) and "what I can do". Analogy: a
-doctor asks the list of questions before the appointment, not one at
-a time in the doorway. → choice point, default, attention. VI
+**Pure re-run** — the re-verification driver: a `kind: run` document
+with no behaviors, no patch and no build declaration. Its whole
+content is "run again", so it never dedupes: the same bytes after a
+fix of the tree are a NEW application, not a replay. Re-verification
+after a repair or a drift is its purpose; an all-fresh corpus
+executes nothing — every row keeps its green, the acceptance stands.
+→ idempotency, drift.
 
 R
 
-**Ratification** — explicit approval by a human (the operator):
-feature prose, executor decisions; for feature prose, a new text
-cancels the previous ratification. → feature, spec. VI
+**Ratify (ratification)** — `ratify: true`, only legal in kind: run:
+the SIGNATURE, not a run — it executes nothing (no row, no build)
+and signs exactly when the recorded green still stands: every row
+fresh at unchanged inputs and the surface digest equal to the last
+green run's. Stale — a red row, a never-run row, a moved input, a
+drifted tree — is a refusal naming the rows or the paths (nothing
+applied); the honest route back is a plain run. Success freezes the
+verdict snapshot inside the same transaction; the case lives on —
+at deliver a run is refused, the next spec version reopens the work.
+→ freshness, stages, verdict snapshot.
 
-**READY / QUARANTINE / NOT-READY** — the statuses of the verdict. VI
+**READY / NOT-READY** — the statuses of the verdict. NOT-READY is a
+named red list with the measured facts, never a silent "almost
+done". → verdict.
 
-**Red list (RED LIST)** — the slot's red checks, folded into runs by
-identical cause; the static blockers as a separate GATE REDS list. VI
+**Red list (RED LIST)** — the standing reds with their measured
+reasons: in the focus atom's card of the implement slot and in the
+NOT-READY verdict, capped by the list budget (10 lines, canon
+data). → measured value.
 
-**Refreeze** — the journal head has changed (a change request, a
-double-compile): the verdict is rendered anew, and the knowledge
-renders are regenerated in the same step. → composition freeze,
-verdict. VI
+**Renders** — the machine-written regenerable files of the instance
+root and `.punchtape`: AGENTS.md, the reference library, spec.md,
+SUMMARY.md — derived from the canon and the journal, never a source
+of truth. → knowledge render.
 
-**Regeneration** — the action proposed by the slot on a deep red (more
-than half the card's scenarios, or the second attempt): rewrite the
-facet from scratch instead of patching it. VI
+**Report (the verb)** — `punchtape report`: the operator's read-only
+table of the stored runs (nothing re-runs): every row's exact
+command, its demand, the measured answer (the exit code and output
+digest of the last run), the run's time and the freshness mark. The
+default surface is the door view (per-atom counters, the red rows in
+full); `--full` prints the whole table; `--since vN` aims the same
+facts at the delta after a frozen verdict — the changed, new,
+re-measured and retired rows by name. → freshness,
+verdict snapshot.
 
-**Rerun (RERUN)** — a code/fix submission whose content matched the
-project entirely (not a single new byte): nothing is applied, the
-counters do not move, the gates run synchronously. The honest way to
-recheck after the environment has been restored or the recipe has
-changed — before, hands disguised a rerun as kind: fix. Analogy:
-rechecking a finished part by re-measuring it, not by putting it into
-the work again. → submission, digest, gate. VI
+**Retired row (retirement)** — a row removed from the corpus by a
+spec version (an id the document no longer names, a shrunk row list,
+a patch `remove`): recorded as a visible journal frame with its last
+standing; the next verdict explains every one by name — greening by
+deletion without a trace is impossible. A row dropped before the
+case's first run never had a chance to measure (amnestied); a row
+retired after runs without ever running is a refusal at ratify.
+→ patch, verdict.
 
-**Retrospective (retro)** — a computable breakdown of pains by
-frequency, with workarounds and a call to write the cure into
-knowledge. VI
+**Row (check row)** — one executable end-to-end check inside a
+behavior: ONE head — the general `run` command (argv or a quoted
+string) or a typed head — plus optional seeds, the expectations
+(out/err/rc/state/bytes), an optional timeout, optional
+procedural modes and an optional `form:` source line. Expectations
+are DIRECT: an echo of a harness self-report is refused, a contains fragment
+shorter than 4 runes needs its honest `(contains-loose)` mark. The
+row's address in replies and renders is `<id>/<n>` (`B1/2`) — the
+address the patches ride. The machine's record of the last run
+(outcome, reason, env-fail) and the freshness memo live in the row,
+and are never submission content. `reference/grammar.md`.
+→ atom, form, seed, suite, typed heads.
 
-**review-diff** — the honesty gate of review: claimed-but-not-done and
-done-but-not-claimed. VI
-
-**Row identity (row key)** — seed + materials + setup + the sequence
-of commands: matched byte for byte — the same table row, the
-expectations are replaced; otherwise a new row. VI
-
-**Row twin** — an addition to the checks table whose form (seed +
-commands) matched an existing row while the set of materials is
-different: NOT a replacement. The submission's answer names such twin
-rows explicitly — there are no silent duplicates in the canon. → row
-identity, checks table. VI
-
-**run-lock** — serialization of the executors of one instance's runs:
-a single scenario port. VI
-
-**Run snapshot** — the map "path → bytes" of all the regular files of
-the run directory after the action: a full reconciliation of state,
-with a reading budget.
+**Run (the kind)** — the executing half of the two kinds: after the
+apply it runs every STALE row of the corpus (the declared build
+first; the kept greens named in the suite line; a run never
+retires); behaviors absent = a pure re-run; `ratify: true` signs
+the recorded green. → document, freshness, pure re-run, ratify.
 
 S
 
-**Scenario skeleton** — the degree of a scenario's immaturity: not
-everything needed for a run is there (no invocation, no assertions).
-Degrees: executable / skeleton / prose. → prose. VI
+**Seed** — a file the machine writes into the work tree before the
+row and removes after it: `text` (inline content) or `from-input`
+(a copy of a file of the instance's input directory). A seed over a
+tree file honestly replaces it for the row's duration; when the row
+ends the original bytes return, a fresh seed path is removed —
+between rows seeds do not live. `reference/grammar.md`.
 
-**Seed** — files with content that the machine brings into the clean
-run directory before the row's commands: a transfer of bytes, the
-meaning unknown to the machine. → materials, checks table row. VI
+**Slot** — one step of work: the stage (STAGE), the INBOX line (the
+door), the contract line, the stage body (the brief at intake; at
+implement the STATE counts, the CHANGED list and — before the first
+run — the await-code line; at deliver the verdict), the
+SESSION HANDOFF recommendation, exactly one action (ACTION), a
+context slice
+(CONTEXT — the focus atom's card), the gates (GATES ON SUBMIT).
+Deterministic: the same canon and journal — bit-for-bit the same
+text; the cache key includes the journal head, the canon digests and
+(on deliver) the live tree digest. → changed list, NEXT SLOT,
+surface modes.
 
-**Semantic comparisons (json-equals / json-contains)** — comparing
-JSON by structure: key order and whitespace do not matter, array
-order is part of the state. VI
+**Surface modes** — the slot's representation-only flags on next and
+submit: `--quiet` (drops the CONTEXT body; the deliver verdict still
+rides), `--delta` (only the rows whose standing moved since the LAST
+SLOT — the anchor is the last `next` reply, any mode; a submit's ack
+is not a slot and never re-anchors it), `--run-after` (submit: the
+just-accepted spec's suite runs in the same door call — two
+transactions, one reply). The journal and the canon are byte-identical
+across the modes. → Slot.
 
-**Silence** — the absence of a human answer to a question: the
-recommended default is applied; a conflict is never resolved by
-silence. → default, escalation. VI
+**Spec (the kind)** — the storing half of the two kinds: the machine
+validates the form and applies the document's behaviors AS THE WHOLE
+CORPUS — an id absent from it retires its atom, nothing runs; the
+FIRST spec is the one full document, every later spec rides patches.
+→ document, atom, patch.
 
-**Slot** — one step of work: stage, state, exactly one action
-(ACTION), a ready example (EXAMPLE), a context slice (CONTEXT), gates
-(GATES ON SUBMIT). Cached; every read after the first serves the
-contextual diff — unchanged blocks collapse under digest anchors,
-the ACTION line never collapses; the whole slot is the first read or
-`next --full`. III, IV
+**Spec version** — the living case's version counter: every accepted
+`kind: spec` document is version N; the ack answers with the counts
+line `SPEC vN: atoms … (+new, ~changed, -retired); rows …` — the
+machine-computed diff of the document against the corpus it arrived
+at. → patch, retired row, verdict snapshot.
 
-**Spec** — the product's specification as data: requirements,
-scenarios, checks; the source is the canon, the views are the checks
-table and the human specs. → spec registry, canon. VI
+**spec.md** — the machine's render of the current spec, refreshed
+after every accepted submission: one section per behavior — the name,
+the prose verbatim, a rows table with the last outcomes, the first
+standing red's reason. A regenerated render, not a journal effect. →
+knowledge render.
 
-**Spec registry** — the table of contents of the human specs: features,
-files, description statuses, scenarios; search via `why spec
-<words>`. VI
+**spec --check (dry validation)** — the free pre-submission check
+of a draft: `punchtape spec --check <file>` runs the door's own form
+rules over the draft against the read-only corpus and prints one
+reason line per finding; a pass is the door's promise — the same
+predicates, the first try. Understands patches (the expansion over
+the corpus as it stands). Nothing opens, nothing writes — the check
+costs nothing.
 
-**SPEC.md / SUMMARY.md** — the machine's renders of the instance's
-knowledge in `.punchtape`: the whole canon spec, and a one-page
-verdict summary (Made/Checked/Remaining/Price) in living words.
-VII
+**Stages** — the steps of a task's life: intake → implement
+→ deliver, and deliver → implement again (the reopen on the next
+spec version); the stages and their exit gates are delivery data
+(stages.yaml), the runner executes them. At deliver a run is
+refused — the case lives on for its next spec version; a new task
+means a new instance. The stop contract (exit codes 0/1/2) is not
+touched by stage data. → gate, ratify.
 
-**Split** — dividing the product into facets of parallel work: cards
-with exclusive ownership of files and contracts on the shared assets.
-Only before the first code; a split proposal in the slot is PROPOSED
-CUT (a big scope — BIG SCOPE — splits itself). VI
+**State check** — the `state:` expectations of a row: files checked
+after the run — exact or contains text (EOL-tolerant), or `from-run`
+byte equality. → row.
 
-**Stages** — the steps of a task's life: intake → spec → ac-compile →
-implement → review → deliver; the stages and the transitions
-themselves are delivery data, the runner executes them. IV
+**Submission (submit)** — delivering the door file to the machine:
+`punchtape submit .punchtape/inbox/current.txt`. Accepted — the reply
+is the thin ack (a run's adds the suite line with its red rows, a
+ratification's the signature and verdict lines); refused — the one
+diagnosis line, the draft stays. Everything that enters the machine
+goes through the door. → door, document, thin ack.
 
-**State machine** — see external transactional state machine (the
-third level of the name).
-
-**Submission (submit)** — delivering a delta to the machine: as a
-file or from stdin (`-`); `--check` is a dry validation without
-applying; `--try` is a dry trial of ONE checks-table row (the same
-runner in a clean directory, without entering the canon or changing
-the stage); accepted — the response carries NEXT SLOT; refused — one
-line of reason. VI
-
-**submit** — see Submission.
-
-**suite** — the full set of an instance's checks. VI
-
-**Surface** — the way of invoking the product that the operator has
-declared: an artifact by the build recipe, or files by the names of
-the commands. The machine runs behavior only through it; the slot
-describes it with a SURFACE CONTRACT block. Analogy: a tourist sees
-the city from a sightseeing bus, not from the basements. II, VI
-
-**Surface entry** — a file the machine materializes in the run
-directory for a row's command[0]: the project file named by command[0]
-(without a recipe), the declared artifact file, or a file inside its
-tree. Resolution order: a ready file of the run directory (a seed, a
-material, the output of an early command) → a surface entry →
-otherwise PATH, by the environment. Analogy: your own brought tool, a
-tool lying on the table, a tool from the issued box — and only then
-the workshop's shared cabinet. → surface, artifact, PATH launch. VI
+**Suite** — the full row set of the corpus; the run's reply opens
+with the suite line — `suite=green (N rows)`,
+`suite=green (N rows: R ran, K kept green at unchanged inputs)`,
+`suite=red (N rows, K red)` — one line per red row after.
+→ freshness.
 
 T
 
-**Tail** — see token tail.
+**Template catch (the door's own blank)** — the door's accident
+insurance: after an accepted submission the door resets to the blank
+template, and submitting those template bytes (or an empty file) is
+refused unread — one line, the instance untouched, idempotent on
+repeats; the accepted ack names the reset (DOOR: reset to the blank
+template). A template that once decoded as a valid spec and drove
+instances off their rails is now mechanically impossible.
 
-**Taste queue** — the verdict line with prose (the spec's unmeasurable
-remainder) and the active rule waivers: "does not block and does not
-stay silent". → prose, waive. VI
+**Thin ack** — the accepted submission's reply: ACCEPTED (the
+transaction id), BYTES (the content sha), GATES (the gate names),
+the DOOR reset note, the measured one-liners (a spec's version
+counts; a run's suite line and red rows; a ratification's signature
+and verdict line) — and no slot body: the slot rides the follow-up
+`next`, and the slot cache makes it free. → NEXT SLOT, submission.
 
-**Token tail (# TOKENS)** — the last line of an executor's
-submission/response: an honest counter of its own environment ("n/a"
-— no environment); reserved by the ledger as the price of the
-invocation. The envelope cuts only the tail line — the delta's bytes
-before it (including the final newlines of the last block scalar) are
-untouchable. VI
+**Timeout** — the mechanism's ceilings: a row runs under 60 s by
+default (its own `timeout` may raise it, up to 300 s); the build
+gets 300 s. Parameters of the mechanism, not budgets for the agent —
+the machine sets no limit on how long the agent may work. →
+env-fail.
 
-**Trace** — the scenario ↔ check link via an identifier inside the
-check itself; the gate catches lost links (MISSING LINKS). VI
+**Transaction** — an atomic proposal of a state change: a submission
+is either accepted whole (validation, the corpus change, — for a
+run — the execution of every stale row, the checkpoint, the stage
+advance, all under one writer monopoly) or refused with one line of
+reason without a change of state; the state is always derivable
+from the journal. → submission, journal.
 
-**Transaction** — an atomic proposal of a state change: an agent's
-submission is either accepted whole (the gates run, the effects are
-written to the journal, the canon is updated) or refused with one line
-of reason without a change of state; the state is always derivable
-from the journal. → submission, journal, external transactional state
-machine. II, VIII
+**Tree moved (the red line)** — the live-tree identity control: a
+digest after the run must equal the one before it outside the
+ignores; a tree that moved under its own measurement makes the run's
+greens non-proof — they flip env-red and the line names the paths.
+A row with `tree: unchanged` runs its own row-scoped control
+(outside `.punchtape/`, the ignores and the row's own seeds, nothing
+it leaves survives it). Rows clean up after themselves: seeds are
+removed, outputs belong in build-ignore or die inside the row.
+→ build-ignore, checkpoint.
 
-**Trust ladder** — the statuses of a boundary: claimed → verified (a
-green run) → valid → reliable; above "verified" there are no machine
-proofs, the rest is human. VI
+**Typed heads** — the mechanical row families as heads of the
+grammar, strictly checked — no shorthand, no bundle:
+`refuse: {args, says, rc}` (one refusal; decode-only: IS the row
+`{run: args, out: "", err: says, rc: rc}`), `det: {run, same}`
+(the determinism pin; decode-only: IS `{run: run, out: same}`),
+`witness: {probe}` (the staged-bytes probe — its bytes ride the
+door and run staged under the row's modes),
+`repeat-run: <command>` (the idempotency witness — runs twice,
+agreement is green). Seeds and timeout compose with every head.
+`reference/grammar.md`.
+→ procedural modes, row.
 
 V
 
-**Validation** — checking a submission at the entrance: form, fields,
-semantics. A refusal is one line of reason; on a form error the
-machine attaches the canonical skeleton of the correct shape. → delta
-skeleton. VI
-
-**Verbs** — the agent's working surface of the machine: `next` (the
-current slot), `submit` (a submission), `why` (an explanation). The
-human writes no commands — they speak wishes, and their agent carries
-them to the machine. III
+**Verbs** — the command surface of the machine, exactly four:
+`next` (the slot; with a brief — birth), `submit` (the door file),
+`spec --check` (the dry validator) and `report` (the read-only
+table of the stored runs). The working loop lives on the first two.
+The human writes no commands — they speak the brief, and their
+agent carries it to the machine.
 
 **Verdict (VERDICT)** — the machine's final output on a task's
-readiness: READY / QUARANTINE / NOT-READY, with a full account
-(scenarios, checks, bill, acceptance, gates) and a digest; the prose
-count in the scenarios line is the number of requirements carrying
-an authored description (the human spec), not the count of prose
-scenarios — those live in the taste queue. Analogy:
-accepting a car by checklist, not by "seems fine". → acceptance,
-gate, taste queue. IV, VI
+readiness: READY / NOT-READY, with the full account (the version
+line of a snapshot, atoms, stages, origin, bill, acceptance, the
+retired rows) and the digest of the exact tree it was pronounced
+on. Analogy: accepting a car by checklist, not by "seems fine".
+→ acceptance, drift, verdict snapshot.
 
-**verifications (verification journal)** — what and when verified each
-boundary: verdicts, digests, anchor transactions. VI
-
-**Version (semver)** — the number of the machine's delivery, vX.Y.Z:
-major — breaking format changes, minor — new properties, patch —
-fixes. Visible via the `punchtape version` command. → machine
-changelog. V
-
-**Volatility (volatile)** — an honest declaration of
-unpredictability: which observations of the brief are declared random
-(identifiers, times) — thread names or file paths; the machine checks
-behavior but does not reconcile these bytes between runs. The file's
-presence is always checked. Analogy: the order number on a receipt
-changes, but the receipt always prints. → double run. VI
+**Verdict snapshot (the versioned freeze)** — every successful
+ratification freezes an IMMUTABLE snapshot — the journaled file
+`.punchtape/verdicts/vN.txt`, written once inside the ratifying
+transaction: v1 is pinned to its digest forever, v2 to its own —
+the model of git commits; the case lives on, the snapshots never
+move. At deliver the slot renders the latest snapshot; a drifted
+tree appends the honest drift line without touching the snapshot.
+The same step regenerates SUMMARY.md and spec.md. → drift, verdict.
 
 W
 
-**Waive (rule waiver)** — a conscious refusal of a completeness rule
-with a mandatory reason; the rule stops blocking but stays visible in
-the verdict. Only completeness can be waived — not feasibility, not
-stop-conditions. Examples of rules: `coverage.family` (a family
-without a scenario), `feature.doc` (a feature without an author's
-description — it holds the verdict itself; the waiver is submitted at
-delivery too). VI
+**Wish** — the older word for the brief; the state field that
+holds the brief is still named `wish`, the surfaces all say brief.
+The wish as a submission kind died with the one-document grammar.
+→ brief.
 
-**Whole-product card** — the starting card for all the non-prose
-scenarios, where implementation begins; the split replaces it with
-facets. VI
+**Work tree (work dir)** — the working directory: the agent's
+territory (the product's code lives here, written directly, never
+read by the machine) plus the machine's `.punchtape` and AGENTS.md.
+The rows run here, in place. → live tree, .punchtape.
 
-**why** — the explanation verb: a topic, or the card of an entity;
-every number of the machine has an origin; why price breaks the price
-of the current slot down by bytes and tokens. VI
-
-**Wish (intent)** — the human's want, verbatim, in living language;
-the source a task originates from; one line in the spec registry. IV,
-VI
-
-**Wish language** — the language of the instance's intent, detected
-by the deterministic script detector (≥30% Han → zh, else ≥30%
-Cyrillic → ru, else en), recorded on the instance; it steers the
-human blocks (questions, summaries, specs, the handoff) — the machine
-protocol itself is English. II
-
-**Write zone** — the rule of who writes files, and how: canon and
-passport — only by transactions under the manifest; journal and
-ledger — append-only; cache — rebuilt. The hand writes nowhere. VIII
+**Write zone** — the rule of who writes files, and how: the canon
+atoms, the state, the checkpoints and the verdict snapshots — only
+by transactions under the lastgood manifest (the recorded digests
+of the last machine-written state); the journal and ledger —
+append-only; the renders — regenerated; the cache — rebuilt. The
+working root outside `.punchtape` is the agent's territory — the
+machine writes only AGENTS.md beside the instance.
+→ writer monopoly.
 
 **Writer monopoly** — one write lock is taken for a whole submission:
-read, apply, commit — a single transaction; a second writer gets an
-honest refusal after short retries. VIII
+read, validate, apply, run the rows, commit — a single transaction;
+a second writer gets an honest refusal after short retries. →
+transaction.
+
+## Experiment and run vocabulary (a separate world — the machine never uses these words)
+
+The terms below belong to the EXPERIMENT layer (campaigns, control
+waves, runs of hands) that measures the machine from the outside.
+They are defined here for the reader of the experiment materials
+only; the machine's own code, canon and instance texts never carry
+them — the machine stays agnostic forever (its own counterparty is
+the agent, its own unit is the instance).
+
+- **Hand** — an experiment participant: an LLM agent session of one
+  arm of a control wave (a machine hand works through punchtape; a
+  solo hand works without it). The machine never speaks of hands.
+- **Cell** — the isolated working directory the experiment allocates
+  for one hand: an `input/ env/ work/` layout under the run root's
+  `cells/` (two-level random names — the measurement's blindness).
+  The machine's own word for its working directory is the instance.
+- **Wave** — one control run of the experiment: cells of both arms on
+  the same tasks, measured against frozen etalons and the economy
+  gates.
+- **Campaign** — the whole experimental series (tasks, briefs,
+  assignments, materials, tools, freezes) that owns waves.
+- **Etalon** — the pre-ratified reference spec of a task used by the
+  experiment's mechanical runner to measure a product.
+- **Operator** — the human role of the experiment layer (the
+  demanding customer of a solo hand, the relaxed owner of a machine
+  hand); outside the experiment there is only the machine's user.

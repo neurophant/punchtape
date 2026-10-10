@@ -1,0 +1,58 @@
+{
+ "law": "named minimal world adaptations over the byte-frozen 0.2.0 prompts",
+ "renders": [
+  {
+   "adaptation": "world-host",
+   "anchors_sha256": [
+    "2ae13c42c92f1d04e1c4ca84295104468009d5a718be63360e758d1d5b3c97cd"
+   ],
+   "render": "prompts-host/HARNESS-HOST.md",
+   "render_sha256": "0722a7061ceec3ba3e8cd5727827f336fd2d347a2942aaba1d8c5cac632f6cc7",
+   "source": "prompts/HARNESS.md",
+   "source_sha256": "b737bfe6f8636d80ac3c5a7fb9b002164f2023de1a353f70dad6f17c6b937d34"
+  },
+  {
+   "adaptation": "contract-paths+economy+stable-rows+form-hints",
+   "anchors_sha256": [
+    "b142c3c4e11942fa724e69083a01ac62b820e2e2a6249be1f85d40542f12a6c6",
+    "33de73a165fe3d9686234746e7417e8432169b4f5dbe44e47fc2393c480dddad",
+    "594a36ae767c9e515f127f361b9268a7dd3ec936b01683aa0bc1ffd685279f6c",
+    "2b842763024f9a884fe0a635a31b410dd7ade4a85095bbc8238270f5f52d10e8",
+    "f1cb66103c71f23762578ae3a83c31fef95d6394683536d399d305b371eb856b",
+    "11b07660ef3cc932ae17359a3445b34c11534b0d94bb69b2621b209ab40076a9"
+   ],
+   "render": "prompts-host/CONTRACT-MACHINE-HOST.md",
+   "render_sha256": "098dd6b7e86191bef20b15ba3923b067153f8499c521543ef8a45d0f4908bd05",
+   "source": "prompts/CONTRACT-MACHINE.md",
+   "source_sha256": "8d515af5e87c665d19d5981ead1083a5a8d17454401d92ac4d9ccdbc302db562"
+  },
+  {
+   "adaptation": "contract-paths",
+   "anchors_sha256": [
+    "3a3273608cf0df59ea9e4cb21a294f3bc732667b27e601a58feccad3d3f4183c"
+   ],
+   "render": "prompts-host/OPERATOR-MACHINE-HOST.md",
+   "render_sha256": "ecafbec717363c6bd31a0e1da4db427f93938aff8d5f3ca7ff735d668a07c6b7",
+   "source": "prompts/OPERATOR-MACHINE.md",
+   "source_sha256": "fb8e57901102a9282579a05a7148bfbcfd5eb657646279ca129492e705516d5c"
+  },
+  {
+   "adaptation": "measurer-host+two-hands",
+   "anchors_sha256": [
+    "3b5d6f341333dfb99bfd07e4ec04ea1f2f1932b47824f66b2025a6d7d9188311",
+    "a70ec852ba1faa27557ab5e9e1dc9268009a44cad20e936aff9b5ed58b1b2c81",
+    "4be2b4ba0e28083c5174f74be5becc8a5805491e555567687851e53f3dc4351d",
+    "23b8ba1ef4c87191900244e9e2c3377996de339e7c662dce86b81d5c82fe8749",
+    "557e5cca54c9ccc5ef1e838a5623d803438976335e6e45670e75364525f747e4",
+    "7be3053654b08f13c3b57db35e1bd21af8281477e50b674b7cd07bc2add32ed8",
+    "e56a18a9f159b03b7f718874065024019dcd1389560ed08c6375b50239f65762",
+    "5926eacced151bd6a7f5e98e3661bb0c67b6540710cbcae7c6bc075a1564ffb5",
+    "4b8e61a3a50334071967656284862c4b4b4181e80fb2834f927165c0e6a1b91f"
+   ],
+   "render": "prompts-host/MEASURER-HOST.md",
+   "render_sha256": "a13e648bedf303e48275c2ba67a6b97a8f5c8c4cd8a6935bd54138b13faebe00",
+   "source": "prompts/MEASURER.md",
+   "source_sha256": "d48170311ece938e3a289bf9f0b1d68b390b9ec0c5989836720f1261f3e65515"
+  }
+ ]
+}

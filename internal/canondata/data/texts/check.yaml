@@ -1,0 +1,38 @@
+assert.bytes-differ: |2-
+  {path} differs from {other}: {diff}
+assert.file-missing: |2-
+  file {path}: missing after the row
+assert.not-contains: |2-
+  the stream does not contain {value}; measured: {actual}
+assert.not-equal: |2-
+  not equal to {value}; measured: {actual}; {diff}
+assert.rc: |2-
+  exit code {got}, expected {want}
+assert.sample-missing: |2-
+  bytes sample {path} vanished from the inbox before the run
+assert.state-not-equal: |2-
+  state {path} not equal to {want}: {reason}
+assert.terminator-proposal: |2-
+   — measured value for the repair: {value}
+fail.observed: |2-
+  {stream}: {reason} (measured excerpt: {stdout})
+fail.seed: |2-
+  seed {path}: {err}
+fail.seed-input: |2-
+  from-input {path}: {err}
+fail.seed-left: |2-
+  seeds did not clean up after the row: {paths}
+fail.probe-form: |2-
+  witness: expected the file://name form (the probe's staged bytes next to the submission), got {given}
+fail.probe-missing: |2-
+  witness probe {path}: the staged bytes are missing from the inbox — probes arrive through the door, never from the machine
+fail.probe-stage: |2-
+  witness probe {path} did not stage into the tree: {err}
+fail.probe-left: |2-
+  the staged probe did not leave the tree after the row: {paths}
+fail.repeat-diverge: |2-
+  the two runs disagree — first: {first}; second: {second}
+fail.start: |2-
+  the command did not start: {command}: {err}
+fail.wait: |2-
+  the command died abnormally: {err} ({command})

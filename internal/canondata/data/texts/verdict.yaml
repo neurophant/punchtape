@@ -1,0 +1,44 @@
+acceptance-drift: |2-
+  acceptance: the tree moved after the acceptance moment (was {old}, now {new}) — the verdict needs re-verification on the current tree
+acceptance-none: |2-
+  acceptance: not reached yet — no green run of the full set
+acceptance-pass: |2-
+  acceptance: PASS on tree {digest} ({green}/{total} rows green)
+atoms: |2-
+  atoms: {total} total, {green} green; rows: {rows}
+bill: |2-
+  bill: machine wall {wall}, {calls} verb calls
+digest: |2-
+  digest: {digest}
+head: |2-
+  VERDICT: {status}
+origin: |2-
+  origin: {text}
+origin-none: |2-
+  origin: (no brief)
+red-list.header: |2-
+  RED LIST ({count}):
+red-list.line: |2-
+  {label}: {reason}
+red-list.no-atoms: |2-
+  no behaviors in the corpus — the spec never arrived
+stages: |2-
+  stages: {submitted} spec submissions, {runs} runs
+version: |2-
+  version: v{version}
+retired.header: |2-
+  retired since v{prev} ({count} rows):
+retired.header.first: |2-
+  retired before the first verdict ({count} rows):
+retired.line: |2-
+  {label}: {outcome} — {reason}
+retired.line.bare: |2-
+  {label}: {outcome}
+retired.never-ran: |2-
+  {label}: never ran
+retired.before-first-run: |2-
+  {label}: retired before the first run (outcome —)
+retired.guard: |2-
+  the verdict cannot account for the retired rows ({labels}) — refusing to certify this version
+retired.never-ran-guard: |2-
+  rows retired without ever running ({labels}) — a check deleted before it measured anything hides it; run them or keep them

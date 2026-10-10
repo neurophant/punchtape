@@ -1,0 +1,13 @@
+{
+  "currency": "USD",
+  "source": "market z.ai tariffs (same source as the 0.2.0 prices.json; cross-checked against several independent summaries — ccswitch.io citing the official tariff; pi.dev zcode-executor; saygm.com)",
+  "adaptation": "model map + two hands (the owner's word: no third hand, no flash): this campaign's own map — the two hands of this repo (solo and the machine hand, both the top model); the flash tier is deleted and nothing consumes it.",
+  "map": [
+    {
+      "model_id": "GLM-5.3",
+      "tier": "GLM-5.3 Max",
+      "used_by": ["solo", "top"],
+      "per_million": {"in": 1.4, "out": 4.4, "cached_in": 0.26}
+    }
+  ]
+}

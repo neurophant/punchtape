@@ -17,24 +17,19 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/neurophant/punchtape/internal/canon"
 	"github.com/neurophant/punchtape/internal/canondata"
+	"github.com/neurophant/punchtape/internal/fsport"
 	"github.com/neurophant/punchtape/internal/journal"
 	"github.com/neurophant/punchtape/internal/yamlio"
 )
 
-// canonNamePattern — a canon file name: lowercase letters, digits, hyphens.
-var canonNamePattern = regexp.MustCompile(`^[a-z0-9-]+\.yaml$`)
-
-// Product passport paths (conventions and the boundary registry) under
-// the writer discipline: written only by machine transactions.
-const (
-	conventionsFilePath = ".punchtape/passport/conventions.yaml"
-	boundariesDirPath   = ".punchtape/passport/boundaries/"
-)
+// canonNamePattern — a canon file name: the behavior id's lowercase
+// spelling plus the identifier alphabet (the executor's ids may carry
+// dots and underscores).
+var canonNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*\.yaml$`)
 
 // Instance paths under the writer discipline.
 const (
@@ -49,7 +44,7 @@ func (e *Engine) markerPath() string {
 
 // lastgoodPath — the manifest of the last machine state of the files.
 func (e *Engine) lastgoodPath() string {
-	return filepath.Join(e.Store.Root(), "cache", "lastgood.yamll")
+	return filepath.Join(e.Store.Root(), "cache", "lastgood.yaml")
 }
 
 // ErrWriterBusy — a busy writer lock: an instance never has a second
@@ -64,69 +59,52 @@ var ErrWriterBusy = errors.New(canondata.T("store.writer.busy"))
 // depth counter: a submission holds the writer for its whole
 // read-modify-write transaction, and its inner commits reuse the same
 // lock instead of waiting on themselves.
-func (e *Engine) acquireWriter() (*os.File, error) {
-	if e.writerDepth > 0 && e.writerLock != nil {
-		e.writerDepth++
-		return e.writerLock, nil
-	}
+func (e *Engine) acquireWriter() (func(), error) {
 	lockPath := filepath.Join(e.Store.Root(), "cache", "writer.lock")
-	if err := os.MkdirAll(filepath.Dir(lockPath), 0o755); err != nil {
+	if err := fsport.Bind.MkdirAll(filepath.Dir(lockPath)); err != nil {
 		return nil, fmt.Errorf("writer lock: %w", err)
 	}
-	f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o644)
+	release, held, err := fsport.Bind.TryLockExclusive(lockPath)
 	if err != nil {
 		return nil, fmt.Errorf("writer lock: %w", err)
 	}
-	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
-		f.Close()
+	if !held {
 		return nil, ErrWriterBusy
 	}
-	e.writerLock = f
-	e.writerDepth = 1
-	return f, nil
+	return release, nil
 }
 
-// releaseWriter releases the writer lock: the outer one (depth 0) by
-// simply closing; a nested one by the counter — the file lives until
-// the last.
-func (e *Engine) releaseWriter(f *os.File) {
-	if e.writerDepth == 0 || f != e.writerLock {
-		_ = f.Close()
-		return
-	}
-	e.writerDepth--
-	if e.writerDepth == 0 {
-		e.writerLock = nil
-		_ = f.Close()
+// releaseWriter releases the writer lock.
+func (e *Engine) releaseWriter(release func()) {
+	// a nil token is a panic-reset artifact: the lock then dies with
+	// the process, the next acquisition takes it fresh
+	if release != nil {
+		release()
 	}
 }
 
 // acquireWriterRetry — acquireWriter with short retries: transient
 // contention (a parallel read-recovery of opening) need not wreck a
 // submission; persistent contention stays an honest refusal.
-func (e *Engine) acquireWriterRetry() (*os.File, error) {
-	var lock *os.File
+func (e *Engine) acquireWriterRetry() (func(), error) {
+	var lock func()
 	var err error
 	for try := 0; try < 3; try++ {
 		lock, err = e.acquireWriter()
 		if err == nil || !errors.Is(err, ErrWriterBusy) {
 			return lock, err
 		}
-		time.Sleep(250 * time.Millisecond)
+		sleep(250 * time.Millisecond)
 	}
 	return lock, err
 }
 
-// commit runs a transaction under the writer lock: journal → marker →
-// effects → lastgood → marker removal. A failure at any step leaves
-// the instance completable: the marker names the transaction, the
-// effects are idempotent.
+// commit runs a transaction under the writer lock its caller holds
+// (a submit or its gates): journal → marker → effects → lastgood →
+// marker removal. A failure at any step leaves the instance
+// completable: the marker names the transaction, the effects are
+// idempotent.
 func (e *Engine) commit(entry journal.Entry) error {
-	lock, err := e.acquireWriter()
-	if err != nil {
-		return err
-	}
-	defer e.releaseWriter(lock)
 	if err := e.Journal.Append(entry); err != nil {
 		return err
 	}
@@ -139,12 +117,12 @@ func (e *Engine) commit(entry journal.Entry) error {
 	if err := e.writeLastgood(entry.Transaction); err != nil {
 		return err
 	}
-	return os.Remove(e.markerPath())
+	return fsport.Bind.Remove(e.markerPath())
 }
 
 // checkEffectPath — the white list of instance writes: a transaction
 // writes only files of zones with the journaled rule — the zone model:
-// state, passport, and canon collections with charset names; everything
+// state and the canon collection with charset names; everything
 // else inside .punchtape is forbidden. Project files are already
 // validated by the delta (card ownership).
 func checkEffectPath(p string) error {
@@ -156,7 +134,7 @@ func checkEffectPath(p string) error {
 	if !canon.JournaledPath(rel) {
 		return errors.New(canondata.T("store.effect.whitelist", canondata.M{"path": p}))
 	}
-	if strings.HasPrefix(rel, "canon/") || strings.HasPrefix(rel, "passport/boundaries/") {
+	if strings.HasPrefix(rel, "canon/") {
 		name := p[strings.LastIndexByte(p, '/')+1:]
 		if !canonNamePattern.MatchString(name) {
 			return errors.New(canondata.T("store.effect.charset", canondata.M{"name": name}))
@@ -175,7 +153,7 @@ func applyEffects(workdir string, effects []journal.Effect) error {
 		}
 		path := filepath.Join(workdir, ef.Path)
 		if ef.Delete {
-			if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			if err := fsport.Bind.Remove(path); err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("delete %s: %w", ef.Path, err)
 			}
 			continue
@@ -183,7 +161,7 @@ func applyEffects(workdir string, effects []journal.Effect) error {
 		if err := yamlio.WriteAtomic(path, []byte(ef.Content)); err != nil {
 			return fmt.Errorf("write %s: %w", ef.Path, err)
 		}
-		back, err := os.ReadFile(path)
+		back, err := fsport.Bind.ReadFile(path)
 		if err != nil || yamlio.Digest(back) != yamlio.Digest([]byte(ef.Content)) {
 			return errors.New(canondata.T("store.effect.readback", canondata.M{"path": ef.Path}))
 		}
@@ -206,7 +184,7 @@ func (e *Engine) verifyInstance() error {
 		return err
 	}
 	defer e.releaseWriter(lock)
-	data, err := os.ReadFile(e.markerPath())
+	data, err := fsport.Bind.ReadFile(e.markerPath())
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return fmt.Errorf("transaction marker: %w", err)
@@ -254,7 +232,7 @@ func (e *Engine) recoverMarked(tx string) error {
 		if err := e.writeLastgood(entry.Transaction); err != nil {
 			return err
 		}
-		return os.Remove(e.markerPath())
+		return fsport.Bind.Remove(e.markerPath())
 	}
 	// The marker names a transaction the journal does not have: the
 	// journal lacks what the machine wrote — the journal was corrupted
@@ -305,7 +283,7 @@ type lastgoodManifest struct {
 func (e *Engine) writeLastgood(head string) error {
 	files := foldInstanceFiles(e.Journal.All())
 	if _, ok := files[stateFilePath]; !ok {
-		if data, err := os.ReadFile(filepath.Join(e.Workdir, stateFilePath)); err == nil {
+		if data, err := fsport.Bind.ReadFile(filepath.Join(e.Workdir, stateFilePath)); err == nil {
 			files[stateFilePath] = yamlio.Digest(data)
 		}
 	}
@@ -313,11 +291,8 @@ func (e *Engine) writeLastgood(head string) error {
 	for _, p := range sortedIDs(files) {
 		m.Files = append(m.Files, lastgoodFile{Path: p, Digest: files[p]})
 	}
-	data, err := yamlio.Marshal(m)
-	if err != nil {
-		return err
-	}
-	data = append([]byte(canon.CacheHeader()+"\n"), data...)
+	// The manifest is plain data: marshal cannot fail
+	data, _ := yamlio.Marshal(m)
 	return yamlio.WriteAtomic(e.lastgoodPath(), data)
 }
 
@@ -325,7 +300,7 @@ func (e *Engine) writeLastgood(head string) error {
 // a virgin instance). An unreadable or wrong-shaped manifest is
 // corruption by hand: an honest refusal.
 func (e *Engine) loadLastgood() (*lastgoodManifest, error) {
-	data, err := os.ReadFile(e.lastgoodPath())
+	data, err := fsport.Bind.ReadFile(e.lastgoodPath())
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -333,9 +308,9 @@ func (e *Engine) loadLastgood() (*lastgoodManifest, error) {
 		return nil, fmt.Errorf("lastgood: %w", err)
 	}
 	var m lastgoodManifest
-	if err := yamlio.DecodeStrict(data, &m); err != nil {
+	if err := yamlio.DecodeDoc(data, &m); err != nil {
 		return nil, e.integrityRefusal([]integrityDiff{
-			{kind: integrityDiffers, path: filepath.ToSlash(filepath.Join(".punchtape", "cache", "lastgood.yamll"))},
+			{kind: integrityDiffers, path: filepath.ToSlash(filepath.Join(".punchtape", "cache", "lastgood.yaml"))},
 		})
 	}
 	return &m, nil
@@ -363,7 +338,7 @@ func foldInstanceFiles(entries []journal.Entry) map[string]string {
 }
 
 // instanceScoped — a path under the writer's reconciliation discipline:
-// canon, passport, and state zones — the zone model.
+// canon and state zones — the zone model.
 func instanceScoped(p string) bool {
 	if !strings.HasPrefix(p, ".punchtape/") {
 		return false
@@ -389,7 +364,7 @@ func (e *Engine) adoptLegacyInstance(head string) error {
 	expected := foldInstanceFiles(e.Journal.All())
 	var diffs []integrityDiff
 	for _, p := range sortedIDs(expected) {
-		data, err := os.ReadFile(filepath.Join(e.Workdir, p))
+		data, err := fsport.Bind.ReadFile(filepath.Join(e.Workdir, p))
 		switch {
 		case err != nil:
 			diffs = append(diffs, integrityDiff{kind: integrityMissing, path: p})
@@ -436,7 +411,7 @@ func (e *Engine) diffManifest(m *lastgoodManifest) []integrityDiff {
 	var diffs []integrityDiff
 	for _, f := range m.Files {
 		listed[f.Path] = true
-		data, err := os.ReadFile(filepath.Join(e.Workdir, f.Path))
+		data, err := fsport.Bind.ReadFile(filepath.Join(e.Workdir, f.Path))
 		switch {
 		case err != nil:
 			diffs = append(diffs, integrityDiff{kind: integrityMissing, path: f.Path})
@@ -454,13 +429,13 @@ func (e *Engine) diffManifest(m *lastgoodManifest) []integrityDiff {
 }
 
 // scanInstanceFiles — the instance's actual files under the
-// reconciliation discipline: canon collections, passport, and state
-// (the journaled zones).
+// reconciliation discipline: canon collections, the verdict
+// snapshots and state (the journaled zones).
 func (e *Engine) scanInstanceFiles() []string {
 	var out []string
 	for _, c := range canon.Collections() {
 		dir := filepath.Join(e.Store.Root(), filepath.FromSlash(c))
-		entries, err := os.ReadDir(dir)
+		entries, err := fsport.Bind.ReadDir(dir)
 		if err != nil {
 			continue
 		}
@@ -470,18 +445,17 @@ func (e *Engine) scanInstanceFiles() []string {
 			}
 		}
 	}
-	if _, err := os.Stat(filepath.Join(e.Store.Root(), "passport", "conventions.yaml")); err == nil {
-		out = append(out, conventionsFilePath)
-	}
-	bdir := filepath.Join(e.Store.Root(), "passport", "boundaries")
-	if entries, err := os.ReadDir(bdir); err == nil {
+	// The verdict snapshots are journaled facts: a manual edit or a
+	// foreign file in their zone is the same integrity refusal.
+	vdir := filepath.Join(e.Store.Root(), "verdicts")
+	if entries, err := fsport.Bind.ReadDir(vdir); err == nil {
 		for _, en := range entries {
-			if !en.IsDir() && strings.HasSuffix(en.Name(), ".yaml") {
-				out = append(out, boundariesDirPath+en.Name())
+			if !en.IsDir() && strings.HasSuffix(en.Name(), ".txt") {
+				out = append(out, ".punchtape/verdicts/"+en.Name())
 			}
 		}
 	}
-	if _, err := os.Stat(filepath.Join(e.Store.Root(), "state.yaml")); err == nil {
+	if _, err := fsport.Bind.Stat(filepath.Join(e.Store.Root(), "state.yaml")); err == nil {
 		out = append(out, stateFilePath)
 	}
 	sort.Strings(out)

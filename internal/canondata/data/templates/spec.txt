@@ -1,0 +1,74 @@
+kind: spec
+# build: [make, build]                    # optional; rc must be 0, 300s
+# build-ignore: ["*.tmp", cache]          # optional globs outside the digested tree
+behaviors:
+  - id: B1                                # your short id; in a full-replace
+    name: sample-behavior                 # document or a run upsert the same id
+                                          # replaces this behavior (an implicit
+                                          # second full spec is refused — see the
+                                          # patch block below)
+    prose: |
+      One paragraph of human-readable prose: what this behavior is.
+    rows:
+      - run: ["./tool", "arg"]            # argv list, or a quoted string
+        # seeds:                           # files written before the row, removed after
+        #   - path: in.txt
+        #     text: |
+        #       seed content
+        #   - path: mat.bin
+        #     from-input: given.dat
+        out: "expected stdout"            # exact (one trailing newline tolerated),
+                                          # "(contains) frag", or "" for empty
+        form: "the brief phrase this pin quotes"
+                                          # REQUIRED for formal pins: any nonzero rc
+                                          # or exact out/err/state text needs its
+                                          # one-line source (runs close on silence)
+        # err: "(contains) usage:"        # optional, same forms as out
+        rc: 0                             # expected exit code, default 0
+        # state:                          # optional file checks after the row
+        #   - path: out.txt
+        #     text: expected content      # exact or "(contains) frag"
+        #   - path: out.bin
+        #     from-run: artifact.bin      # byte-equal with a run-produced file
+        # bytes: file://sample.bin        # optional: sample in this inbox dir;
+        #                                 # stdout must equal its bytes
+        # timeout: 60                     # optional row ceiling, 1..300 s
+        # launch: nonet                   # optional launch mode (any row): the
+                                          # launch happens inside a fresh
+                                          # network-less namespace
+        # tree: unchanged                 # optional tree mode (any row): outside
+                                          # .punchtape/, build-ignore and the row's
+                                          # own seeds nothing survives the row
+      # typed heads for the mechanical families (seeds/timeout/launch/tree compose):
+      # - refuse:                         # one refusal: args, says, rc
+      #     args: ./tool nope
+      #     says: "tool: no such input"
+      #     rc: 2
+      # - det:                            # the determinism pin
+      #     run: ./tool list
+      #     same: "one line"
+      # - witness:                        # the staged-bytes probe head
+      #     probe: file://net-probe.sh    # the probe rides the door (inbox);
+      #                                   # the machine runs its staged bytes
+      #   launch: nonet                   # ...under the row's procedural modes
+      #   tree: unchanged
+      #   out: "probe: ok"                # the probe's observable answer
+      # - repeat-run: ./tool build        # runs twice; both must agree
+# ratify: true                            # only in kind: run — sign the recorded green (nothing runs)
+# AFTER the first accepted spec every submission is a PATCH — the change
+# only, by row address (the full table never rides twice; never reorder
+# accepted rows — new rows go to the end, repairs edit a row in place):
+# kind: spec                              # or run: the change + execution
+# patch:
+#   replace:                              # full new row bytes at the address
+#     B1/2: {run: "./tool x", out: "new want", form: "the brief phrase"}
+#   add:                                  # rows appended to the END of their table
+#     - atom: B1                          # a NEW id opens the behavior (name+prose)
+#       row: {run: "./tool extra"}
+#   remove: ["B2/1"]                      # rows retired by address
+#   run:                                  # rows to execute now, fresh or not
+#     B1/1: {launch: nonet}               # optional mode replacement (or tree:)
+#   prose:                                # the verdict-gate texts, once per behavior
+#     B1: |
+#       the one-paragraph author's prose
+# full-replace: true                      # ONLY the deliberate full rewrite (never with patch)

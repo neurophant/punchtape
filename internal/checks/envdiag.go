@@ -21,12 +21,7 @@ func EnvClass(err error) string {
 	}
 	var execErr *exec.Error
 	if errors.As(err, &execErr) {
-		if errors.Is(execErr.Err, exec.ErrNotFound) || errors.Is(execErr.Err, fs.ErrNotExist) {
-			return "exec-not-found"
-		}
-		if errors.Is(execErr.Err, fs.ErrPermission) {
-			return "exec-permission"
-		}
+		err = execErr.Err
 	}
 	if errors.Is(err, exec.ErrNotFound) || errors.Is(err, fs.ErrNotExist) {
 		return "exec-not-found"

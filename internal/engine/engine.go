@@ -5,12 +5,15 @@
 package engine
 
 import (
-	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/neurophant/punchtape/internal/canon"
+	"github.com/neurophant/punchtape/internal/canondata"
+	"github.com/neurophant/punchtape/internal/fsport"
 	"github.com/neurophant/punchtape/internal/journal"
 	"github.com/neurophant/punchtape/internal/ledger"
+	"github.com/neurophant/punchtape/internal/yamlio"
 )
 
 // Engine is the engine of one instance. All paths are relative to
@@ -21,45 +24,29 @@ type Engine struct {
 	Journal *journal.Journal
 	Ledger  *ledger.Ledger
 	// lastSubmitChecks — how many checks the last submit actually ran.
-	// lastSubmitProbes — how many probe commands submit ran.
-	// lastSubmitRunsMs — the sum of the run times of the last submit's
-	// checks/probes: the verdict latency line counts the machine's
-	// overhead (submission wall minus this sum); the honest working
-	// time of checks is not a gate.
 	lastSubmitChecks int
-	lastSubmitProbes int
-	lastSubmitRunsMs int64
-	// lastDeltaKind — the kind of the last submission: the background
-	// suite rehearsal needs only code/fix, when a surface exists.
+	// lastDeltaKind — the kind of the last submission.
 	lastDeltaKind string
-	// draftSubmit — the next submission is marked with the origin
-	// "draft": a spec draft written by a cheap executor routed by the
-	// machine; review and editing belong to the main hand.
-	draftSubmit bool
 	// lastIdempotent — the last submission was an idempotent repeat of
 	// a key: a fact for the ledger and the pain diary (no work was
 	// applied).
 	lastIdempotent bool
 	// lastContentDigest — the content digest of the last submission:
-	// written to the journal for idempotency by content.
+	// written to the journal for forensics.
 	lastContentDigest string
+	// lastSubmissionKey — the machine key of the last submission.
+	lastSubmissionKey string
 	// lastVerdictDrift — the last verdict render found the surface
 	// drifted against the acceptance moment: freezing is forbidden,
 	// the delivery slot asks for re-verification of the changed
 	// instance.
 	lastVerdictDrift bool
-	// lastRenderDrift — the last slot render found stale boundaries
-	// (the "freshness before work" contour): only a fresh next writes
-	// the fact to the ledger, the repeat cache stays silent.
-	lastRenderDrift []string
 	// digestCache — a cache of instance file digests mtime+size→digest
 	//: it speeds up re-reads, it is not a source of truth.
 	digestCache *digestCache
-	// writerLock/writerDepth — the writer lock with depth counting:
-	// a submission holds the write monopoly for the whole
-	// read-modify-write transaction, inner commits reuse the same lock.
-	writerLock  *os.File
-	writerDepth int
+	// a submission holds the write monopoly for its whole
+	// read-modify-write transaction: every commit of the transaction
+	// rides the one lock the submit took.
 }
 
 // Init creates a new instance in the working directory.
@@ -69,7 +56,93 @@ func Init(workdir string) (*Engine, error) {
 		return nil, err
 	}
 	ensureAgentsRef(workdir)
-	return openParts(workdir, store)
+	ensureReference(workdir)
+	// The birth records the contract's own bytes: the sha256 of the
+	// AGENTS.md the machine just wrote. Every later render stands on
+	// it — the one-line reference while it matches, the FULL contract
+	// again the moment the tree's copy is gone or changed (the
+	// contract law: the hand pays for the whole contract exactly once, at
+	// birth — unless the tree itself breaks the record).
+	if st, err := store.State(); err == nil {
+		if data, rerr := fsport.Bind.ReadFile(filepath.Join(workdir, "AGENTS.md")); rerr == nil {
+			st.ContractSha = yamlio.Digest(data)
+			_ = store.PutState(st)
+		}
+	}
+	eng, err := openParts(workdir, store)
+	if err != nil {
+		return nil, err
+	}
+	eng.ensureCurrentSet()
+	eng.ensureSpecRender()
+	return eng, nil
+}
+
+// Begin — the birth transaction: the brief text arrives with the
+// first next and is fixed in the state (it is not a submission — the
+// wish kind died with the one-document grammar). One journal
+// transaction under the writer monopoly; the reply is the first
+// slot.
+func (e *Engine) Begin(brief string) (string, int) {
+	started := timeNow()
+	brief = strings.TrimSpace(brief)
+	if brief == "" {
+		reply := canondata.T("submit.reject.brief-empty")
+		e.logVerb("next", "rejected", map[string]string{"reason": "empty-brief"}, 0, reply)
+		return reply, Rejected
+	}
+	lock, err := e.acquireWriterRetry()
+	if err != nil {
+		reply := canondata.T("submit.writer-busy", canondata.M{"err": err.Error()})
+		e.logVerb("next", "failure", nil, timeSince(started).Milliseconds(), reply)
+		return reply, Failure
+	}
+	defer e.releaseWriter(lock)
+	state, err := e.Store.State()
+	if err != nil {
+		return canondata.T("cli.fail", canondata.M{"err": firstLine(err)}), Failure
+	}
+	if state.Wish != nil {
+		// The brief is already fixed: a repeated birth phrase is an
+		// honest refusal — the wish is not edited through rebirth.
+		reply := canondata.T("submit.reject.brief-fixed")
+		e.logVerb("next", "rejected", map[string]string{"reason": "brief-already-fixed"}, 0, reply)
+		return reply, Rejected
+	}
+	b := newBuilder(e, state)
+	b.state.Wish = &brief
+	b.state.Language = detectLanguage(brief)
+	b.advance()
+	tx := yamlio.Digest([]byte("brief:" + brief))
+	entry := journal.Entry{
+		Transaction:   tx,
+		SubmissionKey: "brief",
+		DeltaKind:     "brief",
+		WallMs:        timeSince(started).Milliseconds(),
+		RecordedAt:    timeNow().UTC(),
+		Effects:       b.effects,
+	}
+	if err := e.commit(entry); err != nil {
+		return canondata.T("cli.fail", canondata.M{"err": firstLine(err)}), Failure
+	}
+	le := ledger.NewEntry("apply", canon.StageIntake)
+	le.WallMs = entry.WallMs
+	le.Details = map[string]string{"kind": "brief", "outcome": "accepted"}
+	if err := e.Ledger.Append(le); err != nil {
+		return canondata.T("cli.fail", canondata.M{"err": firstLine(err)}), Failure
+	}
+	reply, _, err := e.renderNext(mustState(e))
+	if err != nil {
+		return canondata.T("cli.fail", canondata.M{"err": firstLine(err)}), Failure
+	}
+	e.storeCachedNext(reply)
+	// The birth's ledger reply measures the FULL ceremony the hand
+	// received: the CLI injects the contract above the slot (the
+	// contract law's one full payment) — the meter counts those bytes
+	// where they were paid, in the contract family.
+	birthReply := canondata.T("cli.next.contract-inject") + "\n" + AgentsRefText() + "\n" + reply.Text
+	e.logVerb("next", "ok", map[string]string{"slot": "birth"}, timeSince(started).Milliseconds(), birthReply)
+	return reply.Text, Accepted
 }
 
 // Open opens an existing instance; exists=false if there is no
@@ -87,6 +160,7 @@ func Open(workdir string) (*Engine, bool, error) {
 		return nil, true, err
 	}
 	ensureAgentsRef(workdir)
+	ensureReference(workdir)
 	return eng, true, nil
 }
 
@@ -98,14 +172,18 @@ func openParts(workdir string, store *canon.Store) (*Engine, error) {
 	if err := e.verifyInstance(); err != nil {
 		return nil, err
 	}
+	// The self-damage cure: machine-written undecodable atoms heal at open
+	// (quarantine + journaled deletion), never a dead instance.
+	if err := e.healToolBrokenAtoms(); err != nil {
+		return nil, err
+	}
 	return e, nil
 }
 
 // openEngine — engine construction without the writer discipline:
 // journals are open, the lock is not taken, recovery is not executed.
-// For processes that write no journal states (background rehearsal):
-// the writer lock does not belong to them, there is no race with the
-// hand's verbs.
+// For processes that write no journal states: the writer lock does
+// not belong to them, there is no race with the executor's verbs.
 func openEngine(workdir string, store *canon.Store) (*Engine, error) {
 	root := canon.Dir(workdir)
 	j, err := journal.Open(filepath.Join(root, "journal.yamll"))
@@ -117,18 +195,4 @@ func openEngine(workdir string, store *canon.Store) (*Engine, error) {
 		return nil, err
 	}
 	return &Engine{Workdir: workdir, Store: store, Journal: j, Ledger: l}, nil
-}
-
-// HeadDigest — the digest of the journal head (empty journal — a
-// dash): a key for machine transactions of service modes.
-func (e *Engine) HeadDigest() string {
-	return e.journalHead()
-}
-
-// CommitRunTransaction commits a minimal machine transaction without
-// effects: a service-run fact in the journal (the head changes — a
-// frozen verdict will be re-frozen at the next render).
-func (e *Engine) CommitRunTransaction(submissionKey string) error {
-	entry := journalEntryRun(submissionKey)
-	return e.commit(entry)
 }

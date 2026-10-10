@@ -1,0 +1,96 @@
+acceptance.drift: |2-
+  the tree moved after the acceptance moment (was {old}, now {new})
+acceptance.drift.ru: |2-
+  дерево изменилось после момента приёмки (было {old}, стало {new})
+acceptance.drift.zh: |2-
+  验收后工作树发生了变化（原 {old}，现 {new}）
+acceptance.not-run: |2-
+  no green run of the full set yet
+acceptance.not-run.ru: |2-
+  полного зелёного прогона ещё не было
+acceptance.not-run.zh: |2-
+  尚未有一次全绿的完整运行
+acceptance.pass: |2-
+  PASS on tree {digest} ({green}/{total} rows green)
+acceptance.pass.ru: |2-
+  PASS на дереве {digest} (зелёных строк {green}/{total})
+acceptance.pass.zh: |2-
+  在树 {digest} 上通过（{green}/{total} 行绿）
+checked.acceptance: |2-
+  acceptance: {line}
+checked.acceptance.ru: |2-
+  приёмка: {line}
+checked.acceptance.zh: |2-
+  验收：{line}
+checked.head: |2-
+  CHECKED — what the machine verified:
+checked.head.ru: |2-
+  ПРОВЕРЕНО — что проверила машина:
+checked.head.zh: |2-
+  已验证 — 机器核验的内容：
+checked.rows: |2-
+  rows: {green} green, {red} red of {total}; green atoms {atoms}/{total}
+checked.rows.ru: |2-
+  строки: зелёных {green}, красных {red} из {total}; зелёных атомов {atoms}/{total}
+checked.rows.zh: |2-
+  行：{green} 绿，{red} 红，共 {total}；绿原子 {atoms}/{total}
+made.composition: |2-
+  corpus: {atoms} behaviors, {rows} rows
+made.composition.ru: |2-
+  корпус: атомов {atoms}, строк {rows}
+made.composition.zh: |2-
+  语料：{atoms} 个行为，{rows} 行
+made.flow: |2-
+  flow: {submitted} spec submissions, {runs} runs
+made.flow.ru: |2-
+  поток: подач спеки {submitted}, прогонов {runs}
+made.flow.zh: |2-
+  流程：规格提交 {submitted} 次，运行 {runs} 次
+made.head: |2-
+  MADE — the shape of the work:
+made.head.ru: |2-
+  СДЕЛАНО — форма работы:
+made.head.zh: |2-
+  已完成 — 工作的形态：
+made.verdict: |2-
+  verdict: {status}
+made.verdict.ru: |2-
+  вердикт: {status}
+made.verdict.zh: |2-
+  结论：{status}
+made.wish-head: |2-
+  brief:
+made.wish-head.ru: |2-
+  бриф:
+made.wish-head.zh: |2-
+  任务简述：
+made.wish-none: |2-
+  brief: (none — the instance was born without a phrase)
+made.wish-none.ru: |2-
+  бриф: (нет — инстанс рождён без фразы)
+made.wish-none.zh: |2-
+  任务简述：（无——实例未携带短语创建）
+price.ceremony: |2-
+  ceremony: reply bytes contract {contract}, spec {spec}, report {report}, door-echo {door}
+price.ceremony.ru: |2-
+  церемония: байт ответов контракт {contract}, спека {spec}, отчёт {report}, эхо двери {door}
+price.ceremony.zh: |2-
+  仪式：回复字节 合同 {contract}，规格 {spec}，报告 {report}，门回声 {door}
+price.head: |2-
+  PRICE — machine facts:
+price.head.ru: |2-
+  ЦЕНА — факты машины:
+price.head.zh: |2-
+  代价 — 机器事实：
+price.total: |2-
+  total: machine wall {wall}, {calls} verb calls
+price.total.ru: |2-
+  итого: машинного времени {wall}, вызовов глаголов {calls}
+price.total.zh: |2-
+  合计：机器耗时 {wall}，动词调用 {calls} 次
+title: |2-
+  punchtape — verdict summary
+title.ru: |2-
+  punchtape — сводка вердикта
+title.zh: |2-
+  punchtape — 结论摘要

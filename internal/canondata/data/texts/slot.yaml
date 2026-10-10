@@ -1,0 +1,54 @@
+deliver.action: |2-
+  the verdict above is the accepted state's snapshot (v{version}); the case lives on — the next spec version enters through the same door
+gates.none: |2-
+  suite
+implement.action: |2-
+  write the code for {atom} in the work tree, then submit kind: run (row edits ride the same document as a patch, by row address)
+implement.action.ratify: |2-
+  every row is green — submit kind: run with ratify: true: the signature checks freshness and signs the recorded green (nothing re-runs; a stale row or a moved tree refuses with the names)
+implement.await-code: |2-
+  the rows have not run yet — the machine waits for the code first (write it in the work tree, then kind: run)
+implement.context.green: |2-
+  nothing is red; ratify: true is a SIGNATURE, not a run — it signs the recorded green at unchanged inputs (VERDICT: READY with the tree digest; anything stale refuses with the names; run first, then ratify). The case lives on — the next spec version reopens it
+implement.changed.header: |2-
+  CHANGED ({count}) — rows whose standing moved since the last slot (the full table: punchtape report --full):
+implement.changed.line: |2-
+  {label}: {standing} (was {prev})
+implement.changed.none: |2-
+  nothing changed since the last slot — the corpus stands (the full table: punchtape report --full)
+implement.state: |2-
+  STATE: atoms {atoms}, rows {rows}, open {open}
+inbox.path: |2-
+  INBOX: {path} — the one submission file; overwrite it, then submit the same path
+instruction.atom: |2-
+  ATOM {id} — {name}
+instruction.prose: |2-
+  {text}
+instruction.table.status: |2-
+  rows ({count}): green {green}, red {red}, never {never}
+instruction.red.row: |2-
+  {id}: run {run} | want {want} | {reason}
+instruction.green.counter: |2-
+  green rows: {count} (canon: report --full)
+intake.action: |2-
+  write the spec — one document, kind: spec, into the inbox file below (the form is prefilled; the full grammar: .punchtape/reference/grammar.md)
+intake.context: |2-
+  the spec is your own document: behaviors with prose and check rows;
+    the machine validates the form without running anything and answers with
+    the next slot
+intake.state: |2-
+  BRIEF: {text}
+delta.stage-was: |2-
+  STAGE: {stage} (was {prev})
+delta.no-baseline: |2-
+  no earlier slot to diff against — every row rides this one:
+delta.changed.header: |2-
+  CHANGED SINCE THE LAST SLOT ({count}):
+delta.changed.line: |2-
+  {label}: {standing} (was {prev})
+delta.changed.none: |2-
+  nothing changed since the last slot
+list.more: |2-
+  (+{count} more)
+session.handoff: |2-
+  SESSION HANDOFF: {n} journal entries (threshold {threshold}) — hand the session off with the slot as the resume prompt (a recommendation, not a blocker)

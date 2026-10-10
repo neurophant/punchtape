@@ -1,0 +1,24 @@
+effect.charset: |2-
+  effect name {name}: expected the lowercase identifier alphabet with a .yaml suffix
+effect.readback: |2-
+  read-back of {path} differs from the written bytes: storage is not honest, nothing was committed past this point
+effect.whitelist: |2-
+  effect path {path}: instance writes are limited to state.yaml, the canon atoms and checkpoints
+integrity.differs: |2-
+  {path}: differs from the last machine-written content
+integrity.header: |2-
+  instance integrity check failed: files below differ from what the machine
+  wrote (manual edit detected — the machine is the only writer; restore the
+  named files from your backup or start a new instance; the journal is intact)
+integrity.missing: |2-
+  {path}: missing though the machine wrote it
+integrity.unjournaled: |2-
+  {path}: exists without a machine-written record
+schema-mismatch: |2-
+  canon schema version {have} is not supported (this machine speaks {want}): start a new instance
+writer.busy: |2-
+  another writer holds this instance (.punchtape/cache/writer.lock): wait for the running verb to finish
+atom.undecodable: |2-
+  the serialized atom record does not decode back through the machine's own storage layer — nothing was committed; this is a machine defect, report the submission unchanged
+atom.noncanonical: |2-
+  the serialized atom record is not the canonical spelling of its own data — nothing was committed; this is a machine defect, report the submission unchanged

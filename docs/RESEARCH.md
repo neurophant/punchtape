@@ -12,30 +12,43 @@ Generative development ("vibe coding") is an open loop: the code is
 produced by a language model, and its readiness is judged by an opinion
 — the executor's or the author's. This work studies the hypothesis that
 closing the loop with a transactional state machine external to the
-agent — one that owns the canon of requirements, an executable checks
-table, a double run of every check, and a signed verdict — turns
-readiness from an opinion into a reproducible fact at a measurable
-price. Field experiments were run on a battery of 25 tasks (5 task
-senses × 5 technology stacks): a baseline run, eight control waves, a
-repeat full run after systemic fixes, and a three-hand comparative
-experiment (a top model in the system, a budget model in the system,
-solo execution without the system) with independent judges. The system
-hands delivered 50/50 machine verdicts of "verified twice" with zero
-minutes of intermediate human attention, with quality invariant to the
-model class (the budget loop — the same verdicts for twice the time
-and an eighth of the money); the solo executions, with better
-economics (−31% tokens, −22% time against the top hand), converged to
-the byte-exact reference in only 22% of the judges' table rows, and
-the bulk of the divergence was freedom of interpreting the brief, not
-functional defects. Systemic fixes between the full runs cut the
-battery's cost by 49% of tokens without changing the methodology. A
-September replication campaign on the evolved machine (v0.1.x → 0.2.0)
-— a 75-cell three-hand wave pair, a 20-cell release-validation wave, a
-three-language smoke — reproduced the verdict and quality invariance,
-the judges' protocol-red pattern, and the attention economics. The
-conclusion: the benefit of the closed loop is measured not in tokens
-but in reconcilability; an anti-entropy frame is proposed for
-interpreting the result.
+agent turns readiness from an opinion into a reproducible fact at a
+measurable price. The design the study measured was the machine's 0.2
+loop: the machine owned the canon of requirements and scenarios
+compiled from an executable checks table, was the project's only
+writer of code (the executor submitted code/fix deltas, the machine
+applied them), ran every check twice in clean directories, and issued
+a verdict signed with a digest. Field experiments were run on a
+battery of 25 tasks (5 task senses × 5 technology stacks): a baseline
+run, eight control waves, a repeat full run after systemic fixes, and
+a three-hand comparative experiment (a top model in the system, a
+budget model in the system, solo execution without the system) with
+independent judges. The system hands delivered 50/50 machine verdicts
+of "verified twice" with zero minutes of intermediate human attention,
+with quality invariant to the model class (the budget loop — the same
+verdicts for twice the time and an eighth of the money); the solo
+executions, with better economics (−31% tokens, −22% time against the
+top hand), converged to the byte-exact reference in only 22% of the
+judges' table rows, and the bulk of the divergence was freedom of
+interpreting the brief, not functional defects. Systemic fixes between
+the full runs cut the battery's cost by 49% of tokens without changing
+the methodology. A September replication campaign on the evolved
+machine of the same line (v0.1.x → 0.2.0) — a 75-cell three-hand wave
+pair, a 20-cell release-validation wave, a three-language smoke —
+reproduced the verdict and quality invariance, the judges'
+protocol-red pattern, and the attention economics. The conclusion: the
+benefit of the closed loop is measured not in tokens but in
+reconcilability; an anti-entropy frame is proposed for interpreting
+the result. After the study the machine was reworked onto the 0.3
+model — the boundary moved: the executor writes code directly in the
+repository, the machine keeps the spec corpus and verifies on digest
+snapshots; §7 states that model, its acceptance evidence, and the
+October field battery since run on the new interface — the study's
+battery re-run two-handed: 50/50 cells closed, 25/25 machine verdicts
+on the first acceptance, the full-path economics reproduced (the
+machine camp the cheaper full path in 23 of 25 tasks; the solo camp's
+verifying operator 10.57×–46.01× dearer per wave), one wave of the
+five with the solo hands cheaper in tokens.
 
 **Keywords:** generative development, verification, state machine,
 specification, acceptance checks, compute economics, executor
@@ -44,7 +57,10 @@ convergence, field experiment.
 ## Glossary of the paper
 
 The system's full dictionary is `docs/GLOSSARY.md`; below are the
-paper's working terms.
+paper's working terms. The interface terms — the verdict shapes, the
+gate stack, the probe, the double run, the canon's composition —
+describe the machine loop this study measured (the 0.2 line); the
+machine's current model differs, and §7 states it.
 
 - **Battery** — the task set of a field campaign: 25 tasks = 5 senses ×
   5 stacks.
@@ -95,12 +111,10 @@ paper's working terms.
   the environment's accounting of the run. September replication: the
   full wall — the sum of the durations of all the executor's platform
   segments, rotations and restarts included (the campaign registry's
-  basis, `docs/METRICS.md` §1.2). The two bases are never mixed inside
-  one comparison.
+  basis, `campaigns/case-0/docs/METRICS-0.2.0.md` §1.2). The two
+  bases are never mixed inside one comparison.
 - **submit p95** — the 95th percentile of the machine's submission
   processing time; the budget is 300 ms.
-- **# TOKENS** — the submission trailer with the executor environment's
-  honest token counter.
 - **Harness** — the agent's execution environment (dialog, tools,
   session); it runs the conversation, but not the task's state.
 
@@ -126,15 +140,24 @@ of a live human per batch — against zero for the system hands.
 
 ### 1.2. The approach
 
-The object of study is an external transactional state machine
-(punchtape): a console deterministic arbiter that owns the task's state
-for good (the canon: requirements, scenarios, checks), accepts typed
-submissions from an executor agent, compiles the formalism itself, runs
-every check twice in clean directories itself, and issues a verdict
-with a cryptographic digest: `READY`, or an honest `NOT-READY` with
-named reasons. The agent never touches the state directly — it can only
-propose transactions; every submission is either accepted whole or
+The object of study was an external transactional state machine
+(punchtape) as it stood in the measured releases: a console
+deterministic arbiter that owned the task's state for good (the canon:
+requirements, scenarios, checks), accepted typed submissions from an
+executor agent — including the code itself: the executor authored
+code/fix deltas and the machine applied them, the machine being the
+project's only writer — compiled the formalism itself, ran every check
+twice in clean directories itself, and issued a verdict with a
+cryptographic digest: `READY`, or an honest `NOT-READY` with named
+reasons. The agent never touched the state directly — it could only
+propose transactions; every submission was either accepted whole or
 rejected with a one-line reason.
+
+The study's protocol names this loop's interfaces as they were:
+machine-written code deltas, scenarios as the spec unit compiled from
+the checks table, double-run acceptance. The machine has since been
+reworked and the boundary moved (§7); the experimental record below
+describes the loop it measured, not the current machine.
 
 The inversion of ownership is the key difference from embedded
 libraries: the machine stands outside, the task's state outlives
@@ -203,15 +226,19 @@ pass before any count is recorded.
 
 ## 2. Methodology
 
-### 2.1. The object
+### 2.1. The object (the loop as measured)
 
-The machine is a single binary (Go); the sources and the full
-documentation are in this repository (v0.2.0). The composition: canon
-data (every human-readable surface and threshold as data, not code), a
-transaction journal, a metrics ledger, a compiler from the checks table
-to scenarios, gates (statics, coverage, tracing, an empty-check probe,
+The studied machine was a single binary (Go); the sources and the full
+documentation are in this repository (the study's releases: v0.1.0 for
+the August series, v0.2.0 for the September replication; the current
+model differs — §7). The composition as measured: canon data (every
+human-readable surface and threshold as data, not code), a transaction
+journal, a metrics ledger, a compiler from the checks table to
+scenarios, gates (statics, coverage, tracing, an empty-check probe,
 the double run), a spec registry, and a render of human-readable
-per-feature documents.
+per-feature documents. In this loop the machine was the project's only
+writer: the executor's code reached the tree exclusively as code/fix
+deltas applied by the machine.
 
 ### 2.2. Field campaigns as the measurement method
 
@@ -349,7 +376,7 @@ judges:
    reference table drives the library's own test driver, which solo
    does not have); the conditional count with the judge's minimal
    driver: 11/11, 24/24, 8/11, 8/10 — 51/56, the library's behavior is
-nearly complete;
+   nearly complete;
 5. the solo real functional failures — 5 per battery, all pinpoint:
    an RST cut instead of a clean close and the exit code on a taken
    port (conduit-rust), the missing name field (quire-rust), the
@@ -400,9 +427,10 @@ In the three-hand run, 74 brief forks (the points where the wish was
 silent) were closed by the machine's defaults with a journal and
 tracing; not one required a live answer. In the repeat full run the
 operator questions: 25 → 3, all closed autonomously. The escalation
-rule: when a human decision is requested (code 3/4), the executor
-applies the recommended option, marks it "awaiting ratification", and
-continues — in the isolated worlds nothing is irreversible.
+rule of the study's protocol: when a human decision is requested (code
+3/4), the executor applies the recommended option, marks it "awaiting
+ratification", and continues — in the isolated worlds nothing is
+irreversible.
 
 ### 3.5. Environment observations (the cause registry, a selection)
 
@@ -423,35 +451,37 @@ continues — in the isolated worlds nothing is irreversible.
   systematization the battery's most expensive task fell from 10.45 to
   1.10 M tokens.
 
-## 4. Replication on the evolved machine (2026-09-03)
+## 4. Replication on the evolved machine of the 0.2 line (2026-09-03)
 
 The study above ran on v0.1.0. Before publication the machine went
 through a series of systemic fixes to the 0.2.0 release (v0.1.x →
-0.2.0), and the measurement design was re-run on the evolved machine
-as a September campaign: two full three-hand waves (wave 1: one
-sense × five stacks × three hands, 15 cells; wave S: the other four
-senses × five stacks × three hands, 60 cells — together covering the
-same 5 × 5 × 3 battery shape as the August series), a
-release-validation wave on the frozen 0.2.0 candidate (five senses ×
-two stacks × two machine hands, 20 cells, the arbiter's sha recorded
-in the wave journal), and a live three-language smoke (ru/en/zh). The
-prices are the 2026-09-03 market tariffs; as in §3, the ratios, not
-the absolutes, carry the meaning.
-All numbers below are the campaign registry's (`docs/METRICS.md`),
-every one mechanically revalidated against the run evidence — the cell
-captures and the platform ledger; nothing is retyped from a report.
+0.2.0) — still the same loop: the machine the only writer of code, the
+spec compiled into scenarios, double-run acceptance — and the
+measurement design was re-run on the evolved machine as a September
+campaign: two full three-hand waves (wave 1: one sense × five stacks ×
+three hands, 15 cells; wave S: the other four senses × five stacks ×
+three hands, 60 cells — together covering the same 5 × 5 × 3 battery
+shape as the August series), a release-validation wave on the frozen
+0.2.0 candidate (five senses × two stacks × two machine hands, 20
+cells, the arbiter's sha recorded in the wave journal), and a live
+three-language smoke (ru/en/zh). The prices are the 2026-09-03 market
+tariffs; as in §3, the ratios, not the absolutes, carry the meaning.
+All numbers below are the campaign registry's
+(`campaigns/case-0/docs/METRICS-0.2.0.md`), every one mechanically
+revalidated against the run evidence — the cell captures and the
+platform ledger; nothing is retyped from a report.
 
 **Measurement bases.** The September campaign reports the executor's
 time as the full wall — the sum of the durations of all the executor's
 platform segments, rotations and restarts included (the campaign
 registry defines the full wall and every other metric's provenance —
-`docs/METRICS.md` §1.2); the August series' wall is the ledger /
-environment accounting of its era. The bases differ (the full wall is
-the stricter one: it adds what a single-segment accounting prunes — the
-registry's own basis correction moved 21 multi-segment cells to the
-full wall), and no comparison in this paper mixes them: the August
-numbers are compared within Appendices A–D, the September numbers
-within this section.
+`campaigns/case-0/docs/METRICS-0.2.0.md` §1.2); the August series'
+wall is the ledger / environment accounting of its era. The bases
+differ (the full wall is the stricter one: it adds what a
+single-segment accounting prunes — the registry's own basis
+correction moved 21 multi-segment cells to the full wall), and no
+comparison in this paper mixes them: the August numbers are compared
+within Appendices A–D, the September numbers within this section.
 
 | September wave | Machine | Cells | What it replicates | Result |
 |---|---|---|---|---|
@@ -514,12 +544,17 @@ Two findings the August series could not see. First, the artifact-path
 class: in the validation wave's cross-judgment (the flash product
 against the top benchmark) 7 of 10 tasks scored zero strictly because
 the benchmark rows call the top hand's declared surface while the flash
-product declared its own — a brief/conventions fix candidate, not a
-machine or model defect. Second, the blind-suite nondeterminism of the
-four validation cells (a container per run, not per case) — an honest
-boundary of the measuring procedure itself, caught by the double run.
+product declared its own — a brief/conventions fix candidate of the
+measured loop, not a machine or model defect. Second, the blind-suite
+nondeterminism of the four validation cells (a container per run, not
+per case) — an honest boundary of the measuring procedure itself,
+caught by the double run.
 
 ## 5. Discussion
+
+This section reads the measured results; every interface named here is
+the loop the study measured (the 0.2 line). The boundary move that
+followed the study is §7.
 
 ### 5.1. Reconcilability, not economy
 
@@ -597,9 +632,10 @@ by a live human).
 The harness (the agent's execution environment) and the machine do not
 compete: the agent lives in the harness, the machine stands outside and
 owns the task's state. The separation of responsibility, as shown by
-the experiments' data:
+the experiments' data (the machine column is the loop as measured, the
+0.2 line):
 
-| The harness alone | The machine | The evidence |
+| The harness alone | The machine (as measured) | The evidence |
 |---|---|---|
 | readiness is the agent's opinion | the verdict is an executable fact with a digest | 50/50 verdicts against solo's 22% strict convergence — in the same harness |
 | the task's state dies with the session | the canon lives indefinitely; a change of executor loses nothing | "three top hands — three different answers" on one fork; 74 forks closed by journaled defaults |
@@ -645,13 +681,19 @@ and incomparable.
   the conditional count is given).
 - **External** (the limits): one difficulty band (S: compact console
   utilities with file state); one execution environment and one epoch
-  of models; the measurable requirements — the unmeasurable ones
-  ("make it beautiful") are honestly shelved by the machine into a
+  of models; the measured machine is one design point of the loop
+  (the 0.2 line — §7 moves the boundary inside the same inversion);
+  the measurable part of the brief — the unmeasurable remainder
+  ("make it beautiful") is honestly shelved by the machine into a
   taste queue for the human; the API prices are volatile. The transfer
   to the M/L bands, the long tasks, and the other product classes is
   the subject of the next experiments.
 
 ## 6. Conclusions
+
+The conclusions below state what the measured loop showed — the
+studied design (v0.1.0–0.2.0), its September replication (§4), and
+its October transfer to the moved boundary (§7.1).
 
 1. An external transactional state machine moves readiness from an
    opinion to a signed, re-verifiable fact: 50/50 machine verdicts on
@@ -692,9 +734,234 @@ and incomparable.
    priced in, the machine path is the cheaper one (solo $6.07 against
    top $1.18 per task). Conclusions 1–7 hold beyond the original
    binary and price epoch.
+9. The results transfer across the moved boundary (the 0.3 model,
+   the October field battery of §7.1–§7.2): on the interface where
+   the executor writes code directly and the machine keeps the
+   corpus, 50/50 cells closed at 25/25 machine verdicts on the first
+   acceptance, the judges again separated the solo product from the
+   machine hand's table, and the full-path economics held — the
+   machine camp the cheaper path in 23 of 25 tasks, the solo camp's
+   verifying operator 10.57×–46.01× dearer per wave; the solo hands
+   won the tokens in one wave of the five (§7.2's exception).
 
-## 7. Prospects
+## 7. The 0.3 model: the boundary after the study
 
+After the field study the machine was reworked. The inversion of
+ownership stands; the boundary moved. In the
+measured 0.2 loop the machine was the project's only writer — the
+executor's code reached the tree as code/fix deltas applied by the
+machine, and the spec was compiled from the checks table into
+scenarios. In the 0.3 model not one byte of code passes through the
+machine:
+
+- **Code is the executor's free territory.** The executor writes code
+  directly in the repository — the working root outside `.punchtape/`
+  is the executor's; the machine never sees the code at all, only its
+  behavior on a snapshot. The executor reports with trace manifests
+  (`kind: trace`, one atom, anchors in free form); the machine never
+  checks the anchors, it uses them.
+- **The machine keeps the spec corpus.** Atoms (`ATM-`) — the primary
+  behavioral unit: a trigger, exactly one main outcome, refusal
+  branches of the same stimulus, the author's prose, references to
+  contract specs, existence facts; contract specs (`CTC-`) —
+  everything shared between atoms, small, stable, versioned, frozen at
+  the entry into implement; catalogs (`CAT-`) — navigational
+  grouping; check rows (`TST-`) — one executable end-to-end check
+  each, owned by exactly one atom. The first accepted trace manifest
+  freezes the corpus composition.
+- **Verification runs on digest pairs.** Checkpoints (the tree's
+  file set plus per-file SHA-256, minus `.punchtape` minus the
+  passport's ignores) are taken in gate, verdict and acceptance
+  transactions; each gate run reads the tree's digest before and
+  after — the passport's build once before the rows, the rows'
+  seeds written into the tree and self-removed with each row, and
+  the two digests must name the same surface outside the ignores
+  (0.3's wave ran on that release's isolation substrate — a
+  byte-identical tree replica per run; the economics reported here
+  are that substrate's). The verdict is
+  READY / NOT-READY, signed with the digest of the exact tree it was
+  pronounced on; a tree that moved after acceptance is drift, the
+  verdict says so, and the honest route back is re-verification by a
+  trace manifest. The project passport (`kind: passport`) — the
+  user's build and launch commands, snapshot ignores, layout wishes —
+  is validated for executability only: the build runs once in a clean
+  copy.
+- **Backfill is the round-trip of the corpus.** Bringing an existing
+  tree under the machine needs no separate verb: `init` in the
+  existing repository, the corpus authored against the code that
+  already exists, then acceptance runs the rows against the original
+  tree's digest — green means the spec matches the code; a mismatch
+  is a backfill finding, a red row with the measured bytes.
+
+The 0.3 acceptance evidence is the battery of the rework's validator
+synthetic cases, both sides of the design, each closed at a live
+`VERDICT: READY`:
+
+- **the existing-tree round-trip**: a synthetic tree of 30 domains
+  (tools written before the instance existed) — a corpus of 30 atoms
+  in 3 catalogs, 60 check rows authored against the existing
+  behavior, one backfill finding caught by the measured bytes (an
+  expectation recorded wrongly: want "no argument given", got
+  "argument required" — the row was repaired, the code is the truth),
+  drift caught and re-verified, acceptance PASS 60/60;
+- **the new-feature run**: a fresh wish → three atoms, a contract
+  spec, a catalog, four check rows with owners, a passport → the
+  implement slot's instructions → the code written directly in the
+  repository by the executor's hand → trace manifests → gates in
+  0.3's run world (the first run honestly red —
+  the code did not exist yet) → a NOT-READY on missing prose → the
+  prose ratified → drift caught → re-verification → `VERDICT: READY`,
+  acceptance PASS 4/4 — with a grep of the journal proving the
+  code-free journal: zero code markers in the records and zero in the
+  effects.
+
+What this evidence is and is not: it is mechanical acceptance — both
+sides of the design driven to READY by live runs, with the round-trip
+and the code-free journal proven. It is not field economics. The field
+economics came later, and §7.1–§7.2 record it: the study's protocol —
+batteries, hands, blind measurer, judges — transferred to the new
+interface as designed, the reference tables of the 0.3 waves being the
+corpus's check rows, verified on digest snapshots of the tree rather
+than by a double run.
+
+### 7.1. The field battery on the new interface (2026-10-10)
+
+The study's battery returned on the moved boundary: the same five
+senses × five stacks, the September campaign's brief and material
+bytes, executed by the 0.3 machine in its current host world — the
+September protocol's bytes with the campaign's named adaptations (the
+containers became host cells; the accounting moved to the platform
+database; two hands instead of three: solo — a top model without the
+machine, machine-top — the same model through the machine; no budget
+hand in this campaign). Five waves, one sense per wave, in the order
+conduit → brim → errand → pressmark → quire — 25 tasks × 2 hands =
+50 cells, all on one series binary (sha f0a08dd3, the series freeze).
+The judge received the machine hand's etalon table — its corpus's
+check rows rendered from its instance — and executed it row by row
+against the solo product, byte-strict, a doubt counting against the
+product; the blind measurer replayed every product's rows twice by
+the machine's grammar, each run in a fresh directory.
+
+All numbers below are the campaign registry's
+(`campaigns/case-0/docs/METRICS-0.3.0.md`): the five frozen wave
+reports' Σ-rows read, glued and summed — not one new measurement —
+each wave revalidated green against its run evidence (verify-metrics).
+The registry prints two token bases in every table — in+out (the
+0.2-era working base) and total (= in+out+cache read) — with $
+cache-aware; the ratios below name their base, no verdict of the
+battery changes between the bases, and the battery's numbers are
+compared within this subsection only.
+
+| Battery wave | conduit | brim | errand | pressmark | quire |
+|---|---|---|---|---|---|
+| cells delivered and accepted | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
+| machine hands' door refusals | 0 (of 24) | 0 (of 26) | 0 (of 24) | 0 (of 30) | 1 (of 33) |
+| `VERDICT: READY` on the first acceptance | 5/5 | 5/5 | 5/5 | 5/5 | 5/5 |
+| solo-acceptance rejection cycles | 1 | 0 | 2 | 2 (rust, cycle 3) | 1 (js, accepted in cycle 2) |
+| deliverables — solo hands | 5/5 ×4, 4/5 js | 5/5 ×5 | 5/5 ×5 | 5/5 ×5 | 5/5 ×5 |
+| deliverables — machine hands | 5/5 ×5 | 5/5 ×4, 3/5 go | 5/5 ×5 | 5/5 ×4, 3/5 go | 5/5 ×4, 3/5 cpp |
+| G1 won by the machine | 5/5 | 5/5 | 5/5 | 4/5 (go exchange) | 4/5 (cpp — solo) |
+| Σ-camp total (solo/top ×) | 1.52 | 1.95 | 1.83 | 1.99 | 1.16 |
+| Σ-hands total (without operators) | 1.18 | 1.56 | 1.35 | 1.45 | 0.87 |
+| Σ-hands time (solo/top ×) | 1.31 | 1.41 | 1.33 | 1.30 | 0.99 |
+| Σtotal — machine hands | 29.17M | 22.38M | 34.49M | 48.90M | 48.80M |
+| Σtotal — solo hands | 34.45M | 34.84M | 46.58M | 70.93M | 42.45M |
+| operators (top/solo, total) | 11.32× | 11.82× | 26.31× | 46.01× | 10.57× |
+| judge pass | 21/96 | 46/89 | 46/57 | 43/129 | 42/103 |
+| verify-metrics | GREEN 307/0 | GREEN 306/0 | GREEN 308/0 | GREEN 308/0 | GREEN 307/0 |
+
+The registry's verdicts per task: **G1** — the camp, the hand plus its
+operator (the full path of Appendix E's accounting), compared on total
+tokens; **G2** — the hands alone, their time and total tokens read
+together (machine when both favor the machine hand, solo when both
+favor solo, mixed when they split). The per-task verdicts and the
+wave and battery camp sums are Appendix F.
+
+- **Verdicts and the door (hypotheses 1, 5).** All 50 cells delivered
+  and accepted; the machine hands closed 25/25 at `VERDICT: READY` on
+  the first acceptance — five of five in every wave. The door (the
+  machine's submission gate) refused a single submission of the
+  battery — quire-rust-top's; the other four waves passed every
+  submission (0 of 24, 0 of 26, 0 of 24, 0 of 30; quire 1 of 33).
+  The machine's own verb-wall stayed seconds-scale (0.5–37.8 s per
+  machine cell). The solo path's acceptance remained the operator's
+  cycle loop: rejection cycles in four of the five waves
+  (pressmark-rust reached a third cycle; quire-js was accepted on the
+  second).
+- **The judges (hypothesis 3).** The solo product against the machine
+  hand's table, byte-strict: 21/96 (conduit), 46/89 (brim), 46/57
+  (errand), 43/129 (pressmark), 42/103 (quire). Every wave's table
+  holds a red mass for solo — the separation of §3.3 and §4.1 stands
+  on the new interface — but the registry carries counts, not
+  classes: the protocol-not-function decoding of the red rows is not
+  re-derived here and remains open work on this interface.
+- **The full path — G1.** With the verifying operator counted in, the
+  machine camp is the cheaper path in 23 of 25 tasks: quire-cpp went
+  to solo (camp total 0.85), pressmark-go ended an exchange (the
+  camp's time to the machine at 1.01, its tokens to solo at 0.84). At
+  the battery scale the camps read solo/top 1.7 by total tokens and
+  1.6 by time: the solo operators burned 11107.7 s and 82845228 total
+  tokens over the fifty cells, the machine hands' operators 1205 s and
+  4669448 — the operators' multiple 17.7× by total tokens (17.6× by
+  in+out, 9.2× by time), per wave from 10.57× (quire) to 46.01×
+  (pressmark). The heaviest single camp of the battery is
+  pressmark-rust at 4.95 — the solo hand's wall 3267.4 s against the
+  machine hand's 1131.5.
+- **The hands alone — G2.** Without the operators the answer is
+  task-dependent: the machine hand wins both time and tokens in 16 of
+  25 tasks, solo wins both in 4, and 5 split. At the wave scale the
+  solo hands are the heavier in four waves (Σ-hands total 1.18–1.56)
+  — the September mechanism (without a machine that has already
+  verified, the agent re-reads and re-probes its own product)
+  operating again — and the fifth wave is §7.2's exception.
+- **Attention.** No live human stood in the battery: the wave session
+  is self-executing, and the operator roles ran as AI agents — the
+  Appendix E correction's lower-bound reading applies to their
+  seconds. In this campaign's design both camps' operators ran per
+  cell (the machine hand's one micro-decision per cell, the solo
+  operator's one to three; September's machine hands fired an
+  operator in 7 of 40 wave-S cells): the operator's presence is the
+  protocol's choice; the verification's price is the loop's — and the
+  price held.
+
+### 7.2. What the field battery adds
+
+- **The quire exception.** In quire the solo hands are cheaper than
+  the machine hands in tokens — Σ-hands total 0.87, the battery's only
+  wave below parity — at time parity (0.99): the first measured wave
+  where solo's freedom beats the loop's ritual on the hand's own
+  tokens. The full path still went to the machine in four of the five
+  camps (Σ-camp 1.16): the solo operator's 10.57× — the smallest
+  operator multiple of the battery — takes back what the hand won.
+  The registry records the numbers; the cause of the inversion — why
+  the re-probing mechanism did not operate in this sense — the registry
+  does not carry.
+- **The not-×2 cells.** The blind double replay refused to bless
+  non-repeating bytes in three machine cells (brim-go, pressmark-go,
+  quire-cpp — deliverables 3/5 each) and one solo cell (conduit-js,
+  4/5) — the phenomenon §4.2 met on the September validation wave:
+  the double run as the honest boundary of the measuring procedure
+  itself. The verdicts are unaffected (`READY` on the first
+  acceptance in all three machine cells).
+- **The two-hands boundary.** The battery re-measures the study's
+  solo/machine axis; the budget-model axis of §3.3 (hypothesis 4) is
+  absent by design — the campaign's law is two hands, no flash — so
+  the model-class invariance rests on §3–§4 and is not re-tested
+  here.
+- **The dual token base.** Every ratio is printed on both bases
+  (in+out; total = in+out+cache read), and no verdict of the battery —
+  wave, camp, or task — changes between them; the cache reads enter
+  every token metric as an explicit second base, not only the
+  cache-aware price.
+
+## 8. Prospects
+
+- **The 0.3 field waves**: run — §7.1 records the five-wave battery
+  on the new interface (the corpus and the check rows as the spec
+  unit, verification on digest snapshots, the executor writing code
+  directly); the open remainder: the budget-model axis of the closed
+  loop (§3.3 — the battery is two-handed by design) and the class
+  decoding of the judges' red rows on the new interface.
 - **The M/L bands**: extending the battery upward (the large tasks,
   the multi-file products) after calibrating the bands by the
   accumulated measurements; the hypothesis to check — the freedom-of-
@@ -707,32 +974,39 @@ and incomparable.
 - **Multi-hand and multi-model**: the three-hand design generalizes to
   N hands with a judicial reconciliation against the best table — as
   the standard acceptance procedure of generative delivery.
-- **The unmeasurable remainder**: the taste and aesthetic requirements
-  need a human; the prospective direction — the formalization of the
-  "taste queue" and safe defaults for it.
-- **Reproducibility**: all the experiment materials — the briefs, the
-  task materials, the world images, the methodology, and the full
-  tables — are in this repository (`campaigns/`, `docs/SAMPLES.md`,
-  `docs/SCENARIOS.md`, `docs/METRICS.md` — the replication waves'
-  verified registry), which allows the runs to be
-  repeated independently.
+- **The unmeasurable remainder**: the taste and aesthetic parts of
+  the wish need a human; the prospective direction — the
+  formalization of the "taste queue" and safe defaults for it.
+- **Reproducibility**: the experiment materials of the study — the
+  briefs, the task materials, the world images, the methodology —
+  lived in this repository's campaign layer at the time of the runs,
+  and the full verified tables remain in the tracked registry
+  (`docs/SAMPLES.md`, `docs/VERIFICATION.md`,
+  `campaigns/case-0/docs/METRICS-0.2.0.md`), which allows the runs to
+  be repeated independently.
 
 ## Data sources
 
 All the paper's numbers are taken from the runs' machine evidence and
 summarized in the repository's documents: `docs/SAMPLES.md` (the
-battery and the band calibration), `docs/SCENARIOS.md` (the field
-coverage of the features), `campaigns/` (the briefs, the materials,
-the generator, the world images, the run methodology). The per-task
+battery and the band calibration), `docs/VERIFICATION.md` (the field
+coverage of the features). The per-task
 data of every run is duplicated in Appendices A–D below; the
-replication's full-path breakdown is Appendix E. The September
-replication (§4) is documented in `docs/METRICS.md` — a
-provenance-first registry (three evidence tiers: the instance-ledger
-telemetry, the cell captures at each hand's finish, the platform
-session-database ledger) whose every number is mechanically
-revalidated against the run evidence. The artifact — the machine's
-sources, the campaign methodology and the verified metrics registry —
-is at https://github.com/neurophant/punchtape. Manuscript preparation
+replication's full-path breakdown is Appendix E; the October
+battery's camp sums and per-task verdicts are Appendix F. The
+September
+replication (§4) is documented in
+`campaigns/case-0/docs/METRICS-0.2.0.md` — a provenance-first registry
+(three evidence tiers: the instance-ledger telemetry, the cell
+captures at each hand's finish, the platform session-database ledger)
+whose every number is mechanically revalidated against the run
+evidence. The October field battery (§7.1) is documented in
+`campaigns/case-0/docs/METRICS-0.3.0.md` — the five frozen wave
+reports' Σ-rows read, glued and summed, not one new measurement, each
+wave's registry revalidation green; both registries live in the
+campaign's tracked layer. The machine's sources and the
+verified metrics registry are at
+https://github.com/neurophant/punchtape. Manuscript preparation
 was assisted by AI tools under the author's full responsibility; the
 execution of the runs by AI agents is the subject of the study itself
 and is documented in §2–§4.
@@ -752,7 +1026,7 @@ The author declares no conflicts of interest.
    arXiv:2407.01489, 2024.
 3. Cheng Cheng. Detect–Repair–Verify for Securing LLM-Generated Code:
    A Multi-Language Empirical Study. arXiv:2603.00897, 2026.
-4. Ran Wei, Le Zhu, Haochi Wang, Jim Woodcock, Fang Yan, Simon Foster,
+4. Ran Wei, Le Zhu, Haochi Wang, Jun Woodcock, Fang Yan, Simon Foster,
    Xiangyang Ji. Formal-Method-Guided Vibe Coding: Closing the
    Verification Loop on AI-Generated Safety-Critical Software Through
    Model-Driven Engineering. arXiv:2606.22413, 2026.
@@ -1024,3 +1298,79 @@ Honesty marks: the 10–18 min and the derived ≈4–8 hours are an
 extrapolation from the documented estimate of the earlier series — a
 labeled estimate, not a measurement of these waves; the 530 s mean is
 the ledger recomputation; nothing else is extrapolated.
+
+## Appendix F. The 0.3 field battery: the camp sums by waves and the verdicts per task (2026-10-10)
+
+What this appendix carries is the battery's summary layer: the camp
+sums by wave and over the battery — the registry's §6 Σ-rows — and
+the per-task verdicts — its §7. The camp is §7.1's G1 unit (the hand
+plus its operator); times are seconds; tokens are printed on both
+bases (in+out; total = in+out+cache read); the × rows are solo/top
+ratios. The per-task camp rows behind the sums, and the operators and
+layers behind the camps, are the registry's own
+(`campaigns/case-0/docs/METRICS-0.3.0.md`).
+
+| Wave | Camp | hand s | op s | camp s | hand in+out | op in+out | camp in+out | hand total | op total | camp total |
+|---|---|---|---|---|---|---|---|---|---|---|
+| conduit | solo | 5931.9 | 1785.4 | 7717.3 | 17676749 | 5859225 | 23535974 | 34453965 | 11298521 | 45752486 |
+| conduit | top | 4522.9 | 491.5 | 5014.4 | 14973726 | 513632 | 15487358 | 29165342 | 997984 | 30163326 |
+| conduit | solo/top × | 1.31 | 3.63 | 1.54 | 1.18 | 11.41 | 1.52 | 1.18 | 11.32 | 1.52 |
+| brim | solo | 5124.9 | 1481.9 | 6606.8 | 17820827 | 5459586 | 23280413 | 34843099 | 10600258 | 45443357 |
+| brim | top | 3627.3 | 149.2 | 3776.5 | 11494314 | 461523 | 11955837 | 22378794 | 896659 | 23275453 |
+| brim | solo/top × | 1.41 | 9.93 | 1.75 | 1.55 | 11.83 | 1.95 | 1.56 | 11.82 | 1.95 |
+| errand | solo | 5913.0 | 2292.4 | 8205.4 | 23791864 | 9081917 | 32873781 | 46577848 | 17631805 | 64209653 |
+| errand | top | 4441.6 | 160.0 | 4601.6 | 17581089 | 349737 | 17930826 | 34492513 | 670185 | 35162698 |
+| errand | solo/top × | 1.33 | 14.33 | 1.78 | 1.35 | 25.97 | 1.83 | 1.35 | 26.31 | 1.83 |
+| pressmark | solo | 7525.6 | 3172.8 | 10698.4 | 36026047 | 14101407 | 50127454 | 70925567 | 27350751 | 98276318 |
+| pressmark | top | 5769.7 | 100.7 | 5870.4 | 24944330 | 312198 | 25256528 | 48904522 | 594438 | 49498960 |
+| pressmark | solo/top × | 1.30 | 31.51 | 1.82 | 1.44 | 45.17 | 1.98 | 1.45 | 46.01 | 1.99 |
+| quire | solo | 5631.9 | 2375.2 | 8007.1 | 21666684 | 8207477 | 29874161 | 42445820 | 15963893 | 58409713 |
+| quire | top | 5693.3 | 303.6 | 5996.9 | 24853406 | 794982 | 25648388 | 48803230 | 1510182 | 50313412 |
+| quire | solo/top × | 0.99 | 7.82 | 1.34 | 0.87 | 10.32 | 1.16 | 0.87 | 10.57 | 1.16 |
+| **Σ battery** | **solo** | **30127.3** | **11107.7** | **41235** | **116982171** | **42709612** | **159691783** | **229246299** | **82845228** | **312091527** |
+| **Σ battery** | **top** | **24054.8** | **1205** | **25259.8** | **93846865** | **2432072** | **96278937** | **183744401** | **4669448** | **188413849** |
+| **Σ battery** | **solo/top ×** | **1.3** | **9.2** | **1.6** | **1.2** | **17.6** | **1.7** | **1.2** | **17.7** | **1.7** |
+
+The verdicts per task (§7.1's G1 — the camp by total tokens; G2 — the
+hands alone, time × / total ×):
+
+| Wave | Task | G1 (camp) | camp total, solo/top | G2 — time / total × |
+|---|---|---|---|---|
+| conduit | conduit-cpp | top (G1) | 1.42 | machine (1.24 / 1.01) |
+| conduit | conduit-go | top (G1) | 2.58 | machine (1.79 / 2.21) |
+| conduit | conduit-js | top (G1) | 1.50 | machine (1.22 / 1.17) |
+| conduit | conduit-python | top (G1) | 1.03 | mixed (1.12 / 0.83) |
+| conduit | conduit-rust | top (G1) | 1.47 | machine (1.25 / 1.10) |
+| brim | brim-cpp | top (G1) | 1.66 | machine (1.30 / 1.50) |
+| brim | brim-go | top (G1) | 2.29 | machine (1.31 / 1.79) |
+| brim | brim-js | top (G1) | 3.64 | machine (2.47 / 2.94) |
+| brim | brim-python | top (G1) | 1.29 | mixed (1.18 / 0.83) |
+| brim | brim-rust | top (G1) | 1.71 | machine (1.18 / 1.35) |
+| errand | errand-cpp | top (G1) | 1.76 | machine (1.46 / 1.20) |
+| errand | errand-go | top (G1) | 1.74 | mixed (1.16 / 0.94) |
+| errand | errand-js | top (G1) | 2.78 | machine (1.76 / 1.88) |
+| errand | errand-python | top (G1) | 1.41 | machine (1.28 / 1.21) |
+| errand | errand-rust | top (G1) | 1.75 | machine (1.11 / 1.53) |
+| pressmark | pressmark-cpp | top (G1) | 1.10 | solo (0.91 / 0.73) |
+| pressmark | pressmark-go | — (exchange) | 0.84 | solo (0.70 / 0.49) |
+| pressmark | pressmark-js | top (G1) | 1.73 | machine (1.09 / 1.25) |
+| pressmark | pressmark-python | top (G1) | 1.52 | machine (1.05 / 1.11) |
+| pressmark | pressmark-rust | top (G1) | 4.95 | machine (2.89 / 3.85) |
+| quire | quire-cpp | solo (G1) | 0.85 | solo (0.81 / 0.69) |
+| quire | quire-go | top (G1) | 1.10 | solo (0.86 / 0.94) |
+| quire | quire-js | top (G1) | 1.74 | mixed (1.01 / 0.91) |
+| quire | quire-python | top (G1) | 1.63 | machine (1.12 / 1.33) |
+| quire | quire-rust | top (G1) | 1.00 | mixed (1.37 / 0.77) |
+
+Reading: the operator column carries §7.1's economics at sum scale —
+the solo camp's operator is 9.2× the machine camp's by time and
+17.7× by total tokens, while the camp ratios settle at 1.6 by time
+and 1.7 by both token bases: the hands' own tokens (heavier on the
+solo side in four of the five waves) damp what the operator column
+alone would read. In the verdict table the two non-machine outcomes
+are quire-cpp (the solo camp, 0.85) and pressmark-go (the exchange:
+the camp's time 1.01 to the machine, its tokens 0.84 to solo);
+quire-rust closed the camp totals at parity (1.00) with the machine
+camp ahead on time (1.68). The mixed G2 rows are where the hands
+alone would have read the other way — the operator, not the hand, is
+where the loop's full-path economy lives.

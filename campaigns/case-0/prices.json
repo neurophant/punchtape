@@ -1,0 +1,8 @@
+{
+"currency": "USD",
+"source": "market z.ai tariffs, cross-checked against several independent summaries (ccswitch.io citing the official tariff; pi.dev zcode-executor; saygm.com)",
+"adaptation": "two hands (the owner's word: no third hand, no flash): the 0.2.0 tariffs minus the dead flash tier — no hand of this campaign ever runs on it. The Max numbers are the frozen 0.2.0 bytes; this file is a named adaptation, not a byte transfer.",
+"per_million": {
+"GLM-5.3 Max": {"in": 1.4, "out": 4.4, "cached_in": 0.26}
+}
+}

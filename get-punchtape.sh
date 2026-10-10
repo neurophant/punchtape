@@ -40,7 +40,7 @@ sum_url="$PUNCHTAPE_DIST_BASE/$name.sha256"
 
 echo "== punchtape: $os/$arch, source $PUNCHTAPE_DIST_BASE"
 
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/punchtape-get.XXXXXX")"; trap 'rm -rf "$tmp"' EXIT
 curl -fsSL "$bin_url" -o "$tmp/$name" || fail "could not download $bin_url"
 
 if [ "${PUNCHTAPE_NO_VERIFY:-0}" != "1" ]; then

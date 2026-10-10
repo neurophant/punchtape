@@ -11,9 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"gopkg.in/yaml.v3"
-
-	"github.com/neurophant/punchtape/internal/canon"
+	"github.com/neurophant/punchtape/internal/fsport"
 	"github.com/neurophant/punchtape/internal/yamlio"
 )
 
@@ -24,6 +22,23 @@ type Effect struct {
 	Path    string `yaml:"path"`
 	Content string `yaml:"content,omitempty"`
 	Delete  bool   `yaml:"delete,omitempty"`
+}
+
+// RetiredRow — one retired row of a spec version's diff frame: the
+// label, its last recorded outcome and reason at the moment of
+// retirement. The frame is the visible trace of every disappearance
+// — a verdict certifying the next version explains each of these.
+type RetiredRow struct {
+	Label   string `yaml:"label"`
+	Outcome string `yaml:"outcome,omitempty"`
+	Reason  string `yaml:"reason,omitempty"`
+	// BeforeFirstRun — the case had no run submission at the moment
+	// of this retirement: the row never had a chance to measure, so
+	// its disappearance is an edit of the hand's own first table,
+	// not a hiding (the verdict guard amnesties it). The frame keeps
+	// its own moment; a run that arrives later does not retroactively
+	// criminalize the retirement.
+	BeforeFirstRun bool `yaml:"before-first-run,omitempty"`
 }
 
 // Entry — one applied transaction. Effects are stored in full: the
@@ -52,6 +67,16 @@ type Entry struct {
 	// does not count as a new cycle. Legacy records without the
 	// field are not compared by content (conservative).
 	ContentDigest string `yaml:"content-digest,omitempty"`
+	// SpecVersion — the spec version this submission created (spec
+	// kind only): the living case's version counter at this frame.
+	SpecVersion int `yaml:"spec-version,omitempty"`
+	// Retired — the rows this spec version retired (the visible
+	// diff frame; spec kind only).
+	Retired []RetiredRow `yaml:"retired,omitempty"`
+	// VerdictVersion — the verdict snapshot this transaction froze
+	// (a successful ratification): the immutable vN pinned to its
+	// digest.
+	VerdictVersion int `yaml:"verdict-version,omitempty"`
 }
 
 // Journal — the journal's in-memory copy; the file is a stream of
@@ -73,7 +98,7 @@ func (j *Journal) TornTail() *yamlio.TornTail { return j.torn }
 // as a named diagnosis and is quarantined by the next write.
 func Open(path string) (*Journal, error) {
 	j := &Journal{path: path}
-	data, err := os.ReadFile(path)
+	data, err := fsport.Bind.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return j, nil
@@ -104,18 +129,14 @@ func decodeFrame(fr []byte) (Entry, error) {
 		return Entry{}, errors.New("record cut mid-line")
 	}
 	var e Entry
-	dec := yaml.NewDecoder(bytes.NewReader(fr))
-	dec.KnownFields(true)
-	if err := dec.Decode(&e); err != nil {
+	if err := yamlio.DecodeDoc(fr, &e); err != nil {
 		return e, err
 	}
 	if e.Transaction == "" || e.RecordedAt.IsZero() {
 		return e, errors.New("record missing its anchors")
 	}
-	remarshaled, err := yamlio.Marshal(&e)
-	if err != nil {
-		return e, err
-	}
+	// Entry is plain scalar/slice/time data: marshal cannot fail
+	remarshaled, _ := yamlio.Marshal(&e)
 	if !bytes.Equal(remarshaled, fr) {
 		return e, errors.New("record does not round-trip byte-exact")
 	}
@@ -127,11 +148,9 @@ func decodeFrame(fr []byte) (Entry, error) {
 // end with an empty document, otherwise it reads back as a phantom
 // record.
 func (j *Journal) Append(e Entry) error {
-	data, err := yamlio.Marshal(e)
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(filepath.Dir(j.path), 0o755); err != nil {
+	// Entry is plain scalar/slice/time data: marshal cannot fail
+	data, _ := yamlio.Marshal(e)
+	if err := fsport.Bind.MkdirAll(filepath.Dir(j.path)); err != nil {
 		return fmt.Errorf("journal dir: %w", err)
 	}
 	// A torn tail heals on the write path (the writer holds the
@@ -144,22 +163,11 @@ func (j *Journal) Append(e Entry) error {
 		}
 	}
 	// The manifest header is the first line of a new file: only the
-	// machine writes the journal; it is not edited by hand; comments
-	// do not break the YAML document stream.
-	head := []byte(nil)
-	if _, err := os.Stat(j.path); os.IsNotExist(err) {
-		head = []byte(canon.MachineHeader("submit") + "\n")
-	}
-	f, err := os.OpenFile(j.path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-	if err != nil {
-		return fmt.Errorf("journal %s: %w", j.path, err)
-	}
-	defer f.Close()
-	if _, err := f.Write(append(append(head, []byte("---\n")...), data...)); err != nil {
+	// machine writes the journal; it is not edited by hand. YAML
+	// carries no comment header — a new file starts with the first
+	// frame separator.
+	if err := fsport.Bind.AppendFile(j.path, append([]byte("---\n"), data...)); err != nil {
 		return fmt.Errorf("journal write: %w", err)
-	}
-	if err := f.Sync(); err != nil {
-		return fmt.Errorf("journal sync: %w", err)
 	}
 	j.entries = append(j.entries, e)
 	return nil
@@ -169,9 +177,13 @@ func (j *Journal) Append(e Entry) error {
 // from the intact records: the machine's own write discipline
 // (append, never edit) is restored; the sidecar keeps the torn
 // bytes as evidence with the diagnosis. Caller holds the writer
-// lock (the engine's verification or the next append).
+// lock (the engine's verification or the next append). A healthy
+// journal (no torn region) is a no-op.
 func (j *Journal) HealTail() error {
-	data, err := os.ReadFile(j.path)
+	if j.torn == nil {
+		return nil
+	}
+	data, err := fsport.Bind.ReadFile(j.path)
 	if err != nil {
 		return fmt.Errorf("journal repair read: %w", err)
 	}
@@ -183,21 +195,10 @@ func (j *Journal) HealTail() error {
 	off := yamlio.FrameOffset(preamble, frames, j.torn.Good)
 	torn := data[min(off, len(data)):]
 	q := j.path + ".torn"
-	qf, err := os.OpenFile(q, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return fmt.Errorf("journal quarantine: %w", err)
-	}
-	if _, err := fmt.Fprintf(qf, "# quarantined %s: %s\n", time.Now().UTC().Format(time.RFC3339), j.torn.Error()); err != nil {
-		qf.Close()
-		return fmt.Errorf("journal quarantine: %w", err)
-	}
-	if len(torn) > 0 {
-		if _, err := qf.Write(torn); err != nil {
-			qf.Close()
-			return fmt.Errorf("journal quarantine: %w", err)
-		}
-	}
-	if err := qf.Close(); err != nil {
+	var sidecar []byte
+	sidecar = fmt.Appendf(sidecar, "# quarantined %s: %s\n", time.Now().UTC().Format(time.RFC3339), j.torn.Error())
+	sidecar = append(sidecar, torn...)
+	if err := fsport.Bind.AppendFile(q, sidecar); err != nil {
 		return fmt.Errorf("journal quarantine: %w", err)
 	}
 	if err := yamlio.WriteAtomic(j.path, yamlio.Rebuild(preamble, good)); err != nil {

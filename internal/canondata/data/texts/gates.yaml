@@ -1,0 +1,34 @@
+not-run-cause-build: |2-
+  the build failed in the live tree: {output}
+suite-green: |2-
+  suite=green ({rows} rows)
+suite-not-run: |2-
+  rows not run ({cause}) — the surface is unproven, the outcome is not measured
+suite-red: |2-
+  suite=red ({rows} rows, {red} red)
+tree-moved-live: |2-
+  tree moved during the run: {paths} — rows clean up after themselves (seeds are removed, outputs belong in build-ignore or die inside the row); the verdict signs the pre-run tree
+tree-moved-row: |2-
+  tree moved during the row: {paths} — the row's tree mode is unchanged: outside .punchtape/, build-ignore and the row's own seeds, nothing the row leaves behind survives it
+suite-green-kept: |2-
+  suite=green ({rows} rows: {ran} ran, {kept} kept green at unchanged inputs)
+suite-green-allkept: |2-
+  suite=green ({rows} rows, all fresh — {kept} kept green at unchanged inputs, nothing re-ran)
+suite-red-kept: |2-
+  suite=red ({rows} rows, {red} red: {ran} ran, {kept} kept)
+ratify-signed: |2-
+  ratified: {rows} rows kept green at unchanged inputs, tree digest {digest} — the signature stands on the recorded green, nothing re-ran
+ratify-stale: |2-
+  ratify is a signature, not a run — {count} row(s) lost freshness: {rows}; run the suite (kind: run) and ratify the green it records
+ratify-stale.red: |2-
+  red — a red row always re-measures
+ratify-stale.never: |2-
+  never ran
+ratify-stale.inputs: |2-
+  its inputs changed since its green
+ratify-drift: |2-
+  ratify is a signature, not a run — the tree moved since the last green run ({old} → {new}: {paths}); run the suite (kind: run) and ratify the green it records
+ratify-drift.digests: |2-
+  ratify is a signature, not a run — the tree moved since the last green run ({old} → {new}); run the suite (kind: run) and ratify the green it records
+ratify-no-green: |2-
+  ratify is a signature, not a run — there is no green run to sign yet; run the suite (kind: run) and ratify the green it records

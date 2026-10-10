@@ -7,41 +7,29 @@ package canondata
 
 import (
 	"embed"
+	"errors"
 	"fmt"
+	"io/fs"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"github.com/neurophant/punchtape/internal/yamlio"
 )
 
-//go:embed data/*.yaml
+//go:embed data
 var dataFS embed.FS
 
 // M — canon text render parameters: name → value.
 type M map[string]string
 
 var (
-	texts         = map[string]string{}
-	limits        = map[string]int{}
-	painCatalog   []PainEntry
-	stageList     []ScenarioStage
-	trustSteps    []TrustStatus
-	trustMoves    []TrustTransition
-	lintRules     []LintRule
-	envDiagList   []EnvDiagEntry
-	intentCatalog []IntentRow
-	healCatalog   []HealEntry
-	hypList       []HypothesisEntry
+	texts       = map[string]string{}
+	templates   = map[string][]byte{}
+	limits      = map[string]int{}
+	stageList   []Stage
+	lintRules   []LintRule
+	envDiagList []EnvDiagEntry
+	healCatalog []HealEntry
 )
-
-// PainEntry — a pain catalog entry: an identifier (it appears as a
-// literal in the detection code — the mirror reconciler catches dead
-// entries), a diagnosis and a mandatory workaround (an empty
-// workaround is rendered by the finding itself).
-type PainEntry struct {
-	ID         string `yaml:"id"`
-	Diagnosis  string `yaml:"diagnosis"`
-	Workaround string `yaml:"workaround"`
-}
 
 // StageExit — a process stage's exit: a machine check by name, the
 // transition stage and a machine action on entry (may be empty).
@@ -51,38 +39,22 @@ type StageExit struct {
 	Entry string `yaml:"entry,omitempty"`
 }
 
-// ScenarioStage — a stage of the process state machine: human
+// Stage — a stage of the process state machine: human
 // choice points hold the stage; the exit is executed by the runner
 // by a named check. Ambiguities are resolved by the human from
 // outside — the runner does not resolve them.
-type ScenarioStage struct {
+type Stage struct {
 	ID      string    `yaml:"id"`
 	Choices []string  `yaml:"choices,omitempty"`
 	Exit    StageExit `yaml:"exit"`
 }
 
-// TrustStatus — one step of the boundary trust ladder.
-type TrustStatus struct {
-	ID     string `yaml:"id"`
-	Weight int    `yaml:"weight"`
-}
-
-// TrustTransition — a machine transition of the ladder: a proof by
-// name and the target status. No proofs above "verified" exist.
-type TrustTransition struct {
-	Proof string `yaml:"proof"`
-	To    string `yaml:"to"`
-}
-
 // LintRule — an artifact lint rule: the message is the single
-// source (the registry); waivable — a completeness rule that can be
-// waived with a reason; enforceability and stop-conditions are not
-// waivable.
+// source (the registry).
 type LintRule struct {
-	ID       string `yaml:"id"`
-	Section  string `yaml:"section"`
-	Message  string `yaml:"message"`
-	Waivable bool   `yaml:"waivable,omitempty"`
+	ID      string `yaml:"id"`
+	Section string `yaml:"section"`
+	Message string `yaml:"message"`
 }
 
 // EnvDiagEntry — an environment diagnosis: a deterministically
@@ -92,7 +64,6 @@ type EnvDiagEntry struct {
 	ID        string `yaml:"id"`
 	Diagnosis string `yaml:"diagnosis"`
 	Fix       string `yaml:"fix"`
-	FixNoCode string `yaml:"fix-no-code,omitempty"`
 }
 
 // HealEntry — a healing phrase: a predictable agent failure,
@@ -101,23 +72,6 @@ type EnvDiagEntry struct {
 type HealEntry struct {
 	ID     string `yaml:"id"`
 	Advice string `yaml:"advice"`
-}
-
-// HypothesisEntry — a canon change hypothesis: a canon edit ships
-// only as a new delivery version, each with a testable hypothesis;
-// not confirmed — a rollback, the outcome journaled in the outcome
-// field. A content registry of the delivery process (like intents):
-// lives as data, structurally validated by the loader, needs no
-// by-name code reference — there are no dead entries; the registry
-// is read by the human.
-type HypothesisEntry struct {
-	ID         string `yaml:"id"`
-	Change     string `yaml:"change"`
-	Hypothesis string `yaml:"hypothesis"`
-	Metric     string `yaml:"metric"`
-	Window     string `yaml:"window"`
-	Baseline   string `yaml:"baseline"`
-	Outcome    string `yaml:"outcome"`
 }
 
 // Heal — advice by detection identifier; absence is an honest empty
@@ -131,29 +85,9 @@ func Heal(id string) string {
 	return ""
 }
 
-// IntentRow — an intent table row: an everyday phrase (all keys
-// among the phrase's tokens) routed to a machine verb; topic — a
-// why topic.
-type IntentRow struct {
-	ID    string   `yaml:"id"`
-	Keys  []string `yaml:"keys"`
-	Verb  string   `yaml:"verb"`
-	Topic string   `yaml:"topic,omitempty"`
-}
-
-// Pain — a catalog entry by detection identifier.
-func Pain(id string) (PainEntry, bool) {
-	for _, p := range painCatalog {
-		if p.ID == id {
-			return p, true
-		}
-	}
-	return PainEntry{}, false
-}
-
 // StagesByID — the process stages keyed by identifier.
-func StagesByID() map[string]ScenarioStage {
-	out := make(map[string]ScenarioStage, len(stageList))
+func StagesByID() map[string]Stage {
+	out := make(map[string]Stage, len(stageList))
 	for _, s := range stageList {
 		out[s.ID] = s
 	}
@@ -168,39 +102,6 @@ func StageIDs() []string {
 		out = append(out, s.ID)
 	}
 	return out
-}
-
-// TrustWeight — a ladder status's weight; absence — a status
-// outside the ladder.
-func TrustWeight(id string) (int, bool) {
-	for _, s := range trustSteps {
-		if s.ID == id {
-			return s.Weight, true
-		}
-	}
-	return 0, false
-}
-
-// TrustTop — the weight of the ladder's top step.
-func TrustTop() int {
-	top := 0
-	for _, s := range trustSteps {
-		if s.Weight > top {
-			top = s.Weight
-		}
-	}
-	return top
-}
-
-// TrustTarget — the target of a machine transition by proof name;
-// absence — the proof does not exist, the machine does not guess.
-func TrustTarget(proof string) (string, bool) {
-	for _, t := range trustMoves {
-		if t.Proof == proof {
-			return t.To, true
-		}
-	}
-	return "", false
 }
 
 // LintRuleByID — a registry rule by identifier.
@@ -227,15 +128,6 @@ func LintMessage(id string, params ...M) string {
 // the FIX hint in one piece — so an environment failure carries
 // both the cause and the action.
 func EnvDiag(id string, params ...M) string {
-	return EnvDiagAt(id, false, params...)
-}
-
-// EnvDiagAt — the diagnosed line with the advice routed by the
-// delivered-code state: before any code exists, "install the tool"
-// misleads (there is nothing to install against); the no-code advice
-// says deliver the code. Entries without a no-code form keep their
-// single fix line.
-func EnvDiagAt(id string, noCode bool, params ...M) string {
 	var e EnvDiagEntry
 	for _, c := range envDiagList {
 		if c.ID == id {
@@ -246,16 +138,8 @@ func EnvDiagAt(id string, noCode bool, params ...M) string {
 	if e.ID == "" {
 		panic(fmt.Sprintf("canondata: unknown env diagnosis %q", id))
 	}
-	diag := substitute(e.Diagnosis, params...)
-	fix := e.Fix
-	if noCode && e.FixNoCode != "" {
-		fix = e.FixNoCode
-	}
-	return diag + "; FIX: " + substitute(fix, params...)
+	return substitute(e.Diagnosis, params...) + "; FIX: " + substitute(e.Fix, params...)
 }
-
-// Intents — the intent table rows in data order.
-func Intents() []IntentRow { return intentCatalog }
 
 // substitute — {name} substitution into a registry template: the
 // same mechanics as for canon texts.
@@ -270,182 +154,200 @@ func substitute(tmpl string, params ...M) string {
 	return strings.NewReplacer(pairs...).Replace(tmpl)
 }
 
-func init() {
-	names, err := dataFS.ReadDir("data")
-	if err != nil {
-		panic(fmt.Sprintf("canondata: %v", err))
+func init() { mustLoad(dataFS) }
+
+// mustLoad — the delivered-tree load of the package init; the panic
+// branch is reachable over a broken tree in tests.
+func mustLoad(fsys fs.FS) {
+	if err := loadFS(fsys); err != nil {
+		panic("canondata: " + err.Error())
 	}
-	for _, name := range names {
-		raw, err := dataFS.ReadFile("data/" + name.Name())
-		if err != nil {
-			panic(fmt.Sprintf("canondata: %v", err))
-		}
-		switch name.Name() {
-		case "limits.yaml":
-			if err := yaml.Unmarshal(raw, &limits); err != nil {
-				panic(fmt.Sprintf("canondata: limits: %v", err))
-			}
-		case "pains.yaml":
-			if err := yaml.Unmarshal(raw, &painCatalog); err != nil {
-				panic(fmt.Sprintf("canondata: pains: %v", err))
-			}
-		case "scenarios.yaml":
-			var doc struct {
-				Process string          `yaml:"process"`
-				Stages  []ScenarioStage `yaml:"stages"`
-			}
-			if err := yaml.Unmarshal(raw, &doc); err != nil {
-				panic(fmt.Sprintf("canondata: scenarios: %v", err))
-			}
-			stageList = doc.Stages
-		case "trust.yaml":
-			var doc struct {
-				Ladder      []TrustStatus     `yaml:"ladder"`
-				Transitions []TrustTransition `yaml:"transitions"`
-			}
-			if err := yaml.Unmarshal(raw, &doc); err != nil {
-				panic(fmt.Sprintf("canondata: trust: %v", err))
-			}
-			trustSteps, trustMoves = doc.Ladder, doc.Transitions
-		case "lint.yaml":
-			if err := yaml.Unmarshal(raw, &lintRules); err != nil {
-				panic(fmt.Sprintf("canondata: lint: %v", err))
-			}
-		case "envdiag.yaml":
-			if err := yaml.Unmarshal(raw, &envDiagList); err != nil {
-				panic(fmt.Sprintf("canondata: envdiag: %v", err))
-			}
-		case "intents.yaml":
-			if err := loadIntents(raw); err != nil {
-				panic(fmt.Sprintf("canondata: intents: %v", err))
-			}
-		case "heal.yaml":
-			if err := yaml.Unmarshal(raw, &healCatalog); err != nil {
-				panic(fmt.Sprintf("canondata: heal: %v", err))
-			}
-		case "hypotheses.yaml":
-			var doc struct {
-				Hypotheses []HypothesisEntry `yaml:"hypotheses"`
-			}
-			if err := yaml.Unmarshal(raw, &doc); err != nil {
-				panic(fmt.Sprintf("canondata: hypotheses: %v", err))
-			}
-			if err := validateHypotheses(doc.Hypotheses); err != nil {
-				panic(fmt.Sprintf("canondata: hypotheses: %v", err))
-			}
-			hypList = doc.Hypotheses
-		default:
-			var part map[string]string
-			if err := yaml.Unmarshal(raw, &part); err != nil {
-				panic(fmt.Sprintf("canondata: %s: %v", name.Name(), err))
-			}
-			for k, v := range part {
-				if _, dup := texts[k]; dup {
-					panic(fmt.Sprintf("canondata: duplicate key %s", k))
-				}
-				texts[k] = v
-			}
-		}
-	}
-	validateStructural()
 }
 
-// loadIntents reads the router's content rows and validates their
-// structure: the verb is one of the known ones, a topic only with
-// why, the keys non-empty and unique by composition.
-func loadIntents(raw []byte) error {
-	if err := yaml.Unmarshal(raw, &intentCatalog); err != nil {
+// loadFS — the data load over any fs (the embed tree in production;
+// synthetic trees in tests): every branch of a broken tree is a
+// named load error, caught before any work. The top level carries
+// the structural registries and the limits (YAML, one-line values);
+// texts/ is the tree of canon texts (a namespace dictionary per
+// file at the top, one text document per file under ref/, the
+// path is the key with dots as separators); templates/ is the raw
+// template library (path → bytes, the prefill source of truth).
+func loadFS(fsys fs.FS) error {
+	names, err := fs.ReadDir(fsys, "data")
+	if err != nil {
 		return err
 	}
-	seen := map[string]bool{}
-	for _, row := range intentCatalog {
-		switch row.Verb {
-		case "next", "why":
-		default:
-			return fmt.Errorf("row %s: verb %q invalid", row.ID, row.Verb)
+	for _, name := range names {
+		if name.IsDir() {
+			continue
 		}
-		if row.Topic != "" && row.Verb != "why" {
-			return fmt.Errorf("row %s: topic invalid", row.ID)
+		raw, err := fs.ReadFile(fsys, "data/"+name.Name())
+		if err != nil {
+			return err
 		}
-		if len(row.Keys) == 0 {
-			return fmt.Errorf("row %s: keys empty", row.ID)
+		if err := loadPart(name.Name(), raw); err != nil {
+			return fmt.Errorf("%s: %w", name.Name(), err)
 		}
-		key := strings.Join(row.Keys, "\x00")
-		if seen[key] {
-			return fmt.Errorf("duplicate keys: %s", row.ID)
+	}
+	if err := loadTexts(fsys); err != nil {
+		return err
+	}
+	if err := loadTemplates(fsys); err != nil {
+		return err
+	}
+	return validateStructuralErr()
+}
+
+// loadTexts — the canon texts in two forms, split by role (the role
+// is the layout, not a size judgment): data/texts/<ns>.yaml are
+// namespace DICTIONARIES — flat maps of console lines, one literal
+// block per key, the block's lines are the text verbatim with no
+// edge newlines (the composition owns spacing); data/texts/ref/**
+// are DOCUMENTS — whole text documents (the agents contract, the
+// reference docs) whose bytes are the text verbatim. Any other
+// subdirectory is a load error: no silent hybrid zones.
+func loadTexts(fsys fs.FS) error {
+	return fs.WalkDir(fsys, "data/texts", func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			if p == "data/texts" && errors.Is(err, fs.ErrNotExist) {
+				return nil // an empty text tree is a legal state (tests)
+			}
+			return err
 		}
-		seen[key] = true
+		if !d.IsDir() {
+			rel := strings.TrimPrefix(strings.TrimPrefix(p, "data/texts"), "/")
+			if !strings.Contains(rel, "/") {
+				if !strings.HasSuffix(rel, ".yaml") {
+					return fmt.Errorf("texts/%s: not a dictionary file", rel)
+				}
+				raw, rerr := fs.ReadFile(fsys, p)
+				if rerr != nil {
+					return rerr
+				}
+				segs, derr := yamlio.DecodeDict(raw)
+				if derr != nil {
+					return fmt.Errorf("texts/%s: %w", rel, derr)
+				}
+				ns := strings.TrimSuffix(rel, ".yaml")
+				if ns == "" {
+					return fmt.Errorf("texts/%s: not a dictionary file", rel)
+				}
+				for key, val := range segs {
+					texts[ns+"."+key] = val
+				}
+				return nil
+			}
+			if !strings.HasSuffix(p, ".md") {
+				return fmt.Errorf("texts/%s: not a text file", rel)
+			}
+			raw, rerr := fs.ReadFile(fsys, p)
+			if rerr != nil {
+				return rerr
+			}
+			key := strings.ReplaceAll(strings.TrimSuffix(rel, ".md"), "/", ".")
+			if strings.Contains(key, "..") {
+				return fmt.Errorf("texts/%s: not a key path", rel)
+			}
+			texts[key] = string(raw)
+			return nil
+		}
+		if p != "data/texts" && !strings.HasPrefix(p, "data/texts/ref") {
+			return fmt.Errorf("texts/%s: unknown zone (dictionaries at the top, documents under ref/)", p)
+		}
+		return nil
+	})
+}
+
+// loadTemplates — the template tree: every file's bytes under its
+// relative path. The skeleton files are pretty YAML, the content
+// stubs are text — the loader does not care: a template is bytes the
+// machine hands out verbatim.
+func loadTemplates(fsys fs.FS) error {
+	return fs.WalkDir(fsys, "data/templates", func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			if p == "data/templates" && errors.Is(err, fs.ErrNotExist) {
+				return nil // an empty template tree is a legal state (tests)
+			}
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		rel := strings.TrimPrefix(strings.TrimPrefix(p, "data/templates"), "/")
+		raw, err := fs.ReadFile(fsys, p)
+		if err != nil {
+			return err
+		}
+		templates[rel] = raw
+		return nil
+	})
+}
+
+// loadPart — one structural registry (or the limits) from the top
+// level of the data tree; a named error per broken part. Everything
+// at the top level is structure with one-line values: texts live in
+// texts/, templates in templates/. The field tags keep the grammar's
+// field names; the yamlio layer reads them through the armor.
+func loadPart(name string, raw []byte) error {
+	switch name {
+	case "limits.yaml":
+		return yamlio.DecodeStrict(raw, &limits)
+	case "stages.yaml":
+		var doc struct {
+			Process string  `yaml:"process"`
+			Stages  []Stage `yaml:"stages"`
+		}
+		if err := yamlio.DecodeStrict(raw, &doc); err != nil {
+			return err
+		}
+		stageList = doc.Stages
+	case "lint.yaml":
+		return yamlio.DecodeStrict(raw, &lintRules)
+	case "envdiag.yaml":
+		return yamlio.DecodeStrict(raw, &envDiagList)
+	case "heal.yaml":
+		return yamlio.DecodeStrict(raw, &healCatalog)
+	default:
+		return fmt.Errorf("unknown data part")
 	}
 	return nil
 }
 
-// validateHypotheses — structural validation of the hypothesis
-// registry: complete fields, unique identifiers, an outcome from
-// the closed set. Data drift is caught here, before any work.
-func validateHypotheses(list []HypothesisEntry) error {
-	seen := map[string]bool{}
-	for _, h := range list {
-		if h.ID == "" || h.Change == "" || h.Hypothesis == "" ||
-			h.Metric == "" || h.Window == "" || h.Baseline == "" {
-			return fmt.Errorf("hypothesis %s: incomplete entry", h.ID)
-		}
-		switch h.Outcome {
-		case "open", "confirmed", "refuted":
-		default:
-			return fmt.Errorf("hypothesis %s: outcome %q invalid", h.ID, h.Outcome)
-		}
-		if seen[h.ID] {
-			return fmt.Errorf("hypothesis duplicate: %s", h.ID)
-		}
-		seen[h.ID] = true
-	}
-	return nil
-}
-
-// Hypotheses — the delivery's hypothesis registry.
-func Hypotheses() []HypothesisEntry { return hypList }
-
-// validateStructural — cross-registry load invariants: ladder
-// statuses are unique and grow by weight, transitions lead to ladder
-// statuses, process stages lead to known stages, lint rules are
-// unique. Data drift is caught here, before any work.
+// validateStructural — cross-registry load invariants: process
+// stages lead to known stages, lint rules are unique. Data drift is
+// caught here, before any work.
 func validateStructural() {
-	weights := map[string]bool{}
-	prev := 0
-	for _, s := range trustSteps {
-		if weights[s.ID] {
-			panic(fmt.Sprintf("trust status duplicate: %s", s.ID))
-		}
-		weights[s.ID] = true
-		if s.Weight <= prev {
-			panic(fmt.Sprintf("trust weights: %s", s.ID))
-		}
-		prev = s.Weight
+	if err := validateStructuralErr(); err != nil {
+		panic(fmt.Sprintf("canondata: %v", err))
 	}
-	for _, t := range trustMoves {
-		if !weights[t.To] {
-			panic(fmt.Sprintf("trust transition %s: invalid", t.Proof))
-		}
-	}
-	stageIDs := map[string]bool{}
+}
+
+// validateStructuralErr — the cross-registry invariants as named
+// errors (the synthetic-tree load path of tests).
+func validateStructuralErr() error {
+	ids := map[string]bool{}
 	for _, s := range stageList {
-		if stageIDs[s.ID] {
-			panic(fmt.Sprintf("stage duplicate: %s", s.ID))
+		if ids[s.ID] {
+			return fmt.Errorf("stage duplicate: %s", s.ID)
 		}
-		stageIDs[s.ID] = true
+		ids[s.ID] = true
 	}
 	for _, s := range stageList {
-		if !stageIDs[s.Exit.Goto] {
-			panic(fmt.Sprintf("stage %s: exit %s unknown", s.ID, s.Exit.Goto))
+		if s.Exit.Gate == "" {
+			continue
+		}
+		if !ids[s.Exit.Goto] {
+			return fmt.Errorf("stage exit %s: unknown target %s", s.ID, s.Exit.Goto)
 		}
 	}
-	ruleIDs := map[string]bool{}
+	rules := map[string]bool{}
 	for _, r := range lintRules {
-		if ruleIDs[r.ID] {
-			panic(fmt.Sprintf("canondata: duplicate lint rule %s", r.ID))
+		if rules[r.ID] {
+			return fmt.Errorf("lint rule duplicate: %s", r.ID)
 		}
-		ruleIDs[r.ID] = true
+		rules[r.ID] = true
 	}
+	return nil
 }
 
 // T renders canon text by key with {name} parameter substitution. An
@@ -479,6 +381,21 @@ func TFor(lang, key string, params ...M) string {
 	return T(key, params...)
 }
 
+// TemplateBytes — the raw bytes of a template file by its path under
+// data/templates/ (pretty skeletons, content stubs). The bytes are
+// the machine's single source of truth for what it hands the agent:
+// the file in the source tree, in the binary, in the instance — one
+// point of truth, byte for byte. An unknown name is a programming
+// error (code and canon diverge): an honest fail-fast, the same
+// contract as T.
+func TemplateBytes(name string) []byte {
+	data, ok := templates[name]
+	if !ok {
+		panic(fmt.Sprintf("canondata: unknown template %q", name))
+	}
+	return data
+}
+
 // Limit — a canon numeric threshold by key; thresholds live as
 // delivery data and are not duplicated in code.
 func Limit(key string) int {
@@ -487,4 +404,17 @@ func Limit(key string) int {
 		panic(fmt.Sprintf("canondata: unknown limit %q", key))
 	}
 	return v
+}
+
+// TemplateSet — every template file under a path prefix (an inbox
+// set's template is its manifest plus its content stubs): the name
+// is the path under data/templates/, the value the embedded bytes.
+func TemplateSet(prefix string) map[string][]byte {
+	out := map[string][]byte{}
+	for name, data := range templates {
+		if strings.HasPrefix(name, prefix) {
+			out[name] = data
+		}
+	}
+	return out
 }

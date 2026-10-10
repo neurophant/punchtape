@@ -1,0 +1,14 @@
+process: brief-to-verdict
+stages:
+- id: intake
+  exit:
+    gate: spec-accepted
+    goto: implement
+- id: implement
+  exit:
+    gate: ratify-green
+    goto: deliver
+- id: deliver
+  exit:
+    gate: spec-resubmitted
+    goto: implement

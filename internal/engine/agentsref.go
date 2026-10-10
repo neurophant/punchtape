@@ -2,8 +2,10 @@
 // an AGENTS.md file next to .punchtape/ — a shared convention for
 // executor environments that agents read themselves. A new session in
 // the same directory picks up the contract without verbal instructions.
-// Interface only: verbs, the loop, machine zones; there are and can be
-// no behavior rules here. The text is delivery canon data; the code
+// Interface and role only: verbs, the loop, machine zones, the executor's
+// ownership of corpus and code; there are and can be no behavior rules
+// here - the playbook lives in the reference library (model.md). The
+// text is delivery canon data; the code
 // holds only the identity marker. A work root that already carries the
 // repository's own AGENTS.md is COMBINED: the machine contract first
 // with declared total precedence, the repository's rules preserved
@@ -12,11 +14,11 @@ package engine
 
 import (
 	"bytes"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/neurophant/punchtape/internal/canondata"
+	"github.com/neurophant/punchtape/internal/fsport"
 	"github.com/neurophant/punchtape/internal/yamlio"
 )
 
@@ -44,7 +46,7 @@ func AgentsRefText() string {
 // combinedRefText — the machine head (the contract, always first,
 // with the precedence line) over the repository's own reference
 // preserved byte for byte below the tail boundary: a full instance
-// initialization without losing the repository's rules. Pure
+// initialization without losing the repository's rules. Plain
 // concatenation — the machine learns nothing about the content.
 func combinedRefText(foreign []byte) string {
 	return AgentsRefText() + "\n" +
@@ -68,7 +70,7 @@ func agentsRefText() string { return AgentsRefText() }
 // always first, always prevailing, the repository text kept as is.
 func ensureAgentsRef(workdir string) {
 	path := filepath.Join(workdir, "AGENTS.md")
-	data, err := os.ReadFile(path)
+	data, err := fsport.Bind.ReadFile(path)
 	if err != nil {
 		_ = yamlio.WriteAtomic(path, []byte(agentsRefText()))
 		return

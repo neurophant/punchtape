@@ -1,0 +1,34 @@
+error.expect-contains-empty: |2-
+  (contains) : the fragment after the marker must be non-empty
+error.expect-scalar: |2-
+  expectation value must be a scalar (text)
+error.path-absolute: |2-
+  path {path} must be relative and inside the work tree (no leading /, no ~)
+error.path-empty: |2-
+  path is empty
+error.path-escape: |2-
+  path {path} must stay inside the work tree (no ..)
+error.unbalanced-quote: |2-
+  unbalanced quote in the command line
+error.row-head: |2-
+  a row carries exactly one head — {heads} ({found} present)
+error.row-field: |2-
+  the row's fields are the run command and its expectations (seeds, out, err, rc, state, bytes, timeout); the typed heads are {fields}: {field} — a typed head replaces the run command
+error.row-typed-field: |2-
+  the {kind} row does not carry "{field}" — the head owns the row (seeds, timeout, launch and tree compose on every head; out composes on witness and repeat-run; rc on witness)
+error.typed-field: |2-
+  {kind}: unknown field {field} ({fields})
+error.typed-map-form: |2-
+  {kind}: expected its field map ({fields})
+error.typed-refuse-form: |2-
+  refuse: the fields args, says and rc are all required (rc 0 or greater)
+error.typed-det-form: |2-
+  det: the fields run and same are required
+error.typed-witness-form: |2-
+  witness: probe is required — file://NAME names the probe's staged bytes next to the submission (they arrive through the door, never from the machine)
+error.typed-repeat-form: |2-
+  repeat-run: the command is required
+error.launch-mode: |2-
+  launch: {value} is not a launch mode — the one launch mode is {mode} (the network-less namespace launch)
+error.tree-mode: |2-
+  tree: {value} is not a tree mode — the one tree mode is {mode} (the row-scoped tree identity control)

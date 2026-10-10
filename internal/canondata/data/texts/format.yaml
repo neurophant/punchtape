@@ -1,0 +1,58 @@
+error.answers-no-batch: |2-
+  answers without an open question batch — no batch can be open; drop the answers field
+error.behaviors-empty: |2-
+  the document carries no behaviors
+error.behavior-dup-case: |2-
+  behavior id {id} collides with another id in lower case — the canon file name is the id's lower-case spelling
+error.behavior-dup: |2-
+  behavior id {id} appears twice in the document
+error.behavior-id: |2-
+  behavior id {id}: expected 1-32 characters of letters, digits, dots, underscores or hyphens, starting alphanumeric
+error.behavior-name-empty: |2-
+  name is empty — every behavior carries a living name
+error.behavior-prose-empty: |2-
+  prose is empty — every behavior carries a human-readable paragraph
+error.behavior-rows-empty: |2-
+  rows are empty — a behavior without rows is not accepted
+error.bytes-form: |2-
+  bytes: expected the file://name form (a sample file next to the submission)
+error.bytes-missing: |2-
+  bytes sample {path} is missing next to the submission (the inbox directory)
+error.bytes-path: |2-
+  bytes sample path: {err}
+error.probe-form: |2-
+  witness: expected the file://name form (the probe bytes staged next to the submission, through the door)
+error.probe-missing: |2-
+  witness probe {path} is missing next to the submission (the inbox directory) — probes arrive as staged bytes through the door, never from the machine
+error.probe-path: |2-
+  witness probe path: {err}
+error.from-input-missing: |2-
+  from-input {path}: the input directory has no such file
+error.from-input-path: |2-
+  seeds[{index}].from-input: {err}
+error.from-run-path: |2-
+  state[{index}].from-run: {err}
+error.ratify-not-run: |2-
+  ratify: true is only legal in kind: run — the final submission is a run
+error.rc-negative: |2-
+  rc must be 0 or greater
+error.seed-path: |2-
+  seeds[{index}].path: {err}
+error.state-path: |2-
+  state[{index}].path: {err}
+suggest.kind: |2-
+   — e.g.: kind: {kind}
+error.timeout-range: |2-
+  timeout {got} is outside 1..{max}
+error.unknown-kind: |2-
+  unknown kind {kind}; the document kinds are exactly two: spec, run{hint}
+error.expect-echo: |2-
+  the expectation echoes a self-report line (PASS, OK, ...): every line of it is a verdict token — expect the product's observable text (exact out/err/rc), never a report about the checks
+error.expect-contains-loose: |2-
+  the contains fragment "{text}" is shorter than {min} runes — a fragment this short proves almost nothing; spell the acknowledgment explicitly: (contains-loose) {text}
+error.ignore-dependency: |2-
+  the run names {arg}, a file outside the accounted surface (a build-ignore pattern covers it) and no seed of this row carries its bytes — a green measured on unsigned files is not portable; drop the pattern or carry the bytes in a seed
+error.machine-fields: |2-
+  the row carries machine-recorded fields (outcome/reason/env-fail/ran-at/ran-tree/inputs/ran-rc/ran-out) — the machine's records are written by its runs only
+error.form-unresolved: |2-
+  FORM DECISIONS UNRESOLVED: {labels} — each of these rows pins formal surface (a nonzero rc, or an exact out/err/state text) without its one-line source; add form: "<the brief/prereg/operator phrase the pin quotes>" to the row — an operator decision rides the same line as form: "op(<date>): <the one-line decision>" — runs stay closed until every formal choice is presented

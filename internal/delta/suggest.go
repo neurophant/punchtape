@@ -1,28 +1,20 @@
 package delta
 
 import (
-	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/neurophant/punchtape/internal/canondata"
 )
 
-// With the rejection line the machine attaches a corrected
-// submission line — but only when the correction is uniquely determined.
-// Semantics is never guessed: a hint is a mechanical fix of the form;
-// everything non-deterministic stays without a hint.
+// With the rejection line the machine attaches a corrected hint —
+// but only when the correction is uniquely determined. Semantics is
+// never guessed: everything non-deterministic stays without a hint.
+// The decode surface needs no form repairs: a failure is loud,
+// addressed and final — the only surviving hint is the delta kind.
 
-var (
-	kindKinds = []string{
-		KindIntent, KindLint, KindClarify, KindSpec, KindChecks, KindAssert,
-		KindSplit, KindCode, KindFix, KindProbe,
-	}
-	lineErrRe    = regexp.MustCompile(`line (\d+)`)
-	indicatorRe  = regexp.MustCompile(`^[@` + "`" + `|%>&*!{}[\],#]`)
-	mapValueLine = regexp.MustCompile(`^(\s*-?\s*[\w.-]+:\s)(.+)$`)
-	blockOpenRe  = regexp.MustCompile(`:\s*[|>][+-]?[0-9]*\s*$`)
-)
+var kindKinds = []string{
+	KindSpec, KindRun,
+}
 
 // editDistance — Levenshtein distance for short words.
 func editDistance(a, b string) int {
@@ -44,6 +36,13 @@ func editDistance(a, b string) int {
 		prev, cur = cur, prev
 	}
 	return prev[lb]
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // SuggestKind — an unknown delta kind: the single known kind at an
@@ -71,184 +70,6 @@ func SuggestKind(kind string) (string, bool) {
 		return canondata.T("format.suggest.kind", canondata.M{"kind": best}), true
 	}
 	return "", false
-}
-
-// SuggestLine returns the corrected line when the correction is
-// uniquely determined; ok=false — no hint.
-func SuggestLine(text string, decodeErr error, kind string) (string, bool) {
-	// (1) Unknown delta kind: the single known kind at an edit
-	// distance <=2 becomes a hint for the kind line.
-	if hint, ok := SuggestKind(kind); ok {
-		return hint, true
-	}
-	// (2)-(3) A decode error with a line number: an indicator-leading
-	// scalar and ": " inside the value are fixed with a quote —
-	// mechanically and uniquely (ambiguous constructs are not in the
-	// whitelist).
-	if decodeErr == nil {
-		return "", false
-	}
-	m := lineErrRe.FindStringSubmatch(decodeErr.Error())
-	if m == nil {
-		return "", false
-	}
-	lineNo := 0
-	fmt.Sscanf(m[1], "%d", &lineNo)
-	lines := strings.Split(text, "\n")
-	if lineNo < 1 || lineNo > len(lines) {
-		return "", false
-	}
-	mm := mapValueLine.FindStringSubmatch(lines[lineNo-1])
-	if mm == nil {
-		return "", false
-	}
-	prefix, value := mm[1], strings.TrimRight(mm[2], " \t")
-	if value == "" || strings.HasPrefix(value, "\"") || strings.HasPrefix(value, "'") {
-		return "", false
-	}
-	msg := decodeErr.Error()
-	// An indicator-leading scalar (|, > etc.) gets quoted; a value
-	// starting with { or [ is a structure, not a scalar: quoting its
-	// fragment would be a garbage hint — a rejection is more honest.
-	if strings.Contains(msg, canondata.T("format.match.cannot-start-token")) &&
-		!strings.HasPrefix(value, "{") && !strings.HasPrefix(value, "[") &&
-		indicatorRe.MatchString(value) {
-		return prefix + doubleQuote(value), true
-	}
-	if strings.Contains(msg, canondata.T("format.match.mapping-values-short")) &&
-		strings.Contains(value, ": ") {
-		return prefix + doubleQuote(value), true
-	}
-	return "", false
-}
-
-// DiagnoseYAML — the root cause of a dialect decode error in one line.
-// Only actual pitfall patterns are checked: an anchor (not supported),
-// a comma in an unquoted flow-map value (splits it into entries), a
-// block scalar inside a flow map. Everything else — ok=false, the
-// rejection stays as is.
-func DiagnoseYAML(text string, decodeErr error) (string, bool) {
-	if decodeErr == nil {
-		return "", false
-	}
-	msg := decodeErr.Error()
-	if strings.Contains(msg, "unknown anchor") {
-		return canondata.T("format.diag.anchor"), true
-	}
-	m := lineErrRe.FindStringSubmatch(msg)
-	if m == nil {
-		return "", false
-	}
-	lineNo := 0
-	fmt.Sscanf(m[1], "%d", &lineNo)
-	lines := strings.Split(text, "\n")
-	if lineNo < 1 || lineNo > len(lines) {
-		return "", false
-	}
-	line := lines[lineNo-1]
-	// A block scalar inside a flow map — the parser says "cannot start
-	// any token"; the cause is on the line with {.
-	if strings.Contains(msg, canondata.T("format.match.cannot-start-token")) && strings.Contains(line, "{") {
-		return canondata.T("format.diag.flow-block", canondata.M{"line": m[1]}), true
-	}
-	// A comma in an unquoted flow-map value: a segment after the comma
-	// without "key:" — the value is torn apart; the characteristic
-	// error classes are a foreign field ("field … not found in type",
-	// "unknown field") and a type mismatch (pieces of the value text
-	// became keys).
-	if decodeConfusedClass(msg) && flowCommaSplit(line) {
-		return canondata.T("format.diag.flow-comma", canondata.M{"line": m[1]}), true
-	}
-	if strings.Contains(msg, "did not find expected key") {
-		// A block scalar opened near the error line — the author
-		// already writes the block form; the quoted-scalar advice
-		// does not apply (a wrong hint costs more than none), the
-		// diagnosis stays silent and the raw rejection names the line.
-		if blockScalarNearby(lines, lineNo) {
-			return "", false
-		}
-		return canondata.T("format.diag.long-scalar"), true
-	}
-	return "", false
-}
-
-// blockScalarNearby — a mapping value line ending in a block scalar
-// indicator (|, >, with chomping/keep and indent digits) within a
-// small window above the error line. The window, not the exact
-// arithmetic: scanner-reported line numbers of block-scalar breaks
-// land on the blank or dedented line, which can sit one or two lines
-// past the indicator.
-func blockScalarNearby(lines []string, lineNo int) bool {
-	start := lineNo - 3
-	if start < 1 {
-		start = 1
-	}
-	for i := start; i <= lineNo && i <= len(lines); i++ {
-		if blockOpenRe.MatchString(lines[i-1]) {
-			return true
-		}
-	}
-	return false
-}
-
-// decodeConfusedClass — the characteristic decode-error classes of a
-// torn flow value: a foreign field ("field … not found in type",
-// "unknown field") and a type mismatch (pieces of the value text
-// became keys).
-func decodeConfusedClass(msg string) bool {
-	return unknownFieldRepairRe.MatchString(msg) ||
-		strings.Contains(msg, "field ") && strings.Contains(msg, " not found in type") ||
-		strings.Contains(msg, "cannot unmarshal")
-}
-
-// flowCommaSplit — whether the line's flow map has a segment after a
-// comma without "key:" (outside quotes): the comma tore the value apart.
-func flowCommaSplit(line string) bool {
-	open := strings.Index(line, "{")
-	closeIdx := strings.LastIndex(line, "}")
-	if open < 0 || closeIdx <= open {
-		return false
-	}
-	for _, s := range splitFlowSegments(line[open+1 : closeIdx]) {
-		if !strings.Contains(s, ":") {
-			return true
-		}
-	}
-	return false
-}
-
-// splitFlowSegments splits the inside of a flow map on commas outside
-// quotes; nested brackets are NOT tracked — callers bail on them.
-func splitFlowSegments(inner string) []string {
-	var segs []string
-	var cur strings.Builder
-	var quote byte
-	for i := 0; i < len(inner); i++ {
-		c := inner[i]
-		switch {
-		case quote != 0:
-			if c == quote {
-				quote = 0
-			}
-			cur.WriteByte(c)
-		case c == '\'' || c == '"':
-			quote = c
-			cur.WriteByte(c)
-		case c == ',':
-			segs = append(segs, cur.String())
-			cur.Reset()
-		default:
-			cur.WriteByte(c)
-		}
-	}
-	segs = append(segs, cur.String())
-	return segs
-}
-
-// doubleQuote wraps the value in double quotes, escaping the backslash
-// and the quote itself.
-func doubleQuote(v string) string {
-	return "\"" + strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(v) + "\""
 }
 
 func knownKind(k string) bool {

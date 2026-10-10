@@ -1,0 +1,28 @@
+error.run-argv-empty: |2-
+  run: the argv list is empty
+error.run-argv-scalar: |2-
+  run argv: every element must be a string
+error.run-form: |2-
+  run: expected a command string or an argv list
+error.seed-field: |2-
+  seeds: unknown field {field} (path, text, from-input)
+error.seed-form: |2-
+  seeds: path plus exactly one source form — text (inline) or from-input (a copy from the input directory)
+error.state-field: |2-
+  state: unknown field {field} (path, text, from-run)
+error.state-form: |2-
+  state: path plus exactly one expectation form — text or from-run
+error.patch-empty: |2-
+  patch: carries no operations — a submission with a patch body names at least one replace/add/remove/run/prose change
+error.patch-label: |2-
+  patch: "{label}" is not a row address — the address is the row's label BEHAVIOR-ID/N (one-based, the corpus as it stands)
+error.patch-label-unknown: |2-
+  patch: row {label} does not exist in the corpus — the addresses read the current table
+error.patch-conflict: |2-
+  patch: row {label} is addressed by more than one section — one address, one operation
+error.patch-atom-unknown: |2-
+  patch: prose names behavior "{id}" which the corpus does not carry
+error.patch-add-atom: |2-
+  patch: add names behavior "{id}" twice — one identity per behavior (the opening item carries its name/prose once)
+error.patch-run-mode: |2-
+  patch: run body of {label} carries an illegal mode value (launch: nonet, tree: unchanged — or empty)

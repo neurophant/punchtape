@@ -1,0 +1,42 @@
+accepted.ack: |2-
+  ACCEPTED: transaction {tx}
+  BYTES: sha256 {sha}
+  GATES: {gates}
+  DOOR: reset to the blank template — overwrite current.txt with your next submission before submitting again (a template or empty file is refused, not read)
+  {table}
+full-replace.ack: |2-
+  FULL-REPLACE: {old} rows -> {new} rows (the deliberate full rewrite; the event rides the cell ledger)
+idempotent.ack: |2-
+  IDEMPOTENT REPLAY: transaction {tx} — same content, nothing re-applied
+  BYTES: sha256 {sha}
+  GATES: replay
+error.not-current: |2-
+  not the door file: "{given}" — the machine's one submission file is {want}
+error.stays: |2-
+  the draft stays in {manifest} — the diagnosis is above; edit it and submit it again (the same path)
+error.template-resubmitted: |2-
+  the door file is the blank template (or empty) — no submission was read; an accepted submission resets the door to the template, so OVERWRITE current.txt with your next document and submit it again
+error.full-resubmit: |2-
+  repeated full document forbidden — the full table rode the first spec exactly once; submit a patch (patch: replace/add/remove/run by row address) or, for a deliberate full rewrite, spell full-replace: true
+error.patch-with-full-replace: |2-
+  full-replace and patch do not compose — a full-replace document carries the whole behaviors table, a patch carries the change only
+error.patch-no-spec: |2-
+  a patch needs the first spec — the full document rides the very first kind: spec submission; send the whole table first
+fail: |2-
+  FAIL: {err}.
+reject.brief-empty: |2-
+  the brief is empty — next "<brief text>" carries the task in words
+reject.brief-fixed: |2-
+  the brief is already fixed — it is not edited through rebirth; continue with the slot's route
+reject.line: |2-
+  ERROR: {entity}: {reason}
+reject.run-no-spec: |2-
+  kind run needs an accepted spec first — submit kind: spec (the machine validates the form and answers with the slot)
+reject.stage-deliver: |2-
+  kind {kind} at deliver does not run — the case lives on: submit kind: spec (the next version through the same door) and the work reopens
+spec-diff: |2-
+  SPEC v{version}: atoms {atoms} (+{na} new, ~{ca} changed, -{ra} retired); rows {rows} (+{nr} new, ~{cr} changed, -{rr} retired)
+writer-busy: |2-
+  another writer holds this instance: {err}
+form-unresolved: |2-
+  FORM DECISIONS UNRESOLVED: {labels} — runs stay closed until each pin carries its source line (form: the brief/prereg phrase the pin quotes, or the operator's one-line decision as "op(<date>): <decision>")
