@@ -89,15 +89,15 @@ func (OS) StartOpts(argv []string, dir string, stdin *string, opts LaunchOpts) (
 	}
 	cmd := exec.Command(argv[0], argv[1:]...)
 	cmd.Dir = dir
-	// The standing disciplines (the group) plus the denial: a fresh
-	// user+network namespace, the caller's uid/gid mapped 1:1 so the
-	// tree sees its own owner. Nothing is added to argv.
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid:     true,
-		Cloneflags:  syscall.CLONE_NEWUSER | syscall.CLONE_NEWNET,
-		UidMappings: []syscall.SysProcIDMap{{ContainerID: 0, HostID: syscall.Getuid(), Size: 1}},
-		GidMappings: []syscall.SysProcIDMap{{ContainerID: 0, HostID: syscall.Getgid(), Size: 1}},
+	// The namespace discipline is the OS's to give (see the tagged
+	// netnsSysProcAttr files): Linux raises the denial, a system
+	// without it answers an honest start failure. Nothing is added
+	// to argv.
+	attrs, err := netnsSysProcAttr()
+	if err != nil {
+		return nil, err
 	}
+	cmd.SysProcAttr = attrs
 	if stdin != nil {
 		cmd.Stdin = strings.NewReader(*stdin)
 	}
