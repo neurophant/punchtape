@@ -1,0 +1,9 @@
+# The stage B wave of one meaning: ALL FIVE stacks (the series law:
+# a full run is every meaning in all its stacks), both kinds, two
+# hands a kind, one model pin. Nothing else parameterizes the wave.
+briefs:
+  - quire
+stacks: [go, js, python, rust, cpp]
+kinds: [machine, solo]
+hands_per_kind: 1
+model: GLM-5.3

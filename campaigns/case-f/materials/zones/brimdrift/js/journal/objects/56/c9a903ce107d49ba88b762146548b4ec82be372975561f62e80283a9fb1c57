@@ -1,0 +1,48 @@
+id: brim/usage
+name: honest refusal of clumsy invocation
+prose: |
+  A bad knob value, an extra file argument, an unknown option, an unknown command, and a missing picture are refused with the offending value named along with its requirement, plus the usage line, on exit code 2.
+scope:
+- brim
+- package.json
+- src/**
+- material/**
+- node_modules/**
+covers:
+- R1
+- R2
+- R3
+- R4
+rows:
+- run: ./brim
+  expect:
+    rc: 2
+    out: "contains: missing command"
+- run: ./brim detect
+  expect:
+    rc: 2
+    out: "contains: no picture given"
+- run: ./brim detect material/bordered.jpg extra.jpg
+  expect:
+    rc: 2
+    out: "contains: extra file argument 'extra.jpg'"
+- run: ./brim detect material/bordered.jpg --band 0.7
+  expect:
+    rc: 2
+    out: "contains: bad --band value '0.7': a fraction of the side, greater than 0 and at most 0.5"
+- run: ./brim detect material/bordered.jpg --band abc
+  expect:
+    rc: 2
+    out: "contains: bad --band value 'abc': a fraction of the side, greater than 0 and at most 0.5"
+- run: ./brim detect material/bordered.jpg --threshold 1.5
+  expect:
+    rc: 2
+    out: "contains: bad --threshold value '1.5': a fraction from 0 to 1"
+- run: ./brim detect material/bordered.jpg --wat
+  expect:
+    rc: 2
+    out: "contains: unknown option '--wat'"
+- run: ./brim frobnicate x.jpg
+  expect:
+    rc: 2
+    out: "contains: unknown command 'frobnicate'"

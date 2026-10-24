@@ -1,0 +1,15 @@
+id: brim/purity
+name: reads the picture, writes nothing
+prose: "The program only reads the picture and prints the answer: after a detect run the tree holds exactly the files it held before.\n"
+scope:
+- brim
+- package.json
+- src/**
+- material/**
+- node_modules/**
+covers:
+- R1
+rows:
+- run: before=$(find . -type f -not -path "./.punchtape/*" | sort); ./brim detect material/clear.jpg > /dev/null; after=$(find . -type f -not -path "./.punchtape/*" | sort); [ "$before" = "$after" ]
+  expect:
+    rc: 0

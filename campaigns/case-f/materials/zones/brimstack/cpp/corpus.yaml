@@ -1,0 +1,108 @@
+requirements:
+- id: R1
+  brief:
+  - W2..W4
+- id: R2
+  brief:
+  - W6..W10
+- id: R3
+  brief:
+  - W11..W14
+- id: R4
+  brief:
+  - W15..W16
+- id: R5
+  brief:
+  - W17..W18
+not-a-requirement:
+- lines:
+  - W1
+  quote: "# Brief: brimstack — the same tool on cpp"
+  reason: a heading, not a demand
+- lines:
+  - W5
+  quote: "## My want"
+  reason: a heading, not a demand
+behaviors:
+- id: cli/detect
+  name: measure the four margins
+  prose: "brim detect picture.jpg prints four numbers — margin pixels on the top, bottom, left, and right. Each side is walked from the edge inward one pixel line at a time; a line is a chunk, and its histogram entropy normalized to [0,1] is the chunk's chaos. The margin ends where the entropy first stops being low (above --threshold); the boundary sits at the largest entropy jump between neighboring chunks. Evenness stretching to the end of the search band answers the whole band; no even strip at the edge answers zero. The program only reads the picture and prints the answer: same picture, same answer, every run.\n"
+  scope:
+  - brim
+  - material/**
+  covers:
+  - R1
+  - R4
+  rows:
+  - run: ./brim detect material/bordered.jpg
+    expect:
+      rc: 0
+      out: "contains: 4 4 4 4"
+  - run: ./brim detect material/clear.jpg
+    expect:
+      rc: 0
+      out: "contains: 0 0 0 0"
+  - run: ./brim detect --band 0.01 material/bordered.jpg
+    expect:
+      rc: 0
+      out: "contains: 2 2 2 2"
+  - run: ./brim detect --band 0.05 material/bordered.jpg
+    expect:
+      rc: 0
+      out: "contains: 4 4 4 4"
+  - run: "[ \"$(./brim detect material/bordered.jpg)\" = \"$(./brim detect material/bordered.jpg)\" ] && [ \"$(./brim detect material/clear.jpg)\" = \"$(./brim detect material/clear.jpg)\" ]"
+    expect:
+      rc: 0
+- id: cli/errors
+  name: refuse trouble honestly
+  prose: "Every refusal is one brief English line on stderr and a nonzero exit: usage trouble (a bad knob value, an extra file argument, an unknown option) exits 2; picture trouble (a missing or unreadable file, not a picture at all, not JPEG, a side shorter than two pixels) exits 1. Each knob's invalid value is named together with its requirement.\n"
+  scope:
+  - brim
+  - material/**
+  covers:
+  - R1
+  rows:
+  - run: ./brim detect material/nosuch.jpg 2>&1
+    expect:
+      rc: 1
+      out: "contains: cannot read material/nosuch.jpg: no such file"
+  - run: ./brim detect material/notjpeg.txt 2>&1
+    expect:
+      rc: 1
+      out: "contains: not a picture at all"
+  - run: ./brim detect material/photo.png 2>&1
+    expect:
+      rc: 1
+      out: "contains: not a JPEG picture"
+  - run: ./brim detect material/tiny.jpg 2>&1
+    expect:
+      rc: 1
+      out: "contains: picture too small to search for a margin"
+  - run: ./brim detect --band 0.6 material/bordered.jpg 2>&1
+    expect:
+      rc: 2
+      out: "contains: invalid --band 0.6: want a fraction of the side, greater than 0 and at most 0.5"
+  - run: ./brim detect --band 0 material/bordered.jpg 2>&1
+    expect:
+      rc: 2
+      out: "contains: invalid --band 0: want a fraction of the side, greater than 0 and at most 0.5"
+  - run: ./brim detect --band abc material/bordered.jpg 2>&1
+    expect:
+      rc: 2
+      out: "contains: invalid --band abc: want a fraction of the side, greater than 0 and at most 0.5"
+  - run: ./brim detect --threshold 1.5 material/bordered.jpg 2>&1
+    expect:
+      rc: 2
+      out: "contains: invalid --threshold 1.5: want a fraction from 0 to 1"
+  - run: ./brim detect --threshold -0.1 material/bordered.jpg 2>&1
+    expect:
+      rc: 2
+      out: "contains: invalid --threshold -0.1: want a fraction from 0 to 1"
+  - run: ./brim detect material/bordered.jpg material/clear.jpg 2>&1
+    expect:
+      rc: 2
+      out: "contains: unrecognized arguments: material/clear.jpg"
+  - run: ./brim --bogus detect material/bordered.jpg 2>&1
+    expect:
+      rc: 2
+      out: "contains: unrecognized arguments: --bogus"

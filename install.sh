@@ -12,9 +12,6 @@ fi
 REPO="$(cd "$(dirname "$0")" && pwd)"
 echo "building punchtape from $REPO ..."
 cd "$REPO"
-# The version rides the source (internal/cli/cli.go, the AGENTS §4
-# ritual); no -X override — a tag-derived stamp would disagree with
-# the canon the binary carries.
 go build -buildvcs=false -o punchtape ./cmd/punchtape
 
 DEST="${HOME}/.local/bin"
@@ -25,10 +22,3 @@ case ":$PATH:" in
   *) echo "note: add $DEST to PATH: export PATH=\"\$PATH:$DEST\"" ;;
 esac
 echo "installed: $DEST/punchtape"
-# a smoke test in a temporary directory: next opens an instance in
-# cwd — never run it from the repository root (a ghost instance)
-mkdir -p "$HOME/.experiments/tmp"
-smoke="$(mktemp -d "$HOME/.experiments/tmp/install-smoke.XXXXXX")"
-( cd "$smoke" && "$DEST/punchtape" next >/dev/null 2>&1 ) || true
-rm -rf "$smoke"
-echo "done. Try: mkdir demo && cd demo && punchtape next"

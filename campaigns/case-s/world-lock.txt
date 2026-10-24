@@ -1,0 +1,53 @@
+== world lock (series B; warmed and offline-tested) ==
+The platform cache area ~/.experiments/cache/env-prep carries one
+master per combo; every wave copies, never builds. The cpp stacks
+read the platform prefix ~/.local. Cells: python on pyenv 3.12.12
+(the 3.14 default has no wheels for the brief-era pins), js on the
+system node, rust vendored (resolution and build purely from the
+cell's copy), go through the cell's file proxy, network closed by
+rule and by construction.
+
+-- pip (venv masters, python 3.12.12)
+_venv-quire: Jinja2==3.1.4 Markdown==3.6 MarkupSafe==3.0.4 PyYAML==6.0.1
+_venv-brim: numpy==2.4.6 pillow==12.3.0
+_venv-errand: redis==8.1.0
+_venv-pressmark: annotated-types==0.8.0 Jinja2==3.1.4 Markdown==3.6
+  MarkupSafe==3.0.4 pydantic==2.8.2 pydantic_core==2.20.1
+  python-slugify==8.0.4 PyYAML==6.0.1 text-unidecode==1.3
+  typing_extensions==4.16.0
+
+-- npm (node_modules masters, system node v24.14.1)
+_nodemods-quire: marked 17.0.5, yeahjs 0.3.1, @mourner/yeahml 1.0.0
+_nodemods-brim: jimp 1.6.1
+_nodemods-errand: ioredis 6.0.0
+_nodemods-pressmark: js-yaml 5.4.2, marked 17.0.5, nunjucks 3.2.4
+
+-- go modules (download-proxy masters, go 1.27.3)
+_gomod-quire: goldmark v1.8.6, yaml.v3 v3.0.1
+_gomod-pressmark: goldmark v1.8.6, yaml.v3 v3.0.1
+_gomod-errand: go-redis/v9 v9.5.1, uuid v1.6.0
+
+-- rust (vendored masters, resolved by the warming locks)
+_cargo-quire: comrak 0.24.1, tera 1.20.1, serde_yaml 0.9.34+deprecated
+_cargo-brim: image 0.25.10
+_cargo-conduit: tokio 1.53.3
+_cargo-errand: redis 0.8.0, uuid 0.5.1 (v4), serde 1.0.229,
+  serde_json 1.0.154, serde_derive 1.0.229
+_cargo-pressmark: comrak 0.59.0, tera 2.4.0,
+  serde_yaml 0.9.34+deprecated, serde 1.0.229, serde_json 1.0.154
+
+-- cpp platform prefix (~/.local)
+md4c 0.5.2, libyaml 0.2.5, hiredis 1.1.0, GraphicsMagick 1.3.46
+(the -config wrappers tell the prefix), inja 3.4.0, nlohmann/json
+3.11.3 (headers)
+
+-- system
+go 1.27.3 (snap; the direct binary /snap/go/<rev>/bin/go runs in
+network-cut namespaces, the /snap/bin wrapper does not)
+node v24.14.1 (nvm; the briefs' "system node")
+python 3.12.12 (pyenv, for cells; the default 3.14.4 lacks wheels
+for the pinned libs)
+rustc 1.98.1 / cargo 1.98.1
+g++ 15.2.0
+redis-server 8.0.5 (~/.local/bin; needs LD_LIBRARY_PATH=~/.local/lib
+for liblzf — the errand cells' ENV carries it)

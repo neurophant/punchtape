@@ -1,0 +1,182 @@
+build: make -s all
+requirements:
+- id: R1
+  brief:
+  - W2..W6
+- id: R2
+  brief:
+  - W8..W10
+- id: R3
+  brief:
+  - W11..W12
+- id: R4
+  brief:
+  - W13..W15
+not-a-requirement:
+- lines:
+  - W1
+  quote: "# Brief: brimdrift — the tool must catch the night edit"
+  reason: a heading, not a demand
+- lines:
+  - W7
+  quote: "## My want"
+  reason: a heading, not a demand
+- lines:
+  - W16..W18
+  quote: "4. The edit itself is mine: after your work first stands accepted,\nI change one line of the measuring law and demand restoration.\nExpect it — the proofs you keep decide how fast it heals."
+  reason: the customer's own future act, announced — not a demand on the tool; the catch and the healing it promises ride R2 and R4
+artifacts:
+- brim
+behaviors:
+- id: brim/detect
+  name: the four-number answer on the materials
+  prose: brim detect on a picture prints four numbers — top, bottom, left, right — the even margin found from each edge. On the framed material all four sides answer 4, on the clear material all four answer 0, and a mid-range sensitivity keeps the framed answer.
+  scope:
+  - src/**
+  - Makefile
+  - materials/bordered.jpg
+  - materials/clear.jpg
+  covers:
+  - R1
+  - R2
+  - R3
+  - R4
+  rows:
+  - run: ./brim detect materials/bordered.jpg
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect materials/clear.jpg
+    expect:
+      rc: 0
+      out: |
+        0 0 0 0
+  - run: ./brim detect materials/bordered.jpg --threshold 0.3
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect materials/bordered.jpg --threshold 0.7
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+- id: brim/band
+  name: the search band knob
+  prose: "The --band knob bounds how deep from the edge the margin is hunted: a band shallower than the frame cuts the found numbers down (0.01 answers 2), a deeper one leaves them (0.05 answers 4)."
+  scope:
+  - src/**
+  - Makefile
+  - materials/bordered.jpg
+  covers:
+  - R1
+  - R2
+  - R3
+  - R4
+  rows:
+  - run: ./brim detect materials/bordered.jpg --band 0.01
+    expect:
+      rc: 0
+      out: |
+        2 2 2 2
+  - run: ./brim detect materials/bordered.jpg --band 0.05
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+- id: brim/repeat
+  name: the same answer on a repeat run
+  prose: "A repeat run on the same picture answers the same, to the letter: the measurement is a pure computation on the decoded bytes."
+  scope:
+  - src/**
+  - Makefile
+  - materials/bordered.jpg
+  covers:
+  - R1
+  - R2
+  - R3
+  - R4
+  rows:
+  - run: "a=$(./brim detect materials/bordered.jpg) && b=$(./brim detect materials/bordered.jpg) && [ \"$a\" = \"$b\" ] && printf '%s\\n' \"$a\""
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+- id: brim/usage
+  name: honest refusals
+  prose: "Clumsy calls and unusable files are refused with rc 1, a brief English message on stderr and nothing on stdout: a missing file, not a picture at all, another format than JPEG, sides too short to search, an extra file argument, an unknown option or command, a missing command, and each knob's invalid value named along with its requirement."
+  scope:
+  - src/**
+  - Makefile
+  - testdata/**
+  - materials/bordered.jpg
+  covers:
+  - R1
+  - R2
+  - R3
+  - R4
+  rows:
+  - run: ./brim detect materials/absent.jpg 2>&1
+    expect:
+      rc: 1
+      out: "contains: cannot read"
+  - run: ./brim detect testdata/garbage.bin 2>&1
+    expect:
+      rc: 1
+      out: "contains: not a picture at all"
+  - run: ./brim detect testdata/broken.jpg 2>&1
+    expect:
+      rc: 1
+      out: "contains: not a picture at all"
+  - run: ./brim detect testdata/notjpeg.png 2>&1
+    expect:
+      rc: 1
+      out: "contains: not my format: PNG"
+  - run: ./brim detect testdata/tiny.jpg 2>&1
+    expect:
+      rc: 1
+      out: "contains: too small"
+  - run: ./brim detect materials/bordered.jpg extra.jpg 2>&1
+    expect:
+      rc: 1
+      out: "contains: unexpected extra argument"
+  - run: ./brim detect materials/bordered.jpg --bogus 1 2>&1
+    expect:
+      rc: 1
+      out: "contains: unknown option"
+  - run: ./brim detect 2>&1
+    expect:
+      rc: 1
+      out: "contains: no picture file given"
+  - run: ./brim 2>&1
+    expect:
+      rc: 1
+      out: "contains: missing command"
+  - run: ./brim detect materials/bordered.jpg --band 0.9 2>&1
+    expect:
+      rc: 1
+      out: "contains: --band: invalid value '0.9': a fraction of the side"
+  - run: ./brim detect materials/bordered.jpg --band abc 2>&1
+    expect:
+      rc: 1
+      out: "contains: --band: invalid value 'abc'"
+  - run: ./brim detect materials/bordered.jpg --threshold 1.5 2>&1
+    expect:
+      rc: 1
+      out: "contains: --threshold: invalid value '1.5': a fraction from 0 to 1"
+- id: brim/purity
+  name: reads the picture, writes nothing
+  prose: "The tool only reads the picture and prints the answer: run from an empty directory it leaves that directory empty — nothing written to disk, no settings kept in files."
+  scope:
+  - src/**
+  - Makefile
+  - materials/bordered.jpg
+  covers:
+  - R1
+  rows:
+  - run: mkdir .purity-check && cd .purity-check && ../brim detect ../materials/bordered.jpg > /dev/null && ls -A | wc -l; cd .. && rm -rf .purity-check
+    expect:
+      rc: 0
+      out: |
+        0

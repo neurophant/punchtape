@@ -1,0 +1,201 @@
+requirements:
+- id: R1
+  brief:
+  - W2..W4
+- id: R2
+  brief:
+  - W6..W10
+- id: R3
+  brief:
+  - W11..W14
+- id: R4
+  brief:
+  - W15..W16
+- id: R5
+  brief:
+  - W17..W18
+not-a-requirement:
+- lines:
+  - W1
+  quote: "# Brief: brimstack — the same tool on python"
+  reason: a heading, not a demand
+- lines:
+  - W5
+  quote: "## My want"
+  reason: a heading, not a demand
+behaviors:
+- id: brim/detect
+  name: margins on the given materials
+  prose: "The wish's own ground truth: bordered.jpg (250x250, a 4-pixel even frame) answers 4 4 4 4, clear.jpg (no margin) answers 0 0 0 0, a band shallower than the frame cuts the numbers down to the band itself, and a repeat run answers to the letter the same.\n"
+  scope:
+  - brim
+  - package.json
+  - src/**
+  - material/**
+  - node_modules/**
+  covers:
+  - R1
+  - R4
+  rows:
+  - run: ./brim detect material/bordered.jpg
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect material/clear.jpg
+    expect:
+      rc: 0
+      out: |
+        0 0 0 0
+  - run: ./brim detect material/bordered.jpg --band 0.01
+    expect:
+      rc: 0
+      out: |
+        2 2 2 2
+  - run: ./brim detect material/bordered.jpg --band 0.05
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect material/bordered.jpg && ./brim detect material/bordered.jpg
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+        4 4 4 4
+- id: brim/knobs
+  name: the two knobs with valid values
+  prose: "--band sets how deep from the edge to search, a fraction of each side no greater than half; --threshold sets the sensitivity, a fraction from 0 to 1. Evenness stretching through the whole band makes the whole band the answer (uniform.jpg: bands of 15 rows and 20 columns at the default quarter), and each side is measured on its own (asym.jpg: frame of 4 top, 7 bottom, 3 left, 5 right).\n"
+  scope:
+  - brim
+  - package.json
+  - src/**
+  - material/**
+  - fixtures/**
+  - node_modules/**
+  covers:
+  - R1
+  rows:
+  - run: ./brim detect material/bordered.jpg --band 0.5
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect material/bordered.jpg --threshold 0.3
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect material/bordered.jpg --threshold 0.7
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect fixtures/uniform.jpg
+    expect:
+      rc: 0
+      out: |
+        15 15 20 20
+  - run: ./brim detect fixtures/uniform.jpg --band 0.5
+    expect:
+      rc: 0
+      out: |
+        30 30 40 40
+  - run: ./brim detect fixtures/asym.jpg
+    expect:
+      rc: 0
+      out: |
+        4 7 3 5
+- id: brim/errors
+  name: brief clear trouble reports
+  prose: |
+    Missing or unreadable files, bytes that are not a picture at all, a real picture in a format other than JPEG, and pictures too small to search are each refused in one English line on a failing exit.
+  scope:
+  - brim
+  - package.json
+  - src/**
+  - fixtures/**
+  - node_modules/**
+  covers:
+  - R1
+  rows:
+  - run: ./brim detect missing.jpg
+    expect:
+      rc: 1
+      out: "contains: cannot read 'missing.jpg': no such file or directory"
+  - run: ./brim detect fixtures/not-picture.txt
+    expect:
+      rc: 1
+      out: "contains: is not a picture at all"
+  - run: ./brim detect fixtures/photo.png
+    expect:
+      rc: 1
+      out: "contains: is not my format"
+  - run: ./brim detect fixtures/broken.jpg
+    expect:
+      rc: 1
+      out: "contains: is not a picture at all"
+  - run: ./brim detect fixtures/tiny.jpg
+    expect:
+      rc: 1
+      out: "contains: too small to search for a margin"
+- id: brim/usage
+  name: honest refusal of clumsy invocation
+  prose: |
+    A bad knob value, an extra file argument, an unknown option, an unknown command, and a missing picture are refused with the offending value named along with its requirement, plus the usage line, on exit code 2.
+  scope:
+  - brim
+  - package.json
+  - src/**
+  - material/**
+  - node_modules/**
+  covers:
+  - R1
+  rows:
+  - run: ./brim
+    expect:
+      rc: 2
+      out: "contains: missing command"
+  - run: ./brim detect
+    expect:
+      rc: 2
+      out: "contains: no picture given"
+  - run: ./brim detect material/bordered.jpg extra.jpg
+    expect:
+      rc: 2
+      out: "contains: extra file argument 'extra.jpg'"
+  - run: ./brim detect material/bordered.jpg --band 0.7
+    expect:
+      rc: 2
+      out: "contains: bad --band value '0.7': a fraction of the side, greater than 0 and at most 0.5"
+  - run: ./brim detect material/bordered.jpg --band abc
+    expect:
+      rc: 2
+      out: "contains: bad --band value 'abc': a fraction of the side, greater than 0 and at most 0.5"
+  - run: ./brim detect material/bordered.jpg --threshold 1.5
+    expect:
+      rc: 2
+      out: "contains: bad --threshold value '1.5': a fraction from 0 to 1"
+  - run: ./brim detect material/bordered.jpg --wat
+    expect:
+      rc: 2
+      out: "contains: unknown option '--wat'"
+  - run: ./brim frobnicate x.jpg
+    expect:
+      rc: 2
+      out: "contains: unknown command 'frobnicate'"
+- id: brim/purity
+  name: reads the picture, writes nothing
+  prose: "The program only reads the picture and prints the answer: after a detect run the tree holds exactly the files it held before.\n"
+  scope:
+  - brim
+  - package.json
+  - src/**
+  - material/**
+  - node_modules/**
+  covers:
+  - R1
+  rows:
+  - run: before=$(find . -type f -not -path "./.punchtape/*" | sort); ./brim detect material/clear.jpg > /dev/null; after=$(find . -type f -not -path "./.punchtape/*" | sort); [ "$before" = "$after" ]
+    expect:
+      rc: 0

@@ -1,0 +1,19 @@
+id: detect/clear
+name: No margin on the free-content picture
+prose: |
+  A picture whose edges carry content and no even strip answers zeros on all four sides.
+scope:
+- src/**
+- Cargo.toml
+- Cargo.lock
+- build
+- materials/clear.jpg
+covers:
+- R1
+- R3
+rows:
+- run: ./brim detect materials/clear.jpg
+  expect:
+    rc: 0
+    out: |
+      0 0 0 0

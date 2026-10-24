@@ -13,12 +13,10 @@ affected series (P6).
 
 A self-sufficient folder in `campaigns/` — a full run of the
 implementation: detailed briefs; two hands (machine/solo) build the
-product whole; the economy and quality of camps is measured. The
-current campaign is `campaigns/case-0/` (the 0.2.0 protocol under
-current conditions, a comparative pair on one binary). The entry
-point is the campaign README.
+product whole; the economy and quality of camps is measured. Each
+campaign's README is its entry point.
 
-## 0.2. The campaign isolation law (the owner's word)
+## 0.2. The campaign isolation law
 
 - Every campaign carries ITS OWN tools and ITS OWN materials; no
   imports of another campaign's paths.
@@ -29,13 +27,14 @@ point is the campaign README.
   touching another. The isolation check is a run of the campaign's
   entry gate from its own paths.
 
-## 0.2a. THE SESSION LAW (the owner's word)
+## 0.2a. THE SESSION LAW
 
 Task runs are executed only so:
 
-1. **One session — one task (meaning) in all its stacks.** The
-   session starts with a clean driver context; no second task enters
-   it.
+1. **One task (meaning) in all its stacks — STRICTLY in one
+   session.** The session starts with a clean driver context; a
+   meaning is never split across sessions, and no second task ever
+   enters the session.
 2. **The death of any agent = a clean session restart** (tear down
    the run root, start the task anew in a new session). The
    session's agent census is fixed (§I.6a).
@@ -43,17 +42,17 @@ Task runs are executed only so:
    task and its hands/stacks without loss of information** — the
    closing report is final and is never recalculated later.
 4. **HANDOFF**: after the session closes,
-   `./handoffs/<datetime>-<kind>-<next-task>.md` is written (outside
+   `./handoffs/<next-task>.md` is written (outside
    git): the results, the state, the order of the next session.
 5. **COPY-PASTE PROMPT**: the handoff AND the session's final
    message end with a READY prompt for the next session — a code
-   block the owner copies into the new session whole; the prompt is
+   block copied into the new session whole; the prompt is
    self-supporting (the law + the methodology + the exact run
    commands of the next task). The prompt templates are fixed in the
    campaign README. A run without this ritual is not counted as
    closed.
 
-## 0.2b. THE VICTORY CRITERIA LAW (the owner's word)
+## 0.2b. THE VICTORY CRITERIA LAW
 
 Unified victory criteria of the machine over solo — for any series
 and battery, at any level of aggregation (task, wave/meaning,
@@ -81,15 +80,15 @@ quality is not read as a victory. Numbers come only from mechanical
 sources (the platform base, ledgers, the run journal); not one
 number by hand.
 
-## 0.2c. THE AGENT PARALLELISM CEILING = 8 AND THE FILL NORM (the owner's word, FOREVER)
+## 0.2c. THE AGENT PARALLELISM CEILING AND THE FILL NORM (ceiling 2, here and further)
 
-No more than EIGHT concurrent subagents at any moment of any
+No more than TWO concurrent subagents at any moment of any
 session — hands, judges, calibrations: all agents count. Exceeding
 the ceiling at any moment = an invalid session (stop, tear down the
 root, start the task anew).
 
-THE FILL NORM (the owner's word: "parallel subagents must exist and
-free subagent slots must not idle", "up to 8… now too"): while the
+THE FILL NORM (parallel subagents must exist and free subagent
+slots must not idle): while the
 session/wave has work (the hands of the next cells, judges,
 measurers, operators), the driver keeps subagents working to the
 norm — a free slot with work available is forbidden just like
@@ -101,10 +100,10 @@ hands + judges) goes as a pipeline under the ceiling: the hands of
 the next tasks and the judges of finished tasks enter freed slots,
 never exceeding the ceiling and never leaving a slot empty while the
 work queue is non-empty. The ceiling is fixed in the series freeze
-(Appendix B, item 6).
+(Appendix A, item 6).
 
-**THE DRIVER TURN DISCIPLINE (the owner's word, "every time", in
-force in all subsequent tasks, waves and runs):** a driver turn does
+**THE DRIVER TURN DISCIPLINE (in force in all tasks, waves and
+runs):** a driver turn does
 NOT end until BOTH conditions hold: (1) EVERY subagent completion
 that arrived by that moment has been processed — including
 completions that arrived in a BATCH together with service/system
@@ -117,16 +116,13 @@ spawned until both hands finish), and that is not idling; idling is
 only a slot with a non-empty queue of ready work. Every fact of
 idling with a queue is a red line of the run registry.
 
-**THE DRIVER'S NON-BLOCKING LOOP H1–H5 — MANDATORY TO EXECUTE (the
-owner's word: "filling the slots in time and the non-blocking loop
-are the driver's behavior; document it in the methodology in detail
-as mandatory to execute"; also fixed as law in AGENTS.md §13 and the
-case-0 README).** The operational form of the driver turn
+**THE DRIVER'S NON-BLOCKING LOOP H1–H5 — MANDATORY TO EXECUTE
+(also fixed as law in the campaign README).** The
+operational form of the driver turn
 discipline (see above): five guarantees in force in EVERY wave,
-every task, every run of any campaign of this repo — always, without
-exceptions and without owner prodding. A violation of any H is a red
-line of the run registry (H5 — a self-reporting entry BEFORE the
-owner's prod).
+every task, every run of any campaign of this repo — always and
+without exceptions. A violation of any H is a red line of the run
+registry (H5 — a self-reporting entry BEFORE the prod).
 
 - **H1 — THE NON-BLOCKING LOOP (the core of the guarantee).** In
   mid-wave there is NEVER a blocking wait on an agent longer than
@@ -145,9 +141,7 @@ owner's prod).
   verdict; a free slot with an empty queue of ready work is not
   filled forcibly.
 - **H2 — USAGE BEFORE THE CALL, ACCEPTANCES AS A WHOLE FILE.**
-  Before the FIRST call of every run tool (prep-cell, verify-cell,
-  register-agent, broker, finish-cell, close-wave, canaries,
-  rollout-watch, case-runner-host, count-deliverables) the driver
+  Before the FIRST call of every run tool the driver
   has read its usage block from the tool itself. Acceptance texts
   and operator decisions are passed on (to the broker, finish-cell,
   the hand) ONLY as a whole file: a head -c byte cut breaks
@@ -155,8 +149,8 @@ owner's prod).
 - **H3 — REGISTRATION STRICTLY RIGHT AFTER THE SPAWN.** Every
   subagent of the session is registered IMMEDIATELY after the spawn:
   the platform's real agentId, one register-agent call, the
-  --session pin <the agent's platform session> (for a subagent —
-  sess_subagent_<agentId>); after registration — a follow-up
+  `--session` pin `<the agent's platform session>` (for a subagent —
+  `sess_subagent_<agentId>`); after registration — a follow-up
   reconciliation of the uuid/session against the platform registry.
   The close-wave census gate catches both an unregistered agent and
   an unpinned session — but H3 means there is nothing to catch: the
@@ -169,18 +163,18 @@ owner's prod).
   mid-wave = an H1 violation.
 - **H5 — THE SELF-RED LINE.** Any fact of a slot idling with a
   non-empty queue of ready work longer than 90 s the driver itself
-  enters into redlines.jsonl (class driver-discipline, disposition —
-  the owner) BEFORE the owner's prod; the wave analytics carries a
+  enters into the run registry's red-line log (class
+  driver-discipline) BEFORE the prod; the wave analytics carries a
   "Pipeline discipline" section with the idling line and a breakdown
   of every incident.
 - **Carrying across sessions.** H1–H5 live not only here: every
   wave's handoff carries them verbatim (§0.2a.4–5), the next
   session's copy-paste prompt includes them as an order item, the
   live session handoff carries them as a GUARANTEES section. The law
-  is eternal in the methodology itself, in AGENTS.md §13 and in the
+  is eternal in the methodology itself and in the
   campaign README.
 
-## 0.2d. THE PERMISSION-GAMES BAN (the owner's word, FOREVER)
+## 0.2d. THE PERMISSION-GAMES BAN
 
 Ordinary permissions on the whole run tree and all artifacts: no
 chmod a-w, chmod 700, chmod 660 or other forbidding permissions; no
@@ -189,6 +183,61 @@ to read, clean or delete. Integrity protection is by digest
 manifests and the freeze (P9), NEVER by filesystem permissions. The
 campaign tools are cleansed of forbidding chmod; a return of
 permission games is a red line.
+
+## 0.2e. THE PER-TASK METRICS FILE LAW
+
+Every task's metrics — ALL of its hands, time and tokens, the
+operators' and the judges' rows with them — are collected
+deterministically by the campaign's script (collect.py → metrics.py),
+and the script VERIFIES the collection before writing anything: the
+hands complete against the wave manifest, every hand sessioned, the
+token sums arithmetically consistent (in+out and total), every hand's
+judge page present, the operators exactly one per hand when the wave
+ran them. A failed check stops the metrics; nothing invalid is ever
+written. The verified whole of the wave's metrics lands in the wave
+root's `METRICS.md` — one write per wave, deterministic bytes: the
+same collected inputs give the same file, every time; nothing of
+the run enters the repository.
+
+## 0.2f. THE PROBLEM LEDGER LAW
+
+During the run of EVERY hand — machine and solo alike — the driver
+watches for two kinds of trouble and keeps them strictly apart:
+
+- **MACHINE problems** — the machine's own defects against its
+  contract: refusals by the machine's fault, wrong facts or
+  verdicts, contract↔behavior drift, crashes;
+- **CAMPAIGN problems** — the campaign's own defects: staging,
+  substrate, texts, tooling, collection.
+
+Both kinds are documented in the wave root — fact by fact: the
+hand, what happened, the evidence path. A run without problems is
+recorded as such — the page is never skipped.
+
+## 0.2g. THE SUBAGENT INJECTION LAW
+
+Every agent a run spawns — a hand, an operator, a judge, any role of
+any campaign — is spawned ONLY as a platform agent type with the
+AGENTS.md injection disabled (the platform flag `injectAgentsMd:
+false`; the current carrier: the `experimental` type at
+`~/.zcode/agents/experimental.md`, the session's own model). A
+standard injection-carrying subagent type is forbidden in runs.
+Why: the platform injects the repository's AGENTS.md into every
+standard subagent of a session opened on a repository — and the
+repository's law must not reach a measured hand. The wall is
+verified once per wave by a
+probe agent of the same type reporting the absence of injected
+project instructions (the M-brim probe: NO INJECTED PROJECT
+INSTRUCTIONS). Edition check against the scope-of-work bans: not a
+toy gate — it closes a measured contamination, adds no repeated
+run, and costs one probe per wave.
+
+This law replaces the launch-cwd wall as the injection defense: a
+driver session may sit anywhere. The
+subagents' cwd still equals the session's launch directory, so the
+spawn texts carry absolute paths only (the staging renders them),
+and the closing hygiene scan of the run order stays the net for
+relative-command litter (the C8 class).
 
 ## 0.3. General principles
 
@@ -214,10 +263,11 @@ it by one procedure; the assessment is semantic at the judge's,
 mechanical at the etalon's; surpassing the etalon is added value, not
 a penalty.
 P5. **The driver is one agent of the session.** Run control is
-executed by one session agent (the driver), with frozen tools; the
-same agent plays the operators under the frozen protocol; the human
-is removed from the operator loop; LLM judgment by the operator is
-forbidden wherever the decision has a mechanical form.
+  executed by one session agent (the driver), with frozen tools; the
+  operators are separate automatic micro-agents of the campaign
+  (§I.2), woken and relayed by the driver; the human is removed from
+  the operator loop; LLM judgment by the operator is forbidden
+  wherever the decision has a mechanical form.
 P6. **Immutability within a series.** A change to the methodology is
 a new edition, frozen before the first cell of the affected series.
 P7. **Zero tolerance for steering influences** (the purity law). Any
@@ -237,37 +287,41 @@ to exist in the repository tree.
 ## 0.4. The common substrate
 
 - **A session platform** with background subagents; the platform's
-  accounting base (db.sqlite: model_usage by sessions —
+  accounting base (model_usage by sessions —
   input/output/cache_creation/cache_read tokens and duration_ms; the
   truth of metrics, never self-report).
-- **The single write zone of runs is `~/.experiments`** (the owner's
-  word, uniform with the zone's structural law): `runs/ tmp/
+- **The single write zone of runs is `~/.experiments`** (uniform
+  with the zone's structural law): `runs/ tmp/
   cache/` and nothing else in its root; no tool of a wave, campaign
   or hand writes to the system `/tmp` or anywhere else. During a run
   the subagents write ONLY into `~/.experiments/`: the driver's
   first action creates the run root and works from it; the spawn
   walls (the ENV prefix + WRITE BOUNDS) hold the hands' writes
   inside the cell whatever the session's starting cwd (the
-  subagents' cwd = the session's launch directory — launching from
-  the run root adds a wall over faulty commands too); the hands
-  write only inside cells (the command prefix
+  subagents' cwd = the session's launch directory — the injection
+  wall is the subagent type law §0.2g, not the launch directory;
+  launching from the run root merely keeps relative-command litter
+  out of the repository and stays a recommended convenience); the
+  hands write only inside cells (the command prefix
   `cd <work> && . ./ENV && sh -lc '…'`, WRITE BOUNDS in the spawn,
   the cell's TMPDIR and caches — in ENV). The causes of littering
-  are eliminated at the root (a sterile launch, ENV delivery, the
-  /tmp ban for all tools), not papered over with an audit.
+  are eliminated at the root (ENV delivery, the /tmp ban for all
+  tools, absolute paths in the spawn texts — §0.2g), and the wave's
+  closing hygiene scan is the net for any faulty relative command
+  that still escapes (the C8 class).
 - **The hidden measurement materials live IN the campaign's FOLDER**
-  (the owner's word: `~/.experiments/` is clean of anything
-  permanent). They are never staged to hands; a leak of their
+  (`~/.experiments/` is clean of anything permanent). They are never
+  staged to hands; a leak of their
   contents into a hand's transcript is a red line.
 - **The system punchtape binary**: installed into the system before
-  the cells are staged, its sha256 pinned into the series freeze
-  (`FREEZE-S.sha256`); a rebuild after the series starts is
+  the cells are staged, its sha256 pinned into the series freeze;
+  a rebuild after the series starts is
   forbidden; the solo hand never calls the binary (parity — the
   absence of machine files in the cell for both hands).
 - **The single run root**:
   `~/.experiments/runs/<UTC-timestamp>-<kind>-<name>/`, everything
   of the run lives inside; outside the root the run creates nothing.
-  The structure of `~/.experiments/` (the owner's word): `runs/` —
+  The structure of `~/.experiments/`: `runs/` —
   run roots (the only kind of thing written), `tmp/` — measurement
   scratch, `cache/` — restorable environment caches (env-prep).
   Nothing else is created in `~/.experiments/`; handoffs live in the
@@ -282,7 +336,7 @@ to exist in the repository tree.
 
 ---
 
-# PART I. CASE 0 — A FULL RUN OF THE IMPLEMENTATION (DETAILED BRIEFS)
+# PART I. THE FULL RUN OF THE IMPLEMENTATION (DETAILED BRIEFS)
 
 ## I.1. The experiment question
 
@@ -297,36 +351,46 @@ iterations at the same quality; H0: there is no difference.
 - **Hand** — the task's executor. TWO hands per cell:
   - **machine** — an agent working THROUGH the machine (spec
     submissions, runs, verdicts through the machine's door) + its
-    own micro-operator (owner-micro);
+    own micro-operator (machine-micro);
   - **solo** — an agent without the machine working directly in
     `work/` + its own micro-operator (customer-micro).
   A camp = a hand + its operator (the cell economy).
-- **Operator** — the session's driver playing both camps'
-  micro-operators under frozen prompts: for the machine —
-  owner-micro (short decisions on escalations, starting from
-  `report --since` of the last verdict, a spot check of the delta),
-  for solo — customer-micro (a living engineer: rereads
-  plans/specs/code, checks against the brief, corrects in human
-  language — the symptom and the requirement, WITHOUT naming the
-  remedy). The stopping rule is unified: the operator's acceptance
-  against the brief; for machine hands the machine's final verdict
-  is necessary, not sufficient.
+- **Operator** — an entity of the campaign, a fully AUTOMATIC
+  micro-agent (an LLM agent with a prompt from the campaign's own
+  data), one per hand, never a human: for solo —
+  the customer (reads the brief, the product's files and the full
+  outputs of the commands it runs itself; drives the loop demand →
+  check → reject: spec → code → scenarios → green run → coverage;
+  writes no code), for the machine — the acceptance reader (the
+  brief plus the zone's render — state.md, report.md, corpus.yaml —
+  read-only; "ok" = a green signed verdict; the brief's coverage is
+  the verdict's own recorded law — the operator never re-counts it,
+  they weigh the meaning the machine cannot; suspicions as fact
+  lines only). The rounds are the
+  driver's own mechanics: the driver sees the hand's turn end (the
+  ≤60 s poll), wakes the operator, and relays the operator's demand
+  as the next message into the hand's session — until acceptance.
+  The operator's log stands in the wave root; its usage is collected
+  as its own kind. The stopping rule is unified: the operator's
+  acceptance against the brief's meaning; for machine hands the
+  machine's final verdict is the brief's whole recorded account —
+  the operator weighs what the account says, never re-verifies the
+  accounting.
 - **Driver** — the session's chief agent: cell setup, hand
   spawning, accounting capture, export, judges, tables. One process;
   the agent registry is closed (one cell = one long-lived
   agent-hand; the other agents are judges only, spawned AFTER the
   hands finish; an appearance beyond the list is a red line).
 - **Judge** — the blind role of semantic assessment (I.7).
-- **Steward** — the human role (the owner): ratifies editions,
+- **Steward** — the human role: ratifies editions,
   validity decisions, exclusions.
 
 ## I.3. Task inputs
 
 All inputs are in the campaign folder:
-`briefs/<meaning>/<stack>.md`, `materials/<meaning>/`, `prompts/`
-(the result frame, spawn templates, the environment card, the
-expectations list, JUDGE.md), `prices.json`, `models.json`,
-`FREEZE-S.sha256`.
+`briefs/<meaning>/<stack>.md`, `materials/<meaning>/`, `harness.md`,
+`spawn.yaml`, `judge.md`, `operator-machine.md`, `operator-solo.md`,
+`world-lock.txt`.
 
 1. **The brief (detailed)** — one or two pages of living human
    text: what is wanted, why, how it must behave, the bounds of
@@ -369,7 +433,7 @@ expectations list, JUDGE.md), `prices.json`, `models.json`,
 ## I.4. The world and the cell
 
 - The cell = `input/ env/ work/` under a single scratch-root;
-  staged by the placer (`tools/prep-cell.sh` → `stage-cell.sh`): a
+  staged by the placer: a
   copy of the brief/materials into `input/`, offline caches and
   VERSIONS.txt into `env/`, an empty `work/`; the digest of every
   copied thing is checked against the freeze; a staged manifest
@@ -395,13 +459,14 @@ expectations list, JUDGE.md), `prices.json`, `models.json`,
    edit is a red line. Questions and holds escalate to the
    operator; the hand never resolves them itself; a question does
    NOT block the cell.
-3. **The operator** answers within the hand's window; every answer
-   goes through the answer journal (situation–choice–grounds; the
-   top of similar entries before accepting; contradicting earlier
-   ones is not allowed) with the wave's standard reference (frozen
-   defaults: diagnostic timestamps, exit codes, transliteration and
-   the like). The answer's latency is journaled by frames as
-   operator time.
+3. **The operator** works in rounds, all of it automatic: the driver
+   sees the end of the hand's turn (the ≤60 s poll is the law),
+   wakes the hand's operator; the operator examines and answers —
+   acceptance, or a demand in plain human language (the symptom and
+   the requirement, never the remedy); the driver relays the demand
+   as the next message into the same session of the hand; the hand
+   fixes; the loop repeats until acceptance. No question ever
+   reaches a human; no action is ever a human's.
 4. **The hand's finish**: machine — the instance's final verdict +
    the agent's exit from processes + the operator's acceptance;
    solo — the operator's acceptance against the brief (the
@@ -423,35 +488,27 @@ expectations list, JUDGE.md), `prices.json`, `models.json`,
    whitelist, canaries, transcript scan), the measure, the
    judgment, the snapshot.
 
-### I.5.3a. Journal answers (the gate mechanics)
-
-Every operator answer goes through the answer journal; a record's
-question key is identical for all decisions of one cell, so a cell's
-second and later records are added ONLY with `--note` naming the
-difference from similar records (the duplicate-and-contradiction
-gate cuts without a note). This is mechanics, not a driver choice.
-
 ### I.5.8a. The "etalon before judge" order (law)
 
 The cell is closed → staging of the measurable product
-(`stage-measurable.sh`) → the mechanical etalon (`run-etalon.sh`,
-measure.json) → and only then the judge into the slot. Reconcile's
+→ the mechanical etalon (measure.json) → and only then the judge
+into the slot. Reconcile's
 authorship invariant requires measure.json to be older than the
 cell's judge registration; a violation is a data red line, not a
 byte defect.
 
 ## I.6. Waves and the series
 
-### I.6a. THE SESSION DISCIPLINE of case 0 (the owner's word)
+### I.6a. THE SESSION DISCIPLINE
 
-Case 0 is run ONE TASK (meaning) PER SESSION (§0.2a): one session =
+The run goes ONE TASK (meaning) PER SESSION (§0.2a): one session =
 one meaning in all 5 stacks = 10 cells (5 stacks × 2 camps), the
 session census = 10 hands + judges, no second task enters a session.
 An agent's death = tear down the root and start the task anew. The
 session's closing: a full collection of metrics over the task (all
-cells, hands, camps — G1/G2 + judges) without loss of information,
-the report into docs/; then the handoff
-`./handoffs/<datetime>-case0-<next-task>.md` and the next
+cells, hands, camps — G1/G2 + judges) without loss of information;
+then the handoff
+`./handoffs/<next-task>.md` and the next
 session's COPY-PASTE PROMPT as a code block (the template is the
 campaign README). A battery = a chain of sessions over meanings; the
 battery total is assembled from the session summaries.
@@ -463,7 +520,11 @@ binary and inputs. Inside a session a meaning's cells go in waves by
 the accepted schedule, UNDER THE §0.2c PARALLELISM CEILING; the cell
 time ceiling is 1800 s (a wave parameter; an overrun is a red line,
 not a kill). A cell's hands run in PARALLEL; the schedule is part of
-the wave freeze. The wave-closing reconcile: starts = finishes =
+the wave freeze. A cell that carries platform services stops them
+at its verdict (`sh "$PG_SERVICE" stop`, `sh "$REDIS_SERVICE"
+stop`): no cell process or socket alias outlives its cell's
+verdict, and the wave root never holds a dangling listener. The
+wave-closing reconcile: starts = finishes =
 snapshots = economy rows; the manifests recomputed; the red lines
 dispositioned; the pilot/smoke markings in place (three layers: a
 tag in the manifest, the raw path, a TSV column; they do not enter
@@ -471,17 +532,15 @@ the main pool).
 
 ### I.6c. The wave-closing pipeline (one command)
 
-The wave is closed by `close-wave.sh <run-root>`: collect-cell ×N →
+The wave is closed by one command: collect-cell ×N →
 stage-measurable ×N → run-etalon → the measure/judge layout into the
 blind export zone (anonymous copies by the sealed manifest) →
-operator-ledger → economy.tsv → reconcile → STOPPING the wave's
+operator-ledger → the economy table → reconcile → STOPPING the wave's
 watchers (the watchers' lifecycle is owned by the closing command —
-no danglers). The operator's tokens are attributed EXACTLY
-(`operator-ledger.py`): the driver session's db rows, sliced by the
-frames' open→closed windows; a row in one window → to the cell
-whole; in k≥2 windows → to the shared basket whole with the cell
-list (no splitting); outside the windows → unattributed; the parts
-== session total invariant is checked by refusal.
+no danglers). The operators' tokens are attributed EXACTLY by their
+own spawn bytes: an operator is its own agent with its own sessions,
+collected as kind=operator beside its hand; METRICS carries each
+hand, its operator and the sum.
 
 ## I.7. Measurement
 
@@ -495,7 +554,7 @@ list (no splitting); outside the windows → unattributed; the parts
 - **Etalon score**: the share of implemented rows and refusals
   (partial = 0.5 at the judge's; at the mechanical measurer — a
   mechanical criterion).
-- **Judges** (the frozen prompt `prompts/JUDGE.md`): one micro-judge
+- **Judges** (the frozen prompt `judge.md`): one micro-judge
   per cell, the FULL working tree (not the export), separately
   against the task's inputs; four axes 0–10 with a file:line
   anchor: SPEQ (spec quality), CODQ (code quality), SPEC (contract
@@ -556,8 +615,9 @@ steward's.
 
 ## I.10. The task report: the structure contract and assembly
 
-The numeric core of every task's report is generated by `report.py`
-(the only source of tables): the sources of every number → cell
+The numeric core of every task's report is generated by the run's
+one reporting tool (the only source of tables): the sources of every
+number → cell
 blocks → a table per task (machine vs solo, ratios) → the big table
 (hand tokens/time; operator tokens/time; HAND+OPERATOR tokens/time;
 quality in PERCENTS: etalon and judge) → camp Σ-rows → the S/M TOTAL
@@ -567,12 +627,12 @@ structure change = a visible commit. The final document = the
 deterministic core + an analytical layer (human explanations of
 every value and judgments), GLUED by concatenation; the core MUST
 print the UNIFIED HAND TABLE — hand | time (active s) | tokens
-in/out (separately) | hand $ (cache-aware by prices.json) |
+in/out (separately) | hand $ (cache-aware by the price table) |
 submissions ±/− | verb-wall | verdict | cases | suite×2 |
 deliverables | prose | coverage (with the method line) | LOC |
 operator $/decisions/wait — as a SEPARATE TABLE PER TASK and a
-SUMMARY TABLE OVER ALL HANDS OF ALL TASKS of the run (the owner's
-word); RIGHT AFTER THE DELTAS — THE CAMP TABLE (§6): ALL hands, each
+SUMMARY TABLE OVER ALL HANDS OF ALL TASKS of the run;
+RIGHT AFTER THE DELTAS — THE CAMP TABLE (§6): ALL hands, each
 with ITS OWN operator, hand+operator sums by TIME and TOKENS on both
 bases (in+out and total), the solo/top ratio for every metric and
 the G1 verdict (§0.2b.1: smaller in BOTH tokens AND time on both
@@ -584,7 +644,7 @@ identical structure without reformatting.
 
 ## I.11. The machine's economy
 
-Requirements on the series binary (the case-0 campaign; the sha
+Requirements on the series binary (the sha
 is in the series freeze):
 
 1. **The contract — once at birth**: the full contract is rendered
@@ -601,8 +661,7 @@ is in the series freeze):
    transaction + the accepted bytes' sha + the gates' names + the
    measured one-liners (+ the door-reset line on an accepted
    submission); the slot comes by a separate `next` (the cache
-   makes it free); the echo stays lean — without a numeric pin (the
-   owner's word).
+makes it free); the echo stays lean — without a numeric pin.
 4. **The form block before the run**: a spec row with a form pin
    without a one-line `form:` source = FORM DECISIONS UNRESOLVED,
    run submissions are refused until the source (brief/prereg
@@ -611,8 +670,8 @@ is in the series freeze):
 5. **The ceremony metric**: every machine reply writes the render
    family into the cell's ledger (contract / slot / ack); the dump
    of the four categories (contract / spec / report / door-echo) is
-   a deterministic reading of the canon. There are NO byte metrics
-   and no bars (the owner's word): the economy is only tokens and
+  a deterministic reading of the canon. There are NO byte metrics
+  and no bars: the economy is only tokens and
    seconds from the platform db; the ceremony volume, when needed,
    is read from the db messages.
 6. **Total agnosticism**: there are no domain witnesses in the
@@ -623,39 +682,17 @@ is in the series freeze):
 
 The series accounting order: a dual token base (in+out AND total =
 in+out+cache_read separately), the G1/G2 ratios are printed on both;
-the economy gate: economy.tsv has no None in the main cells'
+the economy gate: the economy table has no None in the main cells'
 mandatory columns after the wave closes; basis corrections go as
 `basis-correction` lines of the wave journal.
 
 ---
 
-# APPENDIX A. The "known defect → mechanism" map
-
-| # | A defect of past runs | The mechanism |
-|---|---|---|
-| 1 | Platform notification drops | The truth of liveness is processes/registry; a loss = a red line |
-| 2 | Accounting truncation | Capture at every turn; the truth is db/ledger/transcripts |
-| 3 | An agent's false death (rotation = death) | Rotation is routine; diagnosis only by processes |
-| 4 | Double control of a cell | The uuid registry; the driver's stamp in the manifest |
-| 5 | Sibling completion loops | Stop only by the full uuid |
-| 6 | A homemade judge harness | The judge's environment is only the canonical runner and probes |
-| 7 | Manual product edits | Only the regular channel; a red line |
-| 8 | Hold decisions by the hand | Escalation to the operator |
-| 9 | Defective materials | The two input checks before the freeze |
-| 10 | Pins/hints in the inputs | The §I.3 bans; P7 |
-| 11 | Delivery typos (corrections by resending) | A byte-for-byte check BEFORE sending; drift = stop |
-| 12 | Agent deaths → respawns/carriers | A fixed census; death = a session restart |
-| 13 | Compaction orphaned db attribution | Isolated sessions; a tiny driver context |
-| 14 | Bytes in the main metrics; rounding drift | Only tokens/seconds; integers; sums of what is printed; an audit |
-| 15 | Slot idling recorded as the norm | Zero tolerance: idling with a queue = a restart |
-| 16 | Blind judges on an impoverished export | Judges: the full working tree |
-| 17 | Form cracks of etalons against solo | The law of forms: forms are named by the wave texts |
-
-# APPENDIX B. Parameters frozen per series
+# APPENDIX A. Parameters frozen per series
 
 1. The series binary's sha (the pin). 2. Prices and models. 3. The
 preregistration bars/thresholds (stage B). 4. The mechanism
-timeouts (probe 60 s, etalon runner 900 s, case 0's wave ceiling
-1800 s). 5. The passport build ceiling 300 s. 6. The series' agent
-parallelism ceiling = 8 (the §0.2c law, forever; it enters every
-series' freeze).
+timeouts (probe 60 s, etalon runner 900 s, the wave ceiling
+   1800 s). 5. The passport build ceiling 300 s. 6. The series' agent
+parallelism ceiling = 2 (the §0.2c law; it enters every series'
+freeze).

@@ -1,0 +1,545 @@
+# The brimfeat seed: the standing S-scale brim product and the
+# zone born under the current binary on this scenario's own brief —
+# the corpus green over the product's standing law, the registry
+# accounting the brief whole, the JSON want standing as an honestly
+# uncovered requirement until the wave's hand delivers it. The
+# product reads from the archived source-series wave root; the zone lives
+# inside the campaign (zone_source). Staging refuses any drift.
+cpp:
+  product:
+  - path: Makefile
+    sha256: d572493ba364081f90d6030e6482574d0c2fb8edbe924769c63faaf194dc9ceb
+    src: Makefile
+  - path: brim
+    sha256: de2dd58934d820610c3f504e0079e00b58a804a7f3677c24bdffe88103d3f20e
+    src: brim
+  - path: materials/bordered.jpg
+    sha256: 7b084f9c88cf7941938765d0cbc6f4118ba181afd89d12175c81e8592cf7b691
+    src: materials/bordered.jpg
+  - path: materials/clear.jpg
+    sha256: a82be65e6612d64055b435020b3bd0679b609239fb2a41f812c6ebf2eacb6597
+    src: materials/clear.jpg
+  - path: src/cli.cpp
+    sha256: 1e02a84778df5c0c7baa982ce54b2d28a740c683b00cdf455d50b8d866337c96
+    src: src/cli.cpp
+  - path: src/cli.h
+    sha256: 3bf57b46569ed538482bd908b972170fc0faa8428dd711ca772308a83f4fcb0e
+    src: src/cli.h
+  - path: src/main.cpp
+    sha256: 2d08b6b922849dd222916c8c6b77904e942309c29ea23efb039a69de8b0b3952
+    src: src/main.cpp
+  - path: src/margins.cpp
+    sha256: 8b229d8f894003a85e457806af23d0885762dfd459f8152fa33e2ff1db6d8a74
+    src: src/margins.cpp
+  - path: src/margins.h
+    sha256: c9bb1ee873a6dff5a35776d2522ebeb0d384c152b0f86763ca62859087632108
+    src: src/margins.h
+  - path: src/picture.cpp
+    sha256: 5e00700c6f85bbc65221b430d1ab93e9846991bfe65a54990cced7d65d1cb091
+    src: src/picture.cpp
+  - path: src/picture.h
+    sha256: db324c68a557eeeddb9e8589c72102892920671e2f16f570190dd549d7fd7c62
+    src: src/picture.h
+  - path: testdata/broken.jpg
+    sha256: 343ba6665ad5da97d584f36b55ce52dc46e12657f45ef8f8ba267a3285df4fc5
+    src: testdata/broken.jpg
+  - path: testdata/garbage.bin
+    sha256: 2452f649b220ba7ae9b9ff820b6ac434417783debb80dedef4fcdee9f159439e
+    src: testdata/garbage.bin
+  - path: testdata/notjpeg.png
+    sha256: 0cbb606976c4876339b54f2642088a11dbacc8c58c35702fc4211e29f0e25196
+    src: testdata/notjpeg.png
+  - path: testdata/tiny.jpg
+    sha256: 1f4bb56008c9da660fd5d21b1fed6621e2c82e2279040d83af9de065202d22a6
+    src: testdata/tiny.jpg
+  source: /home/neurophant/.experiments/waves/81wz7vla-B-brim/cells/brim-cpp-machine-1/work
+  zone:
+  - path: .punchtape/contract-ru.md
+    sha256: bded9e269926b2188875d6107ada72e9d065d368b3380239c32424e664f9eb68
+    src: contract-ru.md
+  - path: .punchtape/contract-zh.md
+    sha256: 28b2f442b0286009306548e0208ac29c32572f8b759dfe3f68e3b938426a75fe
+    src: contract-zh.md
+  - path: .punchtape/contract.md
+    sha256: b1445b748b978b5ce83ac4e3f1d596dac72125b6367f93a95ea2f5a27adc6830
+    src: contract.md
+  - path: .punchtape/corpus.yaml
+    sha256: 74ef17a6c0e81c3e04a4102b0b5288a28ce227292dc77ac42b31fd9ff39beae8
+    src: corpus.yaml
+  - path: .punchtape/journal/epoch-00001.yaml
+    sha256: 56738370974fc9bb9a096aa3d66b8a9542aeeb13a07a937cb2dc7dddf7bd0daa
+    src: journal/epoch-00001.yaml
+  - path: .punchtape/journal/epoch-00002.yaml
+    sha256: d786faa349e1781ff5dcebc9a612812a1261b8179ccafacba7d948576993b7e5
+    src: journal/epoch-00002.yaml
+  - path: .punchtape/journal/objects/18/e1605474f6c140cfdd9d35a89341010ca038c305ce387b77b6d9a485b1dbe1
+    sha256: 18e1605474f6c140cfdd9d35a89341010ca038c305ce387b77b6d9a485b1dbe1
+    src: journal/objects/18/e1605474f6c140cfdd9d35a89341010ca038c305ce387b77b6d9a485b1dbe1
+  - path: .punchtape/journal/objects/66/31d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+    sha256: 6631d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+    src: journal/objects/66/31d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+  - path: .punchtape/journal/objects/74/ef17a6c0e81c3e04a4102b0b5288a28ce227292dc77ac42b31fd9ff39beae8
+    sha256: 74ef17a6c0e81c3e04a4102b0b5288a28ce227292dc77ac42b31fd9ff39beae8
+    src: journal/objects/74/ef17a6c0e81c3e04a4102b0b5288a28ce227292dc77ac42b31fd9ff39beae8
+  - path: .punchtape/journal/objects/9f/5899e67b5ab4a6610d75fcb716c0928d49d32648cb6e69c17d343ad10b2b80
+    sha256: 9f5899e67b5ab4a6610d75fcb716c0928d49d32648cb6e69c17d343ad10b2b80
+    src: journal/objects/9f/5899e67b5ab4a6610d75fcb716c0928d49d32648cb6e69c17d343ad10b2b80
+  - path: .punchtape/journal/objects/d9/46b66e97974345548af25da27a2e9779f078977159bf7d9f91bc7fb651da60
+    sha256: d946b66e97974345548af25da27a2e9779f078977159bf7d9f91bc7fb651da60
+    src: journal/objects/d9/46b66e97974345548af25da27a2e9779f078977159bf7d9f91bc7fb651da60
+  - path: .punchtape/journal/objects/d9/6ff6a105160fcfd423947dd0deb5cc6be7201e2d38029601f668e42c95e9a1
+    sha256: d96ff6a105160fcfd423947dd0deb5cc6be7201e2d38029601f668e42c95e9a1
+    src: journal/objects/d9/6ff6a105160fcfd423947dd0deb5cc6be7201e2d38029601f668e42c95e9a1
+  - path: .punchtape/journal/objects/fc/f5167cdaae3070d3d838e794dd2bb01e0c2039ab5af1810e83caf0e7c08fc4
+    sha256: fcf5167cdaae3070d3d838e794dd2bb01e0c2039ab5af1810e83caf0e7c08fc4
+    src: journal/objects/fc/f5167cdaae3070d3d838e794dd2bb01e0c2039ab5af1810e83caf0e7c08fc4
+  - path: .punchtape/knowledge.md
+    sha256: 066e804b21f6ee5eaff9cdfeb0a03af0b2451ac407bc22560025cf5d79b9a874
+    src: knowledge.md
+  - path: .punchtape/report.md
+    sha256: 535c9469ca3fd9fd779d66685096d24e6bd4a909289c9826afa105e218565df6
+    src: report.md
+  - path: .punchtape/spec/brim/band.md
+    sha256: 98470cb82714aea66654d4dac404cc2eaad4435771a46f018384109c4067437f
+    src: spec/brim/band.md
+  - path: .punchtape/spec/brim/detect.md
+    sha256: ad12b65f5f8bb8536d8a14e69acb3250dfbfb0e4f4d77806718a278cc138c955
+    src: spec/brim/detect.md
+  - path: .punchtape/spec/brim/purity.md
+    sha256: 6e6de0bd2c520465978e364ee52744eb8a629629b833ebf6886b5f4f39120a05
+    src: spec/brim/purity.md
+  - path: .punchtape/spec/brim/repeat.md
+    sha256: e7ad76c548681640070a3227fd6bef819fbb763cde395557f1d9308c2b399877
+    src: spec/brim/repeat.md
+  - path: .punchtape/spec/brim/usage.md
+    sha256: 96b9ae519cf9dce667400b9a460012b4959cded3d720d3cacd00602503c1fcf7
+    src: spec/brim/usage.md
+  - path: .punchtape/spec/index.md
+    sha256: a3a599c1edb7c56c7e999202c93d080b0e186cc021ab4549058da78af18c5f80
+    src: spec/index.md
+  - path: .punchtape/state.md
+    sha256: 843041a8fb1fcbcb31648a46087570904f454aaf925eaae593889f00c9af5792
+    src: state.md
+  - path: .punchtape/template.yaml
+    sha256: a81eb40f98624cb74f1a674c6b00433b4072bc92b00aaa175a610c53d44a7e0e
+    src: template.yaml
+  zone_source: materials/zones/brimfeat/cpp
+go:
+  product:
+  - path: brim
+    sha256: 421d410e334bd0317f7aa0b43700fa537a8b82e78627ef90229f19781521037d
+    src: brim
+  - path: build
+    sha256: 2f96fb94440c26b2d9ff94ed9aeb82f164764ad61462cd4c6727cd176f208257
+    src: build
+  - path: entropy.go
+    sha256: 3d00ed95e438c8ef938f31cf3ffcc0010c28cdb139709aba06f6e3634d48392b
+    src: entropy.go
+  - path: go.mod
+    sha256: 963b128729adbd32a2e80eea9d976ef5b3c37a10a15e0ee22894d4d3b66aa67e
+    src: go.mod
+  - path: main.go
+    sha256: 1b3ac78b2ec9133f057268009386ad2820ec44a6352ccb7d0621cccd3d51e467
+    src: main.go
+  - path: margin.go
+    sha256: bf7777a0337a12c61bb527f959013d46ace674aaa46ae7d5d5af3fec813920cd
+    src: margin.go
+  - path: picture.go
+    sha256: b87855d46ab3f6563fd1f10675aa482863264173eb0beca0a12057655b14afb3
+    src: picture.go
+  - path: testdata/bordered.jpg
+    sha256: 7b084f9c88cf7941938765d0cbc6f4118ba181afd89d12175c81e8592cf7b691
+    src: testdata/bordered.jpg
+  - path: testdata/clear.jpg
+    sha256: a82be65e6612d64055b435020b3bd0679b609239fb2a41f812c6ebf2eacb6597
+    src: testdata/clear.jpg
+  - path: testdata/not-jpeg.txt
+    sha256: 21f4baa802c2b0592b9cd09bedf0cdfee96bcb943c96efaf069deb638e28c439
+    src: testdata/not-jpeg.txt
+  - path: testdata/tiny.jpg
+    sha256: 840fcca38e4333a18408b32f5f609e2db2eeee7c23cabfc3fd55f8fa497d64b6
+    src: testdata/tiny.jpg
+  source: /home/neurophant/.experiments/waves/81wz7vla-B-brim/cells/brim-go-machine-1/work
+  zone:
+  - path: .punchtape/contract-ru.md
+    sha256: bded9e269926b2188875d6107ada72e9d065d368b3380239c32424e664f9eb68
+    src: contract-ru.md
+  - path: .punchtape/contract-zh.md
+    sha256: 28b2f442b0286009306548e0208ac29c32572f8b759dfe3f68e3b938426a75fe
+    src: contract-zh.md
+  - path: .punchtape/contract.md
+    sha256: b1445b748b978b5ce83ac4e3f1d596dac72125b6367f93a95ea2f5a27adc6830
+    src: contract.md
+  - path: .punchtape/corpus.yaml
+    sha256: cb87993371f19d2b95418c5b6089e26c8b699f5d97acbeca64e3212f7c50a41f
+    src: corpus.yaml
+  - path: .punchtape/journal/epoch-00001.yaml
+    sha256: 56738370974fc9bb9a096aa3d66b8a9542aeeb13a07a937cb2dc7dddf7bd0daa
+    src: journal/epoch-00001.yaml
+  - path: .punchtape/journal/epoch-00002.yaml
+    sha256: 81616143254ecad15f83e5dfc65be03a479cd167b3e4497fb042130a48c5728a
+    src: journal/epoch-00002.yaml
+  - path: .punchtape/journal/objects/3a/f402b7a22e93d1b09995721166e9ddf1fcb0aa3468ab297fd8f15ed3991e3d
+    sha256: 3af402b7a22e93d1b09995721166e9ddf1fcb0aa3468ab297fd8f15ed3991e3d
+    src: journal/objects/3a/f402b7a22e93d1b09995721166e9ddf1fcb0aa3468ab297fd8f15ed3991e3d
+  - path: .punchtape/journal/objects/66/31d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+    sha256: 6631d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+    src: journal/objects/66/31d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+  - path: .punchtape/journal/objects/a9/cac55cefa096001359e06c91f63e87a15b15d3e4be3b2f2b2429a0c7d0a5d8
+    sha256: a9cac55cefa096001359e06c91f63e87a15b15d3e4be3b2f2b2429a0c7d0a5d8
+    src: journal/objects/a9/cac55cefa096001359e06c91f63e87a15b15d3e4be3b2f2b2429a0c7d0a5d8
+  - path: .punchtape/journal/objects/c3/572dd645ddd4214c82ae76d8ce3d1fa313ab7fd4e631b3e9bdbdd6208b869d
+    sha256: c3572dd645ddd4214c82ae76d8ce3d1fa313ab7fd4e631b3e9bdbdd6208b869d
+    src: journal/objects/c3/572dd645ddd4214c82ae76d8ce3d1fa313ab7fd4e631b3e9bdbdd6208b869d
+  - path: .punchtape/journal/objects/cb/87993371f19d2b95418c5b6089e26c8b699f5d97acbeca64e3212f7c50a41f
+    sha256: cb87993371f19d2b95418c5b6089e26c8b699f5d97acbeca64e3212f7c50a41f
+    src: journal/objects/cb/87993371f19d2b95418c5b6089e26c8b699f5d97acbeca64e3212f7c50a41f
+  - path: .punchtape/journal/objects/d3/e280727d65e78f7482c88eed8016d3e38e2b1df58eb36d040733a346243fc3
+    sha256: d3e280727d65e78f7482c88eed8016d3e38e2b1df58eb36d040733a346243fc3
+    src: journal/objects/d3/e280727d65e78f7482c88eed8016d3e38e2b1df58eb36d040733a346243fc3
+  - path: .punchtape/journal/objects/d7/447645f98377a87b026c4b3b3936c9e9eac8a3a15b38c9fc2d5f4f7be5c610
+    sha256: d7447645f98377a87b026c4b3b3936c9e9eac8a3a15b38c9fc2d5f4f7be5c610
+    src: journal/objects/d7/447645f98377a87b026c4b3b3936c9e9eac8a3a15b38c9fc2d5f4f7be5c610
+  - path: .punchtape/knowledge.md
+    sha256: 066e804b21f6ee5eaff9cdfeb0a03af0b2451ac407bc22560025cf5d79b9a874
+    src: knowledge.md
+  - path: .punchtape/report.md
+    sha256: cf78499c014c771fea46b36779650d0f38accddaf140aeb6c638ce1a323c650b
+    src: report.md
+  - path: .punchtape/spec/detect/answer.md
+    sha256: 0334d214ad2d184e718eb4db4ce898c7a1b023040e65d033b1a7b5778bb62d03
+    src: spec/detect/answer.md
+  - path: .punchtape/spec/detect/knob-refusals.md
+    sha256: 41f5d5e87654002882430180cd168fef556d9c8055598f8f434036c48a866577
+    src: spec/detect/knob-refusals.md
+  - path: .punchtape/spec/detect/picture-troubles.md
+    sha256: 4d073726e13bd8068dfb9a8937d6ac7e754c823c987997520abcf84bd3d12c40
+    src: spec/detect/picture-troubles.md
+  - path: .punchtape/spec/index.md
+    sha256: 74d1a3eb72d86af5d26b6fa13606968c6a724bb05c61fc0bc48401d83ef4320a
+    src: spec/index.md
+  - path: .punchtape/spec/tool/purity.md
+    sha256: e73e0300225c5f739faec5147ad5fcb26edde3259ae5d31188731ad0c5199f3e
+    src: spec/tool/purity.md
+  - path: .punchtape/spec/tool/stack.md
+    sha256: d7c3d1c7999a32196eb56daa414af2e6aee27332ef678e5b5d941f37232922dc
+    src: spec/tool/stack.md
+  - path: .punchtape/state.md
+    sha256: 9ac15aadfa3250200455b5f6708589d33d76eb95ef626382ab6e09c996ea5d0b
+    src: state.md
+  - path: .punchtape/template.yaml
+    sha256: a81eb40f98624cb74f1a674c6b00433b4072bc92b00aaa175a610c53d44a7e0e
+    src: template.yaml
+  zone_source: materials/zones/brimfeat/go
+js:
+  product:
+  - path: brim
+    sha256: b73bb71a1667331c434bc019749e096a4725420e72ed19c70f6c1a0c53bfb5c7
+    src: brim
+  - path: fixtures/asym.jpg
+    sha256: db459e971f01f94fd1f7cf47faf7c3469104107c7e2c3edcea9c9863a9accce1
+    src: fixtures/asym.jpg
+  - path: fixtures/broken.jpg
+    sha256: 15ffda8f229d75a84dabb73ab63409108fc4102ed02479343a66950c5572d5f0
+    src: fixtures/broken.jpg
+  - path: fixtures/not-picture.txt
+    sha256: 776568038b7f7d979910e6ae3d60fb114c921b844a1503afeda7ed23874287b5
+    src: fixtures/not-picture.txt
+  - path: fixtures/photo.png
+    sha256: 476b39ca93b3fcda92dbd3cbdc81f0d251d0bc1a9be5295ea7557f74c0ef37ce
+    src: fixtures/photo.png
+  - path: fixtures/tiny.jpg
+    sha256: edbfdaebc65fd24e197be2c40c167d19ee2ba81995ad5a54d7a6a45e949cc884
+    src: fixtures/tiny.jpg
+  - path: fixtures/uniform.jpg
+    sha256: 620ceb1e2afcf20d5b34aa558a888f2bd18c4e1d06a18202e5794b328b4aa9ed
+    src: fixtures/uniform.jpg
+  - path: material/bordered.jpg
+    sha256: 7b084f9c88cf7941938765d0cbc6f4118ba181afd89d12175c81e8592cf7b691
+    src: material/bordered.jpg
+  - path: material/clear.jpg
+    sha256: a82be65e6612d64055b435020b3bd0679b609239fb2a41f812c6ebf2eacb6597
+    src: material/clear.jpg
+  - path: package.json
+    sha256: 08d3a6ca4bc6008aa49453d240237dcceb7e5e5263c527eae10496f3d58b260e
+    src: package.json
+  - path: src/cli.js
+    sha256: c66cf49209d52b0b4b6f3ade1428280b42399e492090a9f8857f62a85c6dd110
+    src: src/cli.js
+  - path: src/detect.js
+    sha256: d91d7cc7e0e0bf038e5576025bac63c49a41f2d3ffd775014fe3c1b56332a2b0
+    src: src/detect.js
+  source: /home/neurophant/.experiments/waves/81wz7vla-B-brim/cells/brim-js-machine-1/work
+  zone:
+  - path: .punchtape/contract-ru.md
+    sha256: bded9e269926b2188875d6107ada72e9d065d368b3380239c32424e664f9eb68
+    src: contract-ru.md
+  - path: .punchtape/contract-zh.md
+    sha256: 28b2f442b0286009306548e0208ac29c32572f8b759dfe3f68e3b938426a75fe
+    src: contract-zh.md
+  - path: .punchtape/contract.md
+    sha256: b1445b748b978b5ce83ac4e3f1d596dac72125b6367f93a95ea2f5a27adc6830
+    src: contract.md
+  - path: .punchtape/corpus.yaml
+    sha256: b61cfd9ce8e9830346c22ec98988ef4aff7671969827fee22c1abfe962e92924
+    src: corpus.yaml
+  - path: .punchtape/journal/epoch-00001.yaml
+    sha256: 56738370974fc9bb9a096aa3d66b8a9542aeeb13a07a937cb2dc7dddf7bd0daa
+    src: journal/epoch-00001.yaml
+  - path: .punchtape/journal/epoch-00002.yaml
+    sha256: 993145657d46c61265e192cd960bea5afbe3ed7f57bea26def12f454982cd529
+    src: journal/epoch-00002.yaml
+  - path: .punchtape/journal/objects/35/11d92c99161e54b350f302874455f2d3b9aabc0ff6c11a225c1ca478df6ca0
+    sha256: 3511d92c99161e54b350f302874455f2d3b9aabc0ff6c11a225c1ca478df6ca0
+    src: journal/objects/35/11d92c99161e54b350f302874455f2d3b9aabc0ff6c11a225c1ca478df6ca0
+  - path: .punchtape/journal/objects/66/31d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+    sha256: 6631d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+    src: journal/objects/66/31d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+  - path: .punchtape/journal/objects/8e/0c13e8df8d4a40558958e1296aa9bc6164b20979623fb2a90c2cae1f98d1da
+    sha256: 8e0c13e8df8d4a40558958e1296aa9bc6164b20979623fb2a90c2cae1f98d1da
+    src: journal/objects/8e/0c13e8df8d4a40558958e1296aa9bc6164b20979623fb2a90c2cae1f98d1da
+  - path: .punchtape/journal/objects/96/14ad60c5dba3a6fc6386c57e6e99ddbed83ed856b1e9bb19deb10b364c991f
+    sha256: 9614ad60c5dba3a6fc6386c57e6e99ddbed83ed856b1e9bb19deb10b364c991f
+    src: journal/objects/96/14ad60c5dba3a6fc6386c57e6e99ddbed83ed856b1e9bb19deb10b364c991f
+  - path: .punchtape/journal/objects/af/6821910a0bdc219707f878e3b93eb7ca7ad2fefe8b29fb107d55c7b8aa9028
+    sha256: af6821910a0bdc219707f878e3b93eb7ca7ad2fefe8b29fb107d55c7b8aa9028
+    src: journal/objects/af/6821910a0bdc219707f878e3b93eb7ca7ad2fefe8b29fb107d55c7b8aa9028
+  - path: .punchtape/journal/objects/b6/1cfd9ce8e9830346c22ec98988ef4aff7671969827fee22c1abfe962e92924
+    sha256: b61cfd9ce8e9830346c22ec98988ef4aff7671969827fee22c1abfe962e92924
+    src: journal/objects/b6/1cfd9ce8e9830346c22ec98988ef4aff7671969827fee22c1abfe962e92924
+  - path: .punchtape/journal/objects/e2/0a753fd53d2fd0722d441a66fd50edb0ffa4a6d701324618837af53e0b6463
+    sha256: e20a753fd53d2fd0722d441a66fd50edb0ffa4a6d701324618837af53e0b6463
+    src: journal/objects/e2/0a753fd53d2fd0722d441a66fd50edb0ffa4a6d701324618837af53e0b6463
+  - path: .punchtape/knowledge.md
+    sha256: 066e804b21f6ee5eaff9cdfeb0a03af0b2451ac407bc22560025cf5d79b9a874
+    src: knowledge.md
+  - path: .punchtape/report.md
+    sha256: 7850f51f878705fdd391ec9f46d104df6f15642355eb065629df37b2f0a69e5a
+    src: report.md
+  - path: .punchtape/spec/brim/detect.md
+    sha256: acb28113a5dbb0e5667b5eba4151a76fdc2f3785cee448aaba7179fb1da1fe56
+    src: spec/brim/detect.md
+  - path: .punchtape/spec/brim/errors.md
+    sha256: 4945c444b76dd05e0e820c598f579ef087cc95a9bc4d4a671ec655ca24775074
+    src: spec/brim/errors.md
+  - path: .punchtape/spec/brim/knobs.md
+    sha256: cd06202188901eee8bb58b368e1f2b676cc3888bbd8d5c384afb15204aa35fe5
+    src: spec/brim/knobs.md
+  - path: .punchtape/spec/brim/purity.md
+    sha256: a43ae766581b16d0cb42f083b72ab1837e5cdbb2d02a79b294b19bc84b4358c0
+    src: spec/brim/purity.md
+  - path: .punchtape/spec/brim/usage.md
+    sha256: 21d8cc932d2d4153a6cfda7da861e276cfe4227efd1640c96d4e47137ebedaf9
+    src: spec/brim/usage.md
+  - path: .punchtape/spec/index.md
+    sha256: 3e24970f156b4e4f6ed5b8056bca63ec0e0d038315cd6df227e174ff03c9f237
+    src: spec/index.md
+  - path: .punchtape/state.md
+    sha256: 82e7f1e94694246ae406f3ddfef442c8861f653170fcfd0bc20c58d6ca73d994
+    src: state.md
+  - path: .punchtape/template.yaml
+    sha256: a81eb40f98624cb74f1a674c6b00433b4072bc92b00aaa175a610c53d44a7e0e
+    src: template.yaml
+  zone_source: materials/zones/brimfeat/js
+python:
+  product:
+  - path: brim
+    sha256: c2c96c26dd3de92f80bb8a38feb392a7863a2578a6be211cae0c14208baf9879
+    src: brim
+  - path: material/bordered.jpg
+    sha256: 7b084f9c88cf7941938765d0cbc6f4118ba181afd89d12175c81e8592cf7b691
+    src: material/bordered.jpg
+  - path: material/clear.jpg
+    sha256: a82be65e6612d64055b435020b3bd0679b609239fb2a41f812c6ebf2eacb6597
+    src: material/clear.jpg
+  - path: material/notjpeg.txt
+    sha256: 21b2ba963e013db2e63073f51cd57ddc811741fab6d01bb5ad07a92e33b615a5
+    src: material/notjpeg.txt
+  - path: material/photo.png
+    sha256: 6d471e91b662501ae71ab69db715bd18f282d0ff0c2e4b71d24078bbdf6c4fd2
+    src: material/photo.png
+  - path: material/tiny.jpg
+    sha256: 838e01f7fd752906f63d3c4682a065978937be6e01a7fb2c4f7123bf3da5dbaa
+    src: material/tiny.jpg
+  source: /home/neurophant/.experiments/waves/81wz7vla-B-brim/cells/brim-python-machine-1/work
+  zone:
+  - path: .punchtape/contract-ru.md
+    sha256: bded9e269926b2188875d6107ada72e9d065d368b3380239c32424e664f9eb68
+    src: contract-ru.md
+  - path: .punchtape/contract-zh.md
+    sha256: 28b2f442b0286009306548e0208ac29c32572f8b759dfe3f68e3b938426a75fe
+    src: contract-zh.md
+  - path: .punchtape/contract.md
+    sha256: b1445b748b978b5ce83ac4e3f1d596dac72125b6367f93a95ea2f5a27adc6830
+    src: contract.md
+  - path: .punchtape/corpus.yaml
+    sha256: 38651db9dce92655602465c3bc3972d63a78317335aa504460a01d1d20fb882b
+    src: corpus.yaml
+  - path: .punchtape/journal/epoch-00001.yaml
+    sha256: 56738370974fc9bb9a096aa3d66b8a9542aeeb13a07a937cb2dc7dddf7bd0daa
+    src: journal/epoch-00001.yaml
+  - path: .punchtape/journal/epoch-00002.yaml
+    sha256: 023efc64801b7581432cbbb5a9f6fa87f3589801d39ba5554a48b7dea3276bb8
+    src: journal/epoch-00002.yaml
+  - path: .punchtape/journal/objects/38/651db9dce92655602465c3bc3972d63a78317335aa504460a01d1d20fb882b
+    sha256: 38651db9dce92655602465c3bc3972d63a78317335aa504460a01d1d20fb882b
+    src: journal/objects/38/651db9dce92655602465c3bc3972d63a78317335aa504460a01d1d20fb882b
+  - path: .punchtape/journal/objects/66/31d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+    sha256: 6631d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+    src: journal/objects/66/31d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+  - path: .punchtape/journal/objects/7d/46b9bfdaa55aa0844db51f99ff2bd11d65baee708710c1430cb3442273e908
+    sha256: 7d46b9bfdaa55aa0844db51f99ff2bd11d65baee708710c1430cb3442273e908
+    src: journal/objects/7d/46b9bfdaa55aa0844db51f99ff2bd11d65baee708710c1430cb3442273e908
+  - path: .punchtape/journal/objects/7e/186164b85afd346ed0aef30cd260bd16d4b6b668c7a0544b0f788b5e0742ea
+    sha256: 7e186164b85afd346ed0aef30cd260bd16d4b6b668c7a0544b0f788b5e0742ea
+    src: journal/objects/7e/186164b85afd346ed0aef30cd260bd16d4b6b668c7a0544b0f788b5e0742ea
+  - path: .punchtape/knowledge.md
+    sha256: 066e804b21f6ee5eaff9cdfeb0a03af0b2451ac407bc22560025cf5d79b9a874
+    src: knowledge.md
+  - path: .punchtape/report.md
+    sha256: 059b50e46dff34c7a303acc3c82f3a22770d966f462c7bb087522bb67e02e35e
+    src: report.md
+  - path: .punchtape/spec/cli/detect.md
+    sha256: be9cfb0a2bec4a0e27a15eb8cac6c014470d3986b01453c939647929d53f2703
+    src: spec/cli/detect.md
+  - path: .punchtape/spec/cli/errors.md
+    sha256: d5d310f712cd9f92207b262e0aed4ae7dec56334953f31788760f66f17d7c644
+    src: spec/cli/errors.md
+  - path: .punchtape/spec/index.md
+    sha256: b375933f65430212553fb324374c45c16cb1196b229cc2177393976697e9578d
+    src: spec/index.md
+  - path: .punchtape/state.md
+    sha256: 9a999c6da38609e699bf366e20d6d20c2da46f6532cd7d9d1706ac4c3924ad85
+    src: state.md
+  - path: .punchtape/template.yaml
+    sha256: a81eb40f98624cb74f1a674c6b00433b4072bc92b00aaa175a610c53d44a7e0e
+    src: template.yaml
+  zone_source: materials/zones/brimfeat/python
+rust:
+  product:
+  - path: Cargo.lock
+    sha256: 0cf489b6419ff58e386728361a6d5227e3cba9127d8b22977b642fc8d058e060
+    src: Cargo.lock
+  - path: Cargo.toml
+    sha256: 84f33d700e5683b5fff33e8ebb7ffd48c18732f0e24aeb1b67c3e4d99f90adbc
+    src: Cargo.toml
+  - path: brim
+    sha256: b7cfef6e3c2bd784494b99b49f61bb676556f1bb4258e6da4d15cd493cf3f96e
+    src: brim
+  - path: build
+    sha256: c2c3445ce8d135d5f9a3f0b96e1d979bc3deded1f8b3f6ec7928e065abdfad6c
+    src: build
+  - path: materials/bordered.jpg
+    sha256: 7b084f9c88cf7941938765d0cbc6f4118ba181afd89d12175c81e8592cf7b691
+    src: materials/bordered.jpg
+  - path: materials/clear.jpg
+    sha256: a82be65e6612d64055b435020b3bd0679b609239fb2a41f812c6ebf2eacb6597
+    src: materials/clear.jpg
+  - path: materials/notpic.jpg
+    sha256: 41ec61454fb04e11b125b944322067a5cdd0b4c6e40ba8183629f5ce3cb8ddac
+    src: materials/notpic.jpg
+  - path: materials/picture.png
+    sha256: 569ca6ceb8a8cd0d5df645e4d88dcd0ff4bdb7bdb6afabfe9dd502b4039da906
+    src: materials/picture.png
+  - path: materials/tiny.jpg
+    sha256: 5b316dc61a0761c166cdc20a128e727f15733890d1263fa79cf14a676e8850f0
+    src: materials/tiny.jpg
+  - path: src/entropy.rs
+    sha256: bbc8432c659c2bcb66521f23a282eb2361576cee1e9de75a3e10cce6e3c1458a
+    src: src/entropy.rs
+  - path: src/main.rs
+    sha256: a23606bddefebd3279be33cf3d406a8356929698c724cea96293698144c76f2f
+    src: src/main.rs
+  - path: src/measure.rs
+    sha256: 585a290dcd1f21bb16e1abb387ba114d2c2926676aacfce235c5408037d8eb19
+    src: src/measure.rs
+  source: /home/neurophant/.experiments/waves/81wz7vla-B-brim/cells/brim-rust-machine-1/work
+  zone:
+  - path: .punchtape/contract-ru.md
+    sha256: bded9e269926b2188875d6107ada72e9d065d368b3380239c32424e664f9eb68
+    src: contract-ru.md
+  - path: .punchtape/contract-zh.md
+    sha256: 28b2f442b0286009306548e0208ac29c32572f8b759dfe3f68e3b938426a75fe
+    src: contract-zh.md
+  - path: .punchtape/contract.md
+    sha256: b1445b748b978b5ce83ac4e3f1d596dac72125b6367f93a95ea2f5a27adc6830
+    src: contract.md
+  - path: .punchtape/corpus.yaml
+    sha256: 1aceda633781b8853d062d2570a2fbddbfa13f8a6c3d7eabb6991db09f74a8f1
+    src: corpus.yaml
+  - path: .punchtape/journal/epoch-00001.yaml
+    sha256: 56738370974fc9bb9a096aa3d66b8a9542aeeb13a07a937cb2dc7dddf7bd0daa
+    src: journal/epoch-00001.yaml
+  - path: .punchtape/journal/epoch-00002.yaml
+    sha256: f8f10327cd8bbd4c88e208a57024b059d3878fbe795de3557c2f4f0831e82f2f
+    src: journal/epoch-00002.yaml
+  - path: .punchtape/journal/objects/1a/ceda633781b8853d062d2570a2fbddbfa13f8a6c3d7eabb6991db09f74a8f1
+    sha256: 1aceda633781b8853d062d2570a2fbddbfa13f8a6c3d7eabb6991db09f74a8f1
+    src: journal/objects/1a/ceda633781b8853d062d2570a2fbddbfa13f8a6c3d7eabb6991db09f74a8f1
+  - path: .punchtape/journal/objects/22/09ff1bfca5637fa932dd139c21d37e705aff193678ff99487b20b863fa2e8d
+    sha256: 2209ff1bfca5637fa932dd139c21d37e705aff193678ff99487b20b863fa2e8d
+    src: journal/objects/22/09ff1bfca5637fa932dd139c21d37e705aff193678ff99487b20b863fa2e8d
+  - path: .punchtape/journal/objects/55/2983b11129b32ebd438310c7a8631a684b5d55a23da90854640041ebc117ce
+    sha256: 552983b11129b32ebd438310c7a8631a684b5d55a23da90854640041ebc117ce
+    src: journal/objects/55/2983b11129b32ebd438310c7a8631a684b5d55a23da90854640041ebc117ce
+  - path: .punchtape/journal/objects/66/31d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+    sha256: 6631d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+    src: journal/objects/66/31d5a27a157e909efd4a659eaef89be6975afa38aff040aa070bd68c8a10df
+  - path: .punchtape/journal/objects/93/0a90007204e6bf2eaef965b38a23b880837e959479b439eb0fc405d51a7fda
+    sha256: 930a90007204e6bf2eaef965b38a23b880837e959479b439eb0fc405d51a7fda
+    src: journal/objects/93/0a90007204e6bf2eaef965b38a23b880837e959479b439eb0fc405d51a7fda
+  - path: .punchtape/journal/objects/a5/752a0922c497df2201c49d4aa69c065eeeb03cd577ea940ffe5cc3b85ce3d5
+    sha256: a5752a0922c497df2201c49d4aa69c065eeeb03cd577ea940ffe5cc3b85ce3d5
+    src: journal/objects/a5/752a0922c497df2201c49d4aa69c065eeeb03cd577ea940ffe5cc3b85ce3d5
+  - path: .punchtape/journal/objects/aa/8ff79179027ca9df2dd41c6ae1e0061130591dd9b4241cb5192d940a3ccdde
+    sha256: aa8ff79179027ca9df2dd41c6ae1e0061130591dd9b4241cb5192d940a3ccdde
+    src: journal/objects/aa/8ff79179027ca9df2dd41c6ae1e0061130591dd9b4241cb5192d940a3ccdde
+  - path: .punchtape/journal/objects/ad/82aedc73b5a90743ec3f011843b18f159008187837ee6c98a59af6fbfdb09d
+    sha256: ad82aedc73b5a90743ec3f011843b18f159008187837ee6c98a59af6fbfdb09d
+    src: journal/objects/ad/82aedc73b5a90743ec3f011843b18f159008187837ee6c98a59af6fbfdb09d
+  - path: .punchtape/journal/objects/af/06143cb4903fbe43aacc240a75936febbc30ff47b3be29502c8bc5a00eacc2
+    sha256: af06143cb4903fbe43aacc240a75936febbc30ff47b3be29502c8bc5a00eacc2
+    src: journal/objects/af/06143cb4903fbe43aacc240a75936febbc30ff47b3be29502c8bc5a00eacc2
+  - path: .punchtape/journal/objects/d3/051da979198941b78b2edbb93fb8af2af1ff518e1342db794912f25b8272f9
+    sha256: d3051da979198941b78b2edbb93fb8af2af1ff518e1342db794912f25b8272f9
+    src: journal/objects/d3/051da979198941b78b2edbb93fb8af2af1ff518e1342db794912f25b8272f9
+  - path: .punchtape/knowledge.md
+    sha256: 066e804b21f6ee5eaff9cdfeb0a03af0b2451ac407bc22560025cf5d79b9a874
+    src: knowledge.md
+  - path: .punchtape/report.md
+    sha256: d0b929098b7f0103c1390314beadd2c0d4b4464c41cd8907c9c922f7dac20f9a
+    src: report.md
+  - path: .punchtape/spec/detect/clear.md
+    sha256: 274ceb2a9adb23cefd6afb97e9eb9ae40d536359e99c2c247b1c0d721077e763
+    src: spec/detect/clear.md
+  - path: .punchtape/spec/detect/frame.md
+    sha256: d2ee8ec135cdf7b553bd136787626414d5af4fb00c819c8599f02ffc9ead1cfa
+    src: spec/detect/frame.md
+  - path: .punchtape/spec/detect/repeatable.md
+    sha256: c1b5e8d60b6f502050f716b2c400420485d27e4c6b75e30b0f620a65ab959013
+    src: spec/detect/repeatable.md
+  - path: .punchtape/spec/index.md
+    sha256: 0254bd7606fb208eced86079dc9c99126ae5823b0447b7bb18aaeaa305f490b3
+    src: spec/index.md
+  - path: .punchtape/spec/refusal/bad-file.md
+    sha256: 52fd397aece10749c3f1a9f91f1b1f7978267c66c1f673b1a5cdd78838506fdc
+    src: spec/refusal/bad-file.md
+  - path: .punchtape/spec/refusal/bad-knob.md
+    sha256: 7774bc620fe535b0a8ed68197fa7b188570a828d07e55b86688797738836f16b
+    src: spec/refusal/bad-knob.md
+  - path: .punchtape/spec/refusal/bad-usage.md
+    sha256: 956f92322dbdc4ac4dae69c03daa7abd50991f3268d5b158da5872a0b40941ee
+    src: spec/refusal/bad-usage.md
+  - path: .punchtape/spec/safety/read-only-run.md
+    sha256: bdf7d7e436393242a9e6dc6efba49802874d7c15e3b4ca64bfee4939981d2db3
+    src: spec/safety/read-only-run.md
+  - path: .punchtape/spec/stack/image-only.md
+    sha256: 709e2fbeaef565cdde452522b51acfc871dc3fd211e939693a4b9d3b2ac642d0
+    src: spec/stack/image-only.md
+  - path: .punchtape/state.md
+    sha256: 41a3f83313fd493912abd05f22046e2e0c76af51b4d8ec98c8da0efb0e0dfbf3
+    src: state.md
+  - path: .punchtape/template.yaml
+    sha256: a81eb40f98624cb74f1a674c6b00433b4072bc92b00aaa175a610c53d44a7e0e
+    src: template.yaml
+  zone_source: materials/zones/brimfeat/rust

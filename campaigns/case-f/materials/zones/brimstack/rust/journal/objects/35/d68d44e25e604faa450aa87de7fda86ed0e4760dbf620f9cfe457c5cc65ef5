@@ -1,0 +1,16 @@
+id: brim/repeat
+name: the same answer on a repeat run
+prose: "A repeat run on the same picture answers the same, to the letter: the measurement is a pure computation on the decoded bytes."
+scope:
+- src/**
+- Makefile
+- materials/bordered.jpg
+covers:
+- R1
+- R4
+rows:
+- run: "a=$(./brim detect materials/bordered.jpg) && b=$(./brim detect materials/bordered.jpg) && [ \"$a\" = \"$b\" ] && printf '%s\\n' \"$a\""
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4

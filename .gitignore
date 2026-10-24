@@ -4,73 +4,33 @@
 # the one-command install distribution (make dist)
 /dist/
 
-# the punchtape instance service directory, wherever a command ran
+# the punchtape instance service directories (generated state)
 **/.punchtape/cache/
 **/.punchtape/derived/
 
-# heavy run artifacts never enter commits: task worlds, stagings,
-# container exports, coverage profiles — text evidence only.
-# Binary products and tool caches inside exported cells are rebuildable
-# from the frozen image and their sha256 lives in evidence.json.
-*.gcno
-*.gcda
-*.profraw
-*.profdata
+# Go test and coverage-instrumented build artifacts
 *.test
 *.out
-node_modules/
+*.gcno
+*.gcda
 
-# raw platform rollout logs and per-call snapshot artifacts: heavy
-# and redundant for proof — the committed ledger plus the platform
-# session DB are the provable metric source (owner's remote hygiene
-# rule; these artifact classes never enter commits)
-**/evidence/**/raw/
-**/evidence/**/raw-ops/
-**/evidence/**/raw-judge/
-**/evidence/**/raw-rollout.jsonl
-**/model-io-*.jsonl
-**/*.r[0-9].jsonl
-**/*.r[0-9][0-9].jsonl
-**/evidence/**/task/**/bin/
-**/evidence/**/task/**/.gocache/
-**/evidence/**/task/**/coverage-build/
-**/evidence/**/task/**/target/
-**/evidence/**/task/**/scratch/
-**/evidence/**/task/**/quire-dist/
-**/evidence/**/task/**/surface/release/
-**/evidence/**/task/**/app/bin/
-**/evidence/**/task/conduit
-**/evidence/**/task/pressmark
-**/evidence/**/task/quire
-**/evidence/**/task/errand
-**/evidence/**/task/errandctl
-**/evidence/**/task/solo-product/bin/
-**/evidence/**/task/solo-product/coverage-build/
-**/evidence/**/task/solo-product/build/
+# the repository-local python tooling venv (uv)
+/.venv/
 
-# the owner's handoff area: dated working documents, never enters
-# commits (the owner's word: handoffs live in ./handoffs, dated;
-# outside git)
+# python bytecode (campaign tools)
+__pycache__/
+*.pyc
+
+# handoff working documents (never enter commits)
 /handoffs/
 
-# agent tool work areas (session-local, never enters commits)
+# agent tool work areas (session-local)
 .kilo/
 .zcode/
+.zcodeignore
 
 # OS and editor noise
 .DS_Store
 *.swp
 .idea/
 .vscode/
-
-# python bytecode (campaigns/tools)
-__pycache__/
-*.pyc
-
-# the python test environment: the venv itself never enters
-# commits; its pinned dependency closure lives in requirements-dev.txt
-/.venv/
-/.zcodeignore
-.pytest_cache/
-.coverage
-.coverage.*

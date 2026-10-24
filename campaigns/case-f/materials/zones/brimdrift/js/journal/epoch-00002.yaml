@@ -1,0 +1,191 @@
+---
+kind: submission
+submission:
+  corpus-version: 1
+  requirements:
+  - id: R1
+    brief:
+    - W2..W6
+  - id: R2
+    brief:
+    - W8..W10
+  - id: R3
+    brief:
+    - W11..W12
+  - id: R4
+    brief:
+    - W13..W15
+  not-a-requirement:
+  - lines:
+    - W1
+    quote: "# Brief: brimdrift — the tool must catch the night edit"
+    reason: a heading, not a demand
+  - lines:
+    - W7
+    quote: "## My want"
+    reason: a heading, not a demand
+  - lines:
+    - W16..W18
+    quote: "4. The edit itself is mine: after your work first stands accepted,\nI change one line of the measuring law and demand restoration.\nExpect it — the proofs you keep decide how fast it heals."
+    reason: the customer's own future act, announced — not a demand on the tool; the catch and the healing it promises ride R2 and R4
+  added:
+  - id: brim/detect
+    addr: e65e7f90b09d829253b8c2cb3949af359535fa8ba740ebcc53a1b2bd739cca24
+  - id: brim/knobs
+    addr: e520381d656762a1de14ee83cca264a8df0b458f1ba2a514bf29b2d58bd0ff01
+  - id: brim/errors
+    addr: fed14cd43beaab677821b730a3ea95791e8680814ac1d25be8b8d689c85508cd
+  - id: brim/usage
+    addr: 56c9a903ce107d49ba88b762146548b4ec82be372975561f62e80283a9fb1c57
+  - id: brim/purity
+    addr: 3511d92c99161e54b350f302874455f2d3b9aabc0ff6c11a225c1ca478df6ca0
+  doc-addr: d6d3ca2bd12d260b3cc4b984d154261df3b5ed238599b30f4f9da61d060e57bc
+---
+kind: run
+run:
+  "n": 1
+  rows:
+  - key: brim/detect/0
+    row: a1cbe4b4243f330b3463dbc416c0ba921e31e95902ae3a655eedee92368f5ada
+    status: green
+    exit: 0
+    proof: b66465b7610a6feedcbaecc10dd7665be25d900aafdf5bf9e44ec9bb16621910
+  - key: brim/detect/1
+    row: 45d779579a19247f4e1a1a1193f6f7bd1148a1a314f0b5aecbaaca58c2c42fc3
+    status: green
+    exit: 0
+    proof: 3a7534fb53023bd52ed731cf57aadea1292e85d352810b87f17ff7ebcba638a9
+  - key: brim/detect/2
+    row: c992d291deeeae3d20976811e5b9285b6987fdd819620c6a017ded7c8c742a30
+    status: green
+    exit: 0
+    proof: 02a495c3e46f61d2172061e53e4008fd4f2ec50f2fffdf8a13d3cd52fca32cc2
+  - key: brim/detect/3
+    row: e0fc9fc4ab2cb04269e9f1ebf5e442c374235125651215236c5e42505b1e17f9
+    status: green
+    exit: 0
+    proof: a07fc6e6151420ebfdd5ca3a1f4143297cc24bd610e9b84e74d8b9cc308ae444
+  - key: brim/detect/4
+    row: 0f34c03d3eb42cb8c22460012bcd44654e25024b99d9444f969b970cabaa38bd
+    status: green
+    exit: 0
+    proof: 4370bdc9e22e3b05576bf699a18c2d1a73fc500698ca255a9fc8bb0cc105c050
+  - key: brim/knobs/0
+    row: 58d356e9e46b1341cd93f38d3995b13d194aa9e3fc69cfe67e259c4170cbbe60
+    status: green
+    exit: 0
+    proof: a6a56a3069667b71fea0dd35233ac738ad2b469f391ddc17980ae996b7d1bc9c
+  - key: brim/knobs/1
+    row: 482b432465da84e1b60e60d826f1f3255f38e0717c410ebd23d2752830c97f64
+    status: green
+    exit: 0
+    proof: d508a6495e1eab4a98992dd80b2a6d3cd85478e9cf05645eee5b30e17b8cb270
+  - key: brim/knobs/2
+    row: 0d866cff77e856acee5a0bb1279904c5573c4ff6045c1f9846f6a9d753c87b56
+    status: green
+    exit: 0
+    proof: c5c33faa3f51d9db63124f66b4ffa7338ac44a123a5dc88425c0a125b65ca5e3
+  - key: brim/knobs/3
+    row: 942d04e10137418dc74373f35d4951e50943561d52a7a1d64c3a65bead7e28e1
+    status: green
+    exit: 0
+    proof: 8028f9d32b3cddc989ae18add3b41c0f5fa026cee4c69625d50dc21aae2a8137
+  - key: brim/knobs/4
+    row: d1b9655ee8ca0da173a8320268492a3ba88c6cabfae17138ea72d9aae043d33d
+    status: green
+    exit: 0
+    proof: 74b5d378c40d40d33e46580ad30fe29829254938f9a36da92a0aa0a078334811
+  - key: brim/knobs/5
+    row: 00462834c2ceaa2fdab5c5a3b5d922e385574bcc0efbf1388b0b2a61c3546edb
+    status: green
+    exit: 0
+    proof: cd384f69970aa91b983a85a9d181d6bddb7a4fd6b929a4c464a6627432dcf163
+  - key: brim/errors/0
+    row: 1cdf547c04b06d82ae2699cb88729682b2a85151e0068136fdf0b2c2cd1f391b
+    status: green
+    exit: 1
+    proof: 0f23e0a11cb6edc6a3ff68842d791de63b9931cf96a4a8a310b4c262d5a14962
+  - key: brim/errors/1
+    row: 08bd2be60da4f4a369ac7415cfe1f41d0355619f9796af0442e0d0e77850262a
+    status: green
+    exit: 1
+    proof: 24d35453c6ec23f308b452363f6d3c84431a4861d72715ebd2ed96ca7097edbd
+  - key: brim/errors/2
+    row: 7dc09bb00c1ae544ccbad83eec61877dec686ca54783d617df3b18cbd22b2cc5
+    status: green
+    exit: 1
+    proof: 6c98c7eed0ca629a040c35e129d6091feff86335310fd2b1d6ac8b4f8d1d57ae
+  - key: brim/errors/3
+    row: c1d742d05d50283894dc5e4f34906412092f5e7b876fcadce6c351a2ba9d47aa
+    status: green
+    exit: 1
+    proof: 8589af659a31c865af767fc65a078f3bf3cdf07329bb80901e421a537b307178
+  - key: brim/errors/4
+    row: ab29b4c52e6852dd50cae20f6b8e2f5e45b5fe0d610cc5c19089a5cabd529563
+    status: green
+    exit: 1
+    proof: e484d9d67f979404fa323ba9e85f6b84ab4388045f1f1a3d56acd18275dee67e
+  - key: brim/usage/0
+    row: 5e4b1b4722be48207ffa38718cb5f21e9fb824e07e90f2f4b26ad7eaf849d0ca
+    status: green
+    exit: 2
+    proof: 432b612e3cc64f5430894be38e07aab8183268f4e9cf90bf0c03b1ea5584adc8
+  - key: brim/usage/1
+    row: 30e4870f39e533bdb677e91831330b56a821595b36160f961567181ec20be184
+    status: green
+    exit: 2
+    proof: 256dd5d0af414fdb5a5900ebc3bdeef99c9c19244d5dd0f1a41454b96020bb37
+  - key: brim/usage/2
+    row: da47deb172cc3b7e065881110896a8daab90445222031051d5ad97f85b8e5bd1
+    status: green
+    exit: 2
+    proof: 21537f0252a37de4643590e525ac770496b4e796f4d2eea03d6b57eaeb173e53
+  - key: brim/usage/3
+    row: 6db903e901f297abdc5f0d35a2e13486830da5349f2ebba0736ddd9d721019ee
+    status: green
+    exit: 2
+    proof: 591d0a35ee4521ced65ad0013003fe11c85ffbec0d7a1ce686835d069156a898
+  - key: brim/usage/4
+    row: bc743d175ad60e9a24359fc033e884bd51231ccfa848d057beef429521a239fc
+    status: green
+    exit: 2
+    proof: ede1c6274706b3022cb3700bdc69faa0fb5bbe56efe079501716b2d0377da600
+  - key: brim/usage/5
+    row: c0df3d03b846ed8ad354a486e2df5336067a1d43a4b8b1ba17b216e907fdb0f0
+    status: green
+    exit: 2
+    proof: 8be97dff0ef683d0a7e7b63c5f7f09ae031035ef0c3910a63a14de2ac490bb98
+  - key: brim/usage/6
+    row: 9600498c620a276307b08b6a2d148564914f8666e61c765b0ffdc41dfe38fd61
+    status: green
+    exit: 2
+    proof: 02b349e073c613a187e8f2273e2d6a198fc5147250a9eb2f2fffbf7548e10794
+  - key: brim/usage/7
+    row: 797cc26f92fd6a0433a73c85824bf7d460d76ed2a879edbcb9b0c8ab803e003e
+    status: green
+    exit: 2
+    proof: 609f3506b90882826d9a79703d0654e618bac9be8353a237beb010a217f79c46
+  - key: brim/purity/0
+    row: 7e4b6120f4cd2c00224e87b6bb007fb1463cae873bd7823d1572b76fead98df9
+    status: green
+    exit: 0
+    proof: 90f99903cfc434ddcafdc4b65efdcb50960565f2cf8319f71c220b9c7e0274c2
+---
+kind: verdict
+verdict:
+  "n": 1
+  corpus-version: 1
+  signature: e37aef3782afe772cdb42cc5a559f89023cd5549ec216395cf7b3f5e15f3f8ca
+  registry-digest: 809a1b644cb27f3a778f43e7eebbdf00339009131c870dba7562bb15db329280
+  scopes:
+  - id: brim/detect
+    pointer: 224a096df8802aa5e23a97b41c657e7c191bf8384957dc706166bd1b0b6a3dfd
+  - id: brim/errors
+    pointer: b43c8e324ee64e66966bbeb702371c5f6ba1b94a076bd1db6e83403d1d90f426
+  - id: brim/knobs
+    pointer: a19a00e70936b20054079ace6a27c57dbf17b1a138ba3dabbb29b7188d598f6e
+  - id: brim/purity
+    pointer: 224a096df8802aa5e23a97b41c657e7c191bf8384957dc706166bd1b0b6a3dfd
+  - id: brim/usage
+    pointer: 224a096df8802aa5e23a97b41c657e7c191bf8384957dc706166bd1b0b6a3dfd
+  run: 1

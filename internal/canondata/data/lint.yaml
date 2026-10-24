@@ -1,3 +1,0 @@
-- id: fixture.path-relative
-  section: fixture
-  message: "path {path} must be relative and inside the work tree (no leading /, no .., no ~)"

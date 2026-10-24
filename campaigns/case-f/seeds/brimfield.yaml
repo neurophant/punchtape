@@ -1,0 +1,144 @@
+# The brimfield seed: the standing S-scale product each stack's
+# cells receive in work/ — the B-brim solo deliveries of the
+# source-series wave (judge-clean, no partly, clean runs). No zone rides
+# brimfield: the instance is born anew on the standing tree (the
+# case the wave measures). Read-only source, every file pinned by
+# its sha256; staging refuses any drift.
+cpp:
+  product:
+  - path: Makefile
+    sha256: bd83d3a6446601a620020be83cfd4082a2fa56fc1078ff2c26e928477bd54d84
+    src: Makefile
+  - path: brim
+    sha256: dc2e687e97995b84615819686222f043e671be55e6fe47ec763a41283d326a24
+    src: brim
+  - path: coverage.md
+    sha256: df707cc1eeec17e7d3a381e20e955992a6a93013583052a658ad58fc148b0706
+    src: coverage.md
+  - path: scenarios.md
+    sha256: 4fdd6597476406d9f2197a3bfd1fd86c584fc992f982dd0529d2c74d011f3a93
+    src: scenarios.md
+  - path: spec.md
+    sha256: 7a9a5d5a981fff3e7b93636fc89933ee632443b471743eb0270dabf30bebbbc7
+    src: spec.md
+  - path: src/cli.cpp
+    sha256: 94369c03ef3d41bab0f5f31617946347267429066aad459135c8565efd2626d9
+    src: src/cli.cpp
+  - path: src/cli.d
+    sha256: bb0b2703a4bbc55a7994af05d32732e1d1e92a26345612dc70eba968aa3c34f1
+    src: src/cli.d
+  - path: src/cli.hpp
+    sha256: 878dfaee73c7f3a9bc3aa164e0901516c3b27906ad30633048a29a61e6310939
+    src: src/cli.hpp
+  - path: src/cli.o
+    sha256: 03325df0b7f37ce09d482138355469970872d4862aeea1604302a1b72ceeb6f9
+    src: src/cli.o
+  - path: src/image.cpp
+    sha256: f72825fd31ffad31fd107a40a98c8ac4d48bdf6076220aa9ad9fd40e7a10e4e2
+    src: src/image.cpp
+  - path: src/image.d
+    sha256: 152fa4baa8b4fcab193c14f77503e326971fe5e4ba77a080b084b013b2d551b8
+    src: src/image.d
+  - path: src/image.hpp
+    sha256: b9e88bb09083caf7f8eb690a960758cb4c11d63d69ee4cba7b686f90b9575af2
+    src: src/image.hpp
+  - path: src/image.o
+    sha256: a28c9d5534770b9a14425cf4cefdd10b0cf2034327d73cb4d2a267f37b37b56b
+    src: src/image.o
+  - path: src/main.cpp
+    sha256: 547881cecafa2fbbd8d6231147b9bf0b9f069fb44b748023741d8c1e1acecdd0
+    src: src/main.cpp
+  - path: src/main.d
+    sha256: 58c2c9b0a6bc717f7eaf32b03587f6802e58e1a15aef6f6e2b8043665fac61a7
+    src: src/main.d
+  - path: src/main.o
+    sha256: 2c5756741e6bc712ac6525fbfaac95c565ecd773ec780ca172b357fa8aa08d07
+    src: src/main.o
+  - path: src/margin.cpp
+    sha256: e641115f69525f13c6da7ad43b428c5956a97c21e0ec3828374c41af0be69cff
+    src: src/margin.cpp
+  - path: src/margin.d
+    sha256: 42b5f28a9ac4d25d3e8d63a5373a28911d901d18911b43c58ca8375ad0ff7596
+    src: src/margin.d
+  - path: src/margin.hpp
+    sha256: 7374facb98b1bf32a6315b8a1bc90463f1093d6ff7f9d1d822d510df10aacdf5
+    src: src/margin.hpp
+  - path: src/margin.o
+    sha256: 9f514e9fdb3028b9a3a94292759f9f2fe188f07a5f412cc5b3eaa9a1d717a4b6
+    src: src/margin.o
+  source: /home/neurophant/.experiments/waves/81wz7vla-B-brim/cells/brim-cpp-solo-1/work
+go:
+  product:
+  - path: brim
+    sha256: 02d3f1c86a3cc0ad907dc6036f5f9067893680b66db3905401cd17f3f4351892
+    src: brim
+  - path: cli.go
+    sha256: ad869517708ea26f95116b3abfb71faa78592ce32329ad2a6300074c734ff05b
+    src: cli.go
+  - path: detect.go
+    sha256: 469d1e065a36ce62d6171e2c242c6304265f38d9dbdb3e6daa605f97d7b30692
+    src: detect.go
+  - path: entropy.go
+    sha256: 89fd17d471eec99c33b839ffa101f96fd4f7ad902bb9cb68f91082d49a734643
+    src: entropy.go
+  - path: go.mod
+    sha256: bb10c7b5efbf292961c38b07e146c02f021ac46604c24124190f8849857319d3
+    src: go.mod
+  - path: main.go
+    sha256: 5e7c8cb95506eac1f704d1d18b7bf45cf157fc0216eb293c0eadaa44dd6fbbf2
+    src: main.go
+  - path: margins.go
+    sha256: 3432e04ee109bafb419c4691113b94b9bc1de7fd337f8af38dfc6ef6cf8f9d18
+    src: margins.go
+  source: /home/neurophant/.experiments/waves/81wz7vla-B-brim/cells/brim-go-solo-1/work
+js:
+  product:
+  - path: brim.mjs
+    sha256: d6376adf09c14bea496b33fced293909c32543fad363945a69fb45bd0560ecf6
+    src: brim.mjs
+  - path: package.json
+    sha256: 6f773ad09402c61c98b7d28063150fd309def39dda5a875244d5d2adbb03cc39
+    src: package.json
+  - path: src/cli.js
+    sha256: f6723244cdeba9a1d9bc92944c13d660aed101ccf9e0c8bcd5ced2970529ac86
+    src: src/cli.js
+  - path: src/detect.js
+    sha256: 0c25f842d8b9cba0d922aa032611fa3f40a60967c21bf52321e634909edc065d
+    src: src/detect.js
+  - path: src/entropy.js
+    sha256: ff1b1e0e55c689ed0050b27fff0b83a10b631d945ed977af350663723e5214e5
+    src: src/entropy.js
+  - path: src/image.js
+    sha256: ac3b93bbc028dd4273533591556cbd141c4044765fb8f91e2f8fdb1c512f4e59
+    src: src/image.js
+  source: /home/neurophant/.experiments/waves/81wz7vla-B-brim/cells/brim-js-solo-1/work
+python:
+  product:
+  - path: brim
+    sha256: 94132eecf94c1dc34a621f25d3495662ba4dbe4f959576475985dddb7a459fc9
+    src: brim
+  source: /home/neurophant/.experiments/waves/81wz7vla-B-brim/cells/brim-python-solo-1/work
+rust:
+  product:
+  - path: Cargo.lock
+    sha256: 0cf489b6419ff58e386728361a6d5227e3cba9127d8b22977b642fc8d058e060
+    src: Cargo.lock
+  - path: Cargo.toml
+    sha256: 84f33d700e5683b5fff33e8ebb7ffd48c18732f0e24aeb1b67c3e4d99f90adbc
+    src: Cargo.toml
+  - path: src/cli.rs
+    sha256: b0ea5dbf86090c29949feb6e75524e58e3b3705d4581e5cefdacf1803ebe280d
+    src: src/cli.rs
+  - path: src/entropy.rs
+    sha256: af6da6ceb2210453f4177a5b4b05ead57442199bc958e0c2072877504783a62e
+    src: src/entropy.rs
+  - path: src/load.rs
+    sha256: 7286c079328a4bfb8aa57ec6480930ca7c9de091bb6e15a35f37738bac50d745
+    src: src/load.rs
+  - path: src/main.rs
+    sha256: 08813b72a12f5b590b8168dd7e6fe3e14ce91198f86f7acb6aa8f7389448fc20
+    src: src/main.rs
+  - path: src/margins.rs
+    sha256: bdb6d50132e7ccb1bfb73e880dfd04b94b9e55942cb5f784ad4ba8f1d2a8ff4a
+    src: src/margins.rs
+  source: /home/neurophant/.experiments/waves/81wz7vla-B-brim/cells/brim-rust-solo-1/work

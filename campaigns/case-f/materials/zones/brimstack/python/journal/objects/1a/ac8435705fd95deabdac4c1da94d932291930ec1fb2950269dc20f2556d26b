@@ -1,0 +1,39 @@
+id: brim/detect
+name: margins on the given materials
+prose: "The wish's own ground truth: bordered.jpg (250x250, a 4-pixel even frame) answers 4 4 4 4, clear.jpg (no margin) answers 0 0 0 0, a band shallower than the frame cuts the numbers down to the band itself, and a repeat run answers to the letter the same.\n"
+scope:
+- brim
+- package.json
+- src/**
+- material/**
+- node_modules/**
+covers:
+- R1
+- R4
+rows:
+- run: ./brim detect material/bordered.jpg
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+- run: ./brim detect material/clear.jpg
+  expect:
+    rc: 0
+    out: |
+      0 0 0 0
+- run: ./brim detect material/bordered.jpg --band 0.01
+  expect:
+    rc: 0
+    out: |
+      2 2 2 2
+- run: ./brim detect material/bordered.jpg --band 0.05
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+- run: ./brim detect material/bordered.jpg && ./brim detect material/bordered.jpg
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+      4 4 4 4

@@ -1,0 +1,120 @@
+---
+kind: submission
+submission:
+  corpus-version: 1
+  requirements:
+  - id: R1
+    brief:
+    - W2..W4
+  - id: R2
+    brief:
+    - W6..W10
+  - id: R3
+    brief:
+    - W11..W14
+  - id: R4
+    brief:
+    - W15..W16
+  - id: R5
+    brief:
+    - W17..W18
+  not-a-requirement:
+  - lines:
+    - W1
+    quote: "# Brief: brimstack — the same tool on cpp"
+    reason: a heading, not a demand
+  - lines:
+    - W5
+    quote: "## My want"
+    reason: a heading, not a demand
+  added:
+  - id: cli/detect
+    addr: ce22112269455c9758d3ba5d2a8d7279cf7de07a4f2101ab7659187c4492d989
+  - id: cli/errors
+    addr: 7e186164b85afd346ed0aef30cd260bd16d4b6b668c7a0544b0f788b5e0742ea
+  doc-addr: f93acf01ebfa9b5c71d48ddc90d5621f6aac83d746da566562946bd35a56f5a1
+---
+kind: run
+run:
+  "n": 1
+  rows:
+  - key: cli/detect/0
+    row: 23e00e531d5b1bcabb58102b7de9ebae811a44961ebeef9c1a85da157e885dc5
+    status: green
+    exit: 0
+    proof: e9e55f1be3caa3b7ecd599e8a3d59be611ffe54941ca902b9ef7d610127173bf
+  - key: cli/detect/1
+    row: 741b7c673a3f086f27d63bbf6d7a4ea0cc6e2d5b05d94659dce8f980d9a5e9b1
+    status: green
+    exit: 0
+    proof: 8e4715c3c13e3e46564f985d82fe8284ab156073346730eec420cc4c23ccb8b9
+  - key: cli/detect/2
+    row: 06f1a3d666a59fbebf7e504e7a9083148b2e4b15c73873d4f6af0e4bc5c20b16
+    status: green
+    exit: 0
+    proof: 7b4e2712167e470ac2abe0cd438be559cf6f2586a0f8683ef87c6747a3637224
+  - key: cli/detect/3
+    row: bf6ec2fc0436993cd433f633df7306f2bed5c364bbec2c5968a3c3e99e298ad5
+    status: green
+    exit: 0
+    proof: ccba7e28c02b2b1a3137cc492ee869296d55380e0ab1bcaccfbef6c7fa78243b
+  - key: cli/detect/4
+    row: a44a47ac730b768f70e851a1427558bddc96b9d04e70dd9c35d3da9006adc7be
+    status: green
+    exit: 0
+    proof: df7dc4077679c07084f80f539d0c200a25a1140be0c6fbce09a037449df0b02d
+  - key: cli/errors/0
+    row: 6459b9eeb16feba6ffce5d594367e57daddda24885a5ef2e6a987d8e129c103d
+    status: green
+    exit: 1
+    proof: fcb47929f7e5c3dc6e2ceb0aba936754399136b132d2edcf09c2fd848d6c8a80
+  - key: cli/errors/1
+    row: 01797f9be38fda4a2911645511395e54fb410a5423977448ca75b8356d5c5e08
+    status: green
+    exit: 1
+    proof: 9bff9882e2601dfdffc30171dfdf590fa14dcdf120cc77454ff031ae89c424b6
+  - key: cli/errors/2
+    row: c38bc73cc139ca905b7b004fdec869b1145c7bb56780a69fe33e59d3135f1936
+    status: green
+    exit: 1
+    proof: 2b59d9bb5649598f27625ca73e756a90df84f52aa432b2090022110a7353d12e
+  - key: cli/errors/3
+    row: c4cd31dfa3d06d40d01fb2aa4ce6f9b19c46c56768aae32ade97969d2b622b52
+    status: green
+    exit: 1
+    proof: c8bbba9ed8d65685d5114f68d005b28506fa0a694690857fd1cb52fddbd84494
+  - key: cli/errors/4
+    row: e9eb51315b686a180b1962d182098801d19f3b41bc9a2e634826a46d49a9a349
+    status: green
+    exit: 2
+    proof: 220bd0aa2974975fd80ba43d6023fea837dec0b30578343b8ebe815cf5a69837
+  - key: cli/errors/5
+    row: 3cd621f5947510b0833add54579382c6e0bf44a32befce3c417ee480e892f343
+    status: green
+    exit: 2
+    proof: 1913f030ef924904a57fbfe3977ecfe0a26f7e8bc454118784fd368fb5e07188
+  - key: cli/errors/6
+    row: 211b4645684872e3b8d6a3b38e56f90e0b6310b21619f8bbbacad914435260a1
+    status: green
+    exit: 2
+    proof: 18d270f1f28ed37ac331d8d688bbfcf2dbfc2b06694047f6ccaef3d6f5984b72
+  - key: cli/errors/7
+    row: 889e399d5eb833093cae52a66c830ff2ea19bb61810729569b025348992f4437
+    status: green
+    exit: 2
+    proof: 9a9541f1525bf360941a67311decbb58dcaa590550aa0dee750e288cdf2efcb9
+  - key: cli/errors/8
+    row: 6c3c75f90055d6e83dc420aa428ddad7c1197691ef40b1004b09e735ef32b1cb
+    status: green
+    exit: 2
+    proof: 426d85191670bf1ced753d7d34167e51536255214a0a48ba610b756b9bc07f31
+  - key: cli/errors/9
+    row: 47a2b0ae51a2c7b74b32d2dbd89975bcc130423259d9e7eabaa58402354f052c
+    status: green
+    exit: 2
+    proof: 2f8ec714890cfe8d2456023d94eaba6cb21fe336744b221754570bc21936a6f4
+  - key: cli/errors/10
+    row: 875b48cb73f86b62ac75d57a878ed66949a594b49f7eac0516d5507417a89864
+    status: green
+    exit: 2
+    proof: a9c6b64525ee70b3f76e3d56e7450a8a2650ad227318cd423f0d999be2ea5956

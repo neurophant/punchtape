@@ -6,6 +6,29 @@ Independent researcher
 
 hey@neurophant.tech
 
+## Contents
+
+- [Abstract](#abstract)
+- [Glossary of the paper](#glossary-of-the-paper)
+- [1. Introduction](#1-introduction)
+- [2. Methodology](#2-methodology)
+- [3. Experimental record](#3-experimental-record)
+- [4. Replication on the evolved machine of the 0.2 line (2026-09-03)](#4-replication-on-the-evolved-machine-of-the-02-line-2026-09-03)
+- [5. Discussion](#5-discussion)
+- [6. Conclusions](#6-conclusions)
+- [7. The 0.3 model: the boundary after the study](#7-the-03-model-the-boundary-after-the-study)
+- [8. Prospects](#8-prospects)
+- [Data sources](#data-sources)
+- [Conflicts of interest](#conflicts-of-interest)
+- [References](#references)
+- [Appendix A. The baseline run, per task (2026-08-30)](#appendix-a-the-baseline-run-per-task-2026-08-30)
+- [Appendix B. The repeat full run, per task (2026-08-30)](#appendix-b-the-repeat-full-run-per-task-2026-08-30)
+- [Appendix C. The submissions and questions of the repeat full run](#appendix-c-the-submissions-and-questions-of-the-repeat-full-run)
+- [Appendix D. The three-hand run, per task (2026-08-31)](#appendix-d-the-three-hand-run-per-task-2026-08-31)
+- [Appendix E. The full path per task, the September replication: hand + its operator](#appendix-e-the-full-path-per-task-the-september-replication-hand--its-operator)
+- [Appendix F. The 0.3 field battery: the camp sums by waves and the verdicts per task (2026-10-10)](#appendix-f-the-03-field-battery-the-camp-sums-by-waves-and-the-verdicts-per-task-2026-10-10)
+- [9. The 0.4 model: the loop without ceremonies — and the operator question (October 2026)](#9-the-04-model-the-loop-without-ceremonies--and-the-operator-question-october-2026)
+
 ## Abstract
 
 Generative development ("vibe coding") is an open loop: the code is
@@ -203,7 +226,7 @@ specifications shown to the model up front [6]. The machine of this
 paper belongs to this line with two differences: the checks table is
 human-readable and the canon is compiled from it by the machine, not a
 formalism the model authors; and every check is run twice in clean
-directories by the machine itself — the loop's owner and the loop's
+directories by the machine itself — the loop's principal and the loop's
 executor are different parties.
 
 **Vibe coding, measured.** The open loop this paper studies is the
@@ -352,9 +375,9 @@ hand):
 
 | Hand | Tokens, M (sum / median / min–max) | Wall, min (sum / median / min–max) | Battery cost guide |
 |---|---|---|---|
-| system + top | 65.31 / 2.23 / 0.60–7.66 | 435.6 / 14.4 / 8.2–33.8 | ≈ $111–131 |
-| system + flash | 72.78 / 2.32 / 0.66–10.05 | 756.7 / 29.0 / 11.7–61.9 | ≈ $13.5–16 |
-| solo (no machine) | 45.22 / 1.41 / 0.39–5.46 | 339.9 / 11.4 / 7.1–22.5 | ≈ $77–90 |
+| system + top | 65.31 / 2.23 / 0.60–7.66 | 435.6 / 14.4 / 8.2–33.8 | ≈ \$111–131 |
+| system + flash | 72.78 / 2.32 / 0.66–10.05 | 756.7 / 29.0 / 11.7–61.9 | ≈ \$13.5–16 |
+| solo (no machine) | 45.22 / 1.41 / 0.39–5.46 | 339.9 / 11.4 / 7.1–22.5 | ≈ \$77–90 |
 
 Solo is the cheapest and the fastest hand; flash is the most expensive
 by the total path (the cheap step is paid for by the number of steps).
@@ -385,7 +408,7 @@ judges:
    its own way" they are invisible to the self-report.
 
 Finishing the solo products to verifiable quality (the same battery)
-is estimated at ≈ $204–240 and 4–7.5 hours of a live human — against
+is estimated at ≈ \$204–240 and 4–7.5 hours of a live human — against
 zero intermediate participation for the system hands.
 
 ### The per-task structure (paired comparisons)
@@ -487,7 +510,7 @@ within Appendices A–D, the September numbers within this section.
 |---|---|---|---|---|
 | wave 1 + wave S | the v0.1.x line (a pinned binary per wave) | 75 = 25 tasks × 3 hands | the three-hand experiment of §3.3 | machine hands 50/50 `VERDICT READY`; blind measurer: suite ×2 green, 5/5 deliverables in 75/75 products; solo 20/20 accepted via operator cycles |
 | validation wave | 0.2.0, frozen | 20 machine cells | the fixes hold on the release candidate | 20/20 `VERDICT READY`, zero panics / deadlocks / quarantines / lost cells, zero new machine defect classes |
-| smoke (ru/en/zh) | 0.2.0, frozen | 3 live wishes | the wish → verdict cycle with no human in the loop | `READY` ×3, zero question batches, $0.66 total, 256 s parallel wall |
+| smoke (ru/en/zh) | 0.2.0, frozen | 3 live wishes | the wish → verdict cycle with no human in the loop | `READY` ×3, zero question batches, \$0.66 total, 256 s parallel wall |
 
 ### 4.1. What replicated
 
@@ -508,23 +531,23 @@ within Appendices A–D, the September numbers within this section.
   finishing estimate.
 - **The model class (hypothesis 4).** Identical mechanical quality at
   both model classes; the flash hand is 3.75× cheaper by the hand mean
-  ($0.31 against $1.16) and ≈2× slower on the full wall (2258 against
+  (\$0.31 against \$1.16) and ≈2× slower on the full wall (2258 against
   1131 s mean) — "time or money", not a quality tradeoff, confirmed.
 - **Attention (hypothesis 5).** The machine hands triggered operator
   involvement in 7 of 40 wave-S cells (waits 16–59 s; campaign-wide,
   at the top model, a batch was triggered in 4 of 25 cells) and in 7
-  of 20 validation-wave cells (waits 23–216 s, $0.60 in total at the
+  of 20 validation-wave cells (waits 23–216 s, \$0.60 in total at the
   input-rate upper estimate); the solo path needed its acceptance
   operator at every task — the operator's AI wall averaged 530 s per
   task (range 258–937 s), a lower bound for a live human (the anchored
   estimate: ≈10–18 min per task).
 - **Economics — sharpened, not just confirmed.** The August series
   priced the hands: solo won the hand's own tokens (−31%) but its
-  "done" carried an unpriced human finishing (≈$204–240 and 4–7.5 h per
+  "done" carried an unpriced human finishing (≈\$204–240 and 4–7.5 h per
   batch, §3.3). The September campaign prices the full path — the hand
-  plus its verifying operator, cache-aware tariffs: solo $6.07 per task
-  (hand $4.88 + operator $1.19) against the top hand's $1.18 (5.1×) and
-  the flash hand's $0.32 (19×). Under full-path accounting the closed
+  plus its verifying operator, cache-aware tariffs: solo \$6.07 per task
+  (hand \$4.88 + operator \$1.19) against the top hand's \$1.18 (5.1×) and
+  the flash hand's \$0.32 (19×). Under full-path accounting the closed
   loop is the cheaper path, not the more expensive one — the August
   conclusion (the benefit is reconcilability, not economy) stands, and
   its hidden term is now measured. One further measured mechanism: the
@@ -615,8 +638,8 @@ both system hands delivered 25/25 `READY` + acceptance, 0 quarantines,
 | Verdicts READY + acceptance | 25/25 | 25/25 | 1 |
 | Wall median per task | 14.4 min | 29.0 min | ×2.0 |
 | Battery tokens | 65.31 M | 72.78 M | ×1.11 |
-| Battery cost | ≈ $111–131 | ≈ $13.5–16 | ≈ ÷8 |
-| Task cost | ≈ $4.4–5.2 | ≈ $0.54–0.64 | ≈ ÷8 |
+| Battery cost | ≈ \$111–131 | ≈ \$13.5–16 | ≈ ÷8 |
+| Task cost | ≈ \$4.4–5.2 | ≈ \$0.54–0.64 | ≈ ÷8 |
 
 The cheap model in the system delivers the same signed result for
 twice the time and roughly an eighth of the cost: the cheap step is
@@ -711,7 +734,7 @@ its October transfer to the moved boundary (§7.1).
    loop: both system hands — 25/25 verdicts; flash delivers the same
    result for twice the time (slower in 24 of the 25 tasks,
    p = 7.7·10⁻⁷, at an equal median token price) and roughly
-   one-eighth the money (≈ $13.5–16 against ≈ $111–131 per battery);
+   one-eighth the money (≈ \$13.5–16 against ≈ \$111–131 per battery);
    the cheapest hand with a guarantee is the cheap model in the system;
    the most expensive guarantee is the manual finishing of solo
    (hypothesis 4).
@@ -731,8 +754,8 @@ its October transfer to the moved boundary (§7.1).
    double-run measurer, 50/50 + 20/20 machine verdicts, the judges'
    protocol-red pattern reproduced (solo 87/336 strict rows), and the
    full-path economics made explicit — with the verifying operator
-   priced in, the machine path is the cheaper one (solo $6.07 against
-   top $1.18 per task). Conclusions 1–7 hold beyond the original
+   priced in, the machine path is the cheaper one (solo \$6.07 against
+   top \$1.18 per task). Conclusions 1–7 hold beyond the original
    binary and price epoch.
 9. The results transfer across the moved boundary (the 0.3 model,
    the October field battery of §7.1–§7.2): on the interface where
@@ -805,7 +828,7 @@ synthetic cases, both sides of the design, each closed at a live
   "argument required" — the row was repaired, the code is the truth),
   drift caught and re-verified, acceptance PASS 60/60;
 - **the new-feature run**: a fresh wish → three atoms, a contract
-  spec, a catalog, four check rows with owners, a passport → the
+  spec, a catalog, four check rows with assignees, a passport → the
   implement slot's instructions → the code written directly in the
   repository by the executor's hand → trace manifests → gates in
   0.3's run world (the first run honestly red —
@@ -847,7 +870,7 @@ All numbers below are the campaign registry's
 reports' Σ-rows read, glued and summed — not one new measurement —
 each wave revalidated green against its run evidence (verify-metrics).
 The registry prints two token bases in every table — in+out (the
-0.2-era working base) and total (= in+out+cache read) — with $
+0.2-era working base) and total (= in+out+cache read) — with \$
 cache-aware; the ratios below name their base, no verdict of the
 battery changes between the bases, and the battery's numbers are
 compared within this subsection only.
@@ -980,31 +1003,30 @@ wave and battery camp sums are Appendix F.
 - **Reproducibility**: the experiment materials of the study — the
   briefs, the task materials, the world images, the methodology —
   lived in this repository's campaign layer at the time of the runs,
-  and the full verified tables remain in the tracked registry
-  (`docs/SAMPLES.md`, `docs/VERIFICATION.md`,
-  `campaigns/case-0/docs/METRICS-0.2.0.md`), which allows the runs to
-  be repeated independently.
+  and the full verified tables remain in the era's tracked registry
+  (`campaigns/case-0/docs/METRICS-0.2.0.md`, preserved at the v0.3.0
+  tag), which allows the runs to be repeated independently.
 
 ## Data sources
 
 All the paper's numbers are taken from the runs' machine evidence and
-summarized in the repository's documents: `docs/SAMPLES.md` (the
-battery and the band calibration), `docs/VERIFICATION.md` (the field
-coverage of the features). The per-task
+summarized in the repository's registries named in this section. The per-task
 data of every run is duplicated in Appendices A–D below; the
 replication's full-path breakdown is Appendix E; the October
 battery's camp sums and per-task verdicts are Appendix F. The
 September
 replication (§4) is documented in
-`campaigns/case-0/docs/METRICS-0.2.0.md` — a provenance-first registry
+`campaigns/case-0/docs/METRICS-0.2.0.md` (preserved at the v0.3.0 tag)
+— a provenance-first registry
 (three evidence tiers: the instance-ledger telemetry, the cell
 captures at each hand's finish, the platform session-database ledger)
 whose every number is mechanically revalidated against the run
 evidence. The October field battery (§7.1) is documented in
-`campaigns/case-0/docs/METRICS-0.3.0.md` — the five frozen wave
+`campaigns/case-0/docs/METRICS-0.3.0.md` (preserved at the v0.3.0 tag)
+— the five frozen wave
 reports' Σ-rows read, glued and summed, not one new measurement, each
-wave's registry revalidation green; both registries live in the
-campaign's tracked layer. The machine's sources and the
+wave's registry revalidation green; both registries are preserved at
+the repository's v0.3.0 tag. The machine's sources and the
 verified metrics registry are at
 https://github.com/neurophant/punchtape. Manuscript preparation
 was assisted by AI tools under the author's full responsibility; the
@@ -1374,3 +1396,114 @@ quire-rust closed the camp totals at parity (1.00) with the machine
 camp ahead on time (1.68). The mixed G2 rows are where the hands
 alone would have read the other way — the operator, not the hand, is
 where the loop's full-path economy lives.
+
+## 9. The 0.4 model: the loop without ceremonies — and the operator question (October 2026)
+
+### 9.1. Why the machine was rebuilt: the measured ceremony tax
+
+The 0.3 interface carried its rituals into the 0.4 development branch —
+and the branch measured them before removing them. A line-by-line audit
+of the five machine hands of wave quire-b4 (31,761 transcript lines,
+every anchor L####) found: a **ceremony tax of 22–65% of every hand's
+time** (fresh copies, runs for signatures and keys, ratification
+rounds, the door reset); the
+machine hands **3–3.6× the price of the solo hands** of the same wave
+(51.04M in+out over the five machine hands); four traps present in all
+five hands (a guaranteed birth refusal on the very `next:` the machine
+itself ordered; a tree gate with collective guilt that reddened the
+machine's own canonical example; a nonexistent document kind demanded by
+the harness; coverage metrics that did not credit filled forms); and
+ratification deadlocks — a green signature over an old surface leaving a
+phantom drift forever. The rework's answer was total: what dies is the
+ritual layer itself (fresh copies, runs-for-signatures, tree gates and
+build-ignore, ratification documents, replay keys, the nine-document
+shelf, the echo law, verbatim coverage, collective guilt, authorship in
+the machine); what is born is the proof economy — a row re-executes only
+when its own bytes, its behavior's scope files or the environment have
+moved; an unchanged proof is never re-run — and the append-only journal
+as the single truth, with every zone file a generated image of it; the
+completion act as the one deliberate door to the verdict; the verdict
+signed over the corpus bytes and every behavior's scope fingerprint; a
+machine that is loud about every fact it cannot write; and an agnosticity
+gate that fails the build if the machine learns a word of the world it
+serves.
+
+### 9.2. The M-series battery on the ceremony-free machine
+
+The study's battery returned once more — the same five senses × five
+stacks, two camps (machine / solo), 50 cells, 150 agents (50 hands, 50
+operators, 50 judges), one binary for the whole series (0.4.0, sha
+5099556e5621), every agent GLM-5.3 High, the injection wall from M-brim
+on; pure request-work time, two token bases, mechanical assembly and an
+independent re-validation with zero discrepancies. The series registry
+itself is preserved in the repository's history; the cross-era summary
+is `docs/METRICS.md` §3. What the battery adds to this paper:
+
+- **The camp verdict holds and changes currency: ×1.06 tokens (both
+  bases), ×1.24 time** for the machine camp over the series. The 0.2
+  loop bought dollars, the 0.3 loop bought tokens; the 0.4 loop buys
+  ticks first.
+- **The hands alone reach parity — the rework's direct signature.** In
+  §3.3's September data the loop's hand spent 2.8M against solo's 5.9M;
+  the pre-rework branch of §9.1 had swung the other way to 3–3.6× the
+  solo price; the ceremony-free machine lands at 443.71M vs 403.56M
+  over 25 hands each (solo ×1.10 in tokens, machine ×1.07 in time,
+  criteria 11/12/2, medians 16.42M/15.19M). The work itself now costs
+  the same in either camp — only in a different currency: the machine
+  trades tokens for ticks, and all four split cells of the series are
+  of exactly that one shape.
+- **The operator article is the unconditional one: ×24.0 tokens, ×5.5
+  time; 2 DEMANDs against 32.** The solo operator constructed proof 32
+  times in 25 tasks; the machine camp's two demands were substantive
+  exceptions. In the machine camp the verification lives inside the
+  verdict itself — 50/50 cells closed with standing signed verdicts —
+  so the accepting reader is needed only where the product's own
+  honesty is the open question.
+- **Quality replicates two-sidedly: 0 missing rows of 1720 etalon
+  row-scores in both camps** (847/13/0 machine, 852/8/0 solo). The
+  ceremony removal did not cost a property of any brief in any cell;
+  quality remains the constant, economics the variable.
+- **Where the machine wins and where it does not.** The win follows the
+  task's shape more than the stack: conduit (a counters-and-routes law
+  landing wholly in the corpus) 4/5 at ×1.45/×1.46; brim (a compact
+  image conveyor) 2/3 to solo; js the machine's best soil (×1.59/×1.40,
+  a buildless cycle), rust its worst (long compiles tax every machine
+  pass; solo ×1.11 tokens) — the machine's advantage is real but
+  shaped, not universal.
+
+### 9.3. The operator was a model: the correction carried forward
+
+Every operator of every era of this study was a language model —
+GLM-5.3 Max in the September runs, GLM-5.3 High in every later one,
+the 0.3.0 battery and the M-series (the model record over
+ledgers that pin "GLM-5.3"). Appendix E's correction therefore applies
+to all of them, and the M-series walls let it land on the largest
+sample: the measured
+solo-operator work of the M-series is 13,132 s (3.65 h) per 25 tasks
+against the machine camp's 2,372 s (0.66 h), and at the correction's
+×1.2–2.0 human anchor a live human in the operator seat costs **4.4–7.3
+hours of verifying labor per 25 tasks, against 0.8–1.3 hours
+like-for-like — or two substantive answers — in the machine camp**
+(the full rate table is `docs/METRICS.md` §4). The inversion this
+produces is the section's claim: under an AI operator the M-series
+margin is ×1.06 in tokens — a margin a price shift could erase; under a
+live human it is hours of skilled attention plus the calendar a solo
+wave would spend serialized on the operator's availability, while the
+measured series ran ≈29.6 h of continuous calendar. §5.1's conclusion —
+the product of the effect is not token price but labor displacement —
+is thus the *stronger* claim of the third generation: each generation
+moved the same article, the verifier, further out of the human's day,
+and the ceremony-free machine finally left the hands at parity, so the
+entire remaining difference between the camps is exactly the article a
+human operator would have to live in.
+
+### 9.4. What the M-series does not claim
+
+One binary and one model pin for the whole series: internal validity
+full, external (other models, other tiers) open. Live-subagent ceilings
+varied across waves — wave walls are not compared,
+only work sums. Judges stand outside the camps and their own economics
+are near-parity (69.39M vs 72.30M). The superseded first quire run
+(quire-v0) is excluded from the sums and kept as an appendix. The
+protocol-not-function decoding of the judges' red rows — open on the
+0.3 interface in §7.1 — remains open here.

@@ -1,0 +1,62 @@
+id: brim/usage
+name: honest refusals
+prose: "Clumsy calls and unusable files are refused with rc 1, a brief English message on stderr and nothing on stdout: a missing file, not a picture at all, another format than JPEG, sides too short to search, an extra file argument, an unknown option or command, a missing command, and each knob's invalid value named along with its requirement."
+scope:
+- src/**
+- Makefile
+- testdata/**
+- materials/bordered.jpg
+covers:
+- R1
+- R2
+- R3
+- R4
+rows:
+- run: ./brim detect materials/absent.jpg 2>&1
+  expect:
+    rc: 1
+    out: "contains: cannot read"
+- run: ./brim detect testdata/garbage.bin 2>&1
+  expect:
+    rc: 1
+    out: "contains: not a picture at all"
+- run: ./brim detect testdata/broken.jpg 2>&1
+  expect:
+    rc: 1
+    out: "contains: not a picture at all"
+- run: ./brim detect testdata/notjpeg.png 2>&1
+  expect:
+    rc: 1
+    out: "contains: not my format: PNG"
+- run: ./brim detect testdata/tiny.jpg 2>&1
+  expect:
+    rc: 1
+    out: "contains: too small"
+- run: ./brim detect materials/bordered.jpg extra.jpg 2>&1
+  expect:
+    rc: 1
+    out: "contains: unexpected extra argument"
+- run: ./brim detect materials/bordered.jpg --bogus 1 2>&1
+  expect:
+    rc: 1
+    out: "contains: unknown option"
+- run: ./brim detect 2>&1
+  expect:
+    rc: 1
+    out: "contains: no picture file given"
+- run: ./brim 2>&1
+  expect:
+    rc: 1
+    out: "contains: missing command"
+- run: ./brim detect materials/bordered.jpg --band 0.9 2>&1
+  expect:
+    rc: 1
+    out: "contains: --band: invalid value '0.9': a fraction of the side"
+- run: ./brim detect materials/bordered.jpg --band abc 2>&1
+  expect:
+    rc: 1
+    out: "contains: --band: invalid value 'abc'"
+- run: ./brim detect materials/bordered.jpg --threshold 1.5 2>&1
+  expect:
+    rc: 1
+    out: "contains: --threshold: invalid value '1.5': a fraction from 0 to 1"

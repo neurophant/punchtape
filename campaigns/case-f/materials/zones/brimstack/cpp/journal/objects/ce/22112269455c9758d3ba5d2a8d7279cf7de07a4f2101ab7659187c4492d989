@@ -1,0 +1,29 @@
+id: cli/detect
+name: measure the four margins
+prose: "brim detect picture.jpg prints four numbers — margin pixels on the top, bottom, left, and right. Each side is walked from the edge inward one pixel line at a time; a line is a chunk, and its histogram entropy normalized to [0,1] is the chunk's chaos. The margin ends where the entropy first stops being low (above --threshold); the boundary sits at the largest entropy jump between neighboring chunks. Evenness stretching to the end of the search band answers the whole band; no even strip at the edge answers zero. The program only reads the picture and prints the answer: same picture, same answer, every run.\n"
+scope:
+- brim
+- material/**
+covers:
+- R1
+- R4
+rows:
+- run: ./brim detect material/bordered.jpg
+  expect:
+    rc: 0
+    out: "contains: 4 4 4 4"
+- run: ./brim detect material/clear.jpg
+  expect:
+    rc: 0
+    out: "contains: 0 0 0 0"
+- run: ./brim detect --band 0.01 material/bordered.jpg
+  expect:
+    rc: 0
+    out: "contains: 2 2 2 2"
+- run: ./brim detect --band 0.05 material/bordered.jpg
+  expect:
+    rc: 0
+    out: "contains: 4 4 4 4"
+- run: "[ \"$(./brim detect material/bordered.jpg)\" = \"$(./brim detect material/bordered.jpg)\" ] && [ \"$(./brim detect material/clear.jpg)\" = \"$(./brim detect material/clear.jpg)\" ]"
+  expect:
+    rc: 0

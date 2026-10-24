@@ -1,0 +1,30 @@
+id: refusal/bad-file
+name: File trouble reported briefly and clearly
+prose: |
+  A missing or unreadable file, a file that is not a picture at all, a picture in another format than JPEG, and a picture too small to search (a side shorter than two pixels) are each refused with a one-line English error and a nonzero exit.
+scope:
+- src/**
+- Cargo.toml
+- Cargo.lock
+- build
+- materials/notpic.jpg
+- materials/picture.png
+- materials/tiny.jpg
+covers:
+- R1
+- R2
+- R3
+- R4
+rows:
+- run: ./brim detect materials/missing.jpg
+  expect:
+    rc: 1
+- run: ./brim detect materials/notpic.jpg
+  expect:
+    rc: 1
+- run: ./brim detect materials/picture.png
+  expect:
+    rc: 1
+- run: ./brim detect materials/tiny.jpg
+  expect:
+    rc: 1

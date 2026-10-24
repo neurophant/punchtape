@@ -1,0 +1,33 @@
+id: brim/errors
+name: brief clear trouble reports
+prose: |
+  Missing or unreadable files, bytes that are not a picture at all, a real picture in a format other than JPEG, and pictures too small to search are each refused in one English line on a failing exit.
+scope:
+- brim
+- package.json
+- src/**
+- fixtures/**
+- node_modules/**
+covers:
+- R1
+rows:
+- run: ./brim detect missing.jpg
+  expect:
+    rc: 1
+    out: "contains: cannot read 'missing.jpg': no such file or directory"
+- run: ./brim detect fixtures/not-picture.txt
+  expect:
+    rc: 1
+    out: "contains: is not a picture at all"
+- run: ./brim detect fixtures/photo.png
+  expect:
+    rc: 1
+    out: "contains: is not my format"
+- run: ./brim detect fixtures/broken.jpg
+  expect:
+    rc: 1
+    out: "contains: is not a picture at all"
+- run: ./brim detect fixtures/tiny.jpg
+  expect:
+    rc: 1
+    out: "contains: too small to search for a margin"

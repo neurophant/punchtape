@@ -1,0 +1,30 @@
+id: tool/stack
+name: a Go program on the standard library alone, no third-party dependencies
+prose: "The stack is the customer's demand, not the executor's choice: the tool is a Go program and it uses the standard library only. The module declares no requirements — go.mod carries the single module line and the go directive, nothing else; go list -m all names the main module and nothing but it; and the built binary's own build info contains no dependency line, so no third-party package rides inside the delivered program."
+scope:
+- go.mod
+- build
+- main.go
+- picture.go
+- entropy.go
+- margin.go
+covers:
+- R1
+rows:
+- run: cat go.mod
+  expect:
+    rc: 0
+    out: |
+      module brim
+      
+      go 1.27
+- run: go list -m all
+  expect:
+    rc: 0
+    out: |
+      brim
+- run: test -z "$(go version -m ./brim | grep "^dep")" && echo "no third-party dependencies"
+  expect:
+    rc: 0
+    out: |
+      no third-party dependencies

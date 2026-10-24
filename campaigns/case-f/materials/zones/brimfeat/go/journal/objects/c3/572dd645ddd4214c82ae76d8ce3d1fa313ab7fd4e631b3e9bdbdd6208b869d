@@ -1,0 +1,20 @@
+id: detect/picture-troubles
+name: a missing, foreign, or too small picture is reported briefly and clearly
+prose: A missing or unreadable file, a file that is not a JPEG picture, and a picture with a side shorter than two pixels — too small to search for a margin in — are each reported in one brief English line on stderr with exit code 1.
+scope:
+- main.go
+- picture.go
+- testdata/not-jpeg.txt
+- testdata/tiny.jpg
+covers:
+- R1
+rows:
+- run: ./brim detect testdata/missing.jpg
+  expect:
+    rc: 1
+- run: ./brim detect testdata/not-jpeg.txt
+  expect:
+    rc: 1
+- run: ./brim detect testdata/tiny.jpg
+  expect:
+    rc: 1

@@ -1,0 +1,26 @@
+The environment (identical for every hand; environment mechanics only):
+
+- Your working directory __WORK__ is already prepared on this
+  host; run EVERY command exactly so:
+  cd __WORK__ && . ./ENV && sh -lc '<command>'
+  (the ENV file with this cell's environment exports already lies
+  in __WORK__; do not run a single command without this prefix).
+- The external network is closed by rule, not by a sandbox: do not
+  try to reach anything outside the cell. Everything the work needs
+  rides the cell as real bytes — the brief's pinned libraries
+  included (the module cache named in ENV); a package fetch or a
+  remote host is never part of this work.
+- The task's inputs lie in __INPUT__ and are read only: the brief
+  brief.md and the materials material/.
+- WRITE BOUNDS (absolute): write ONLY inside your own cell — the
+  working directory __WORK__ and the temporary directory TMPDIR
+  from ENV; every file of any program of yours (builds, tests,
+  scratches, caches) lives there. Writing to /tmp, to the home
+  directory, to any other host directory — forbidden; the foot must
+  not leave the cell by a single byte.
+- READ BOUNDS (absolute): your reading scope is your own cell — its
+  working directory and its input directory — nothing else on the
+  host. A program or a tool you call is invoked as a command and
+  never inspected: its binary is not documentation.
+- You are alone: spawn no one — no subagents and no agentic tools.
+  External agentic CLIs of any kind are forbidden.

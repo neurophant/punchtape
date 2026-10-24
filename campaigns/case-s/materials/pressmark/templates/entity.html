@@ -1,0 +1,8 @@
+<article moment="{{moment}}" title="{{title}}" address="{{address}}">
+<h1>{{title}}</h1>
+<time>{{moment}}</time>
+<div class="full">{{full_html}}</div>
+<div class="short">{{short_html}}</div>
+<ul class="pictures">{% for p in pictures %}<li>{{p.name}} {{p.address}}</li>{% endfor %}</ul>
+<ul class="tags">{% for t in tags %}<li>{{t}}</li>{% endfor %}</ul>
+</article>

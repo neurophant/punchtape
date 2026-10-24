@@ -1,0 +1,563 @@
+"""Prepare the cells of one wave.
+
+A cell is one hand's isolated world, laid out as input/, env/ and
+work/: the brief and its material as read-only inputs, the stack's
+pinned libraries and scratch directories as real bytes, the hand's
+own working tree in work/ with the cell's ENV file in it — every
+command the hand runs goes through work/ and its exports, and the
+machine passes the tree's own ENV to every row it executes, so the
+cell's substrate rides both kinds identically. Every hand of the
+same brief gets byte-identical inputs; the script proves it by
+hashing what it copied and refusing to finish on a mismatch.
+
+The series' law: a full run is every meaning in
+ALL FIVE stacks — a wave config that names a meaning without its
+complete stack set is refused, and so is a stack whose warmed master
+is missing from the cache area (a wave never builds the substrate it
+stands on; platform maintenance warms it, offline-tested per combo).
+The M cells carry the store-and-cache platform as service files:
+every cell gets pg.sh and redis.sh (platform bytes, run as
+commands) that bring PostgreSQL and Redis up inside the cell's own
+scratch, on unix sockets named by the ENV exports (each socket
+binds behind a short per-cell alias of the cell's socket dir —
+the kernel's 107-byte socket path cap). The cell's loopback
+listeners are ENV-named too — the HTTP face's SERVE_PORT and, for
+conduit, the INGRESS/EGRESS/TARGET trio — unique across the wave's
+cells, so concurrent cells never share a port.
+The cells carry nothing machine-side: the machine's command is the
+system-installed one, and the script refuses to run unless the
+system binary is exactly the pinned build (version and checksum
+checked). Each hand's spawn bytes are the campaign's harness
+preamble (environment mechanics, identical for both kinds) followed
+by the hand's own text, the cell's paths rendered in.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+CAMPAIGN = Path(__file__).resolve().parent
+SPAWN_SOURCE = CAMPAIGN / "spawn.yaml"
+HARNESS_SOURCE = CAMPAIGN / "harness.md"
+# The platform cache area: the stacks' master environments live here,
+# outside the repository and outside every wave — platform
+# maintenance warms them once per series; a wave only checks and
+# copies (a wave never builds the substrate it stands on).
+ENV_PREP = Path(os.environ.get("C0_ENV_PREP", Path.home() / ".experiments/cache/env-prep"))
+
+# The series' stack set: one meaning runs in all of them, always.
+STACKS = ["go", "js", "python", "rust", "cpp"]
+
+# The series' meaning set.
+MEANINGS = ["quire", "brim", "conduit", "errand", "pressmark"]
+
+# The warmed master each combo stands on: every non-cpp combo
+# carries the stack's service pack (web framework, PG client,
+# Redis client) together with the sense's own libraries — warmed
+# once per series by platform maintenance, offline-tested per
+# combo; a wave never builds the substrate it stands on. The cpp
+# stacks read the platform prefix instead (the sense's own
+# md4c/libyaml/inja/GraphicsMagick++ plus crow/asio/libpq headers
+# and the vendored hiredis sources), checked at staging time.
+MASTERS: dict[tuple[str, str], str] = {
+    (sense, stack): f"_{kind}-m-{sense}"
+    for sense in MEANINGS
+    for stack, kind in (
+        ("go", "gomod"),
+        ("js", "nodemods"),
+        ("python", "venv"),
+        ("rust", "cargo"),
+    )
+}
+
+# The store-and-cache platform every cell brings up itself: the
+# server binaries in the prefix's bin, their libraries in the
+# prefix's lib (the relocated postgres resolves its plugin dir
+# relative to its own binary; liblzf is redis's own dependency).
+PLATFORM_PIECES = [
+    "bin/postgres",
+    "bin/initdb",
+    "bin/pg_ctl",
+    "bin/redis-server",
+    "lib/dict_snowball.so",
+    "lib/liblzf.so.1",
+]
+
+# The hiredis sources vendored into every cpp cell, compiled there.
+HIREDIS_SOURCE = Path.home() / ".local/src/hiredis"
+
+# The cpp platform prefix's own pieces, named for the refusal.
+CPP_PREFIX_PIECES = [
+    "include/md4c.h",
+    "include/md4c-html.h",
+    "include/yaml.h",
+    "include/hiredis/hiredis.h",
+    "include/GraphicsMagick/Magick++.h",
+    "include/inja/inja.hpp",
+    "include/nlohmann/json.hpp",
+    "lib/libmd4c.so",
+    "lib/libyaml.so",
+    "lib/libhiredis.so",
+    "lib/libGraphicsMagick++.so",
+    "bin/GraphicsMagick++-config",
+    # the M service line: Crow over standalone Asio, the system
+    # libpq's client headers, the vendored hiredis sources
+    "include/crow/crow_all.h",
+    "include/asio.hpp",
+    "include/libpq-fe.h",
+    "include/libpq-events.h",
+    "include/postgres_ext.h",
+    "src/hiredis/hiredis.c",
+    "src/hiredis/read.c",
+]
+
+# The exports of a go-stack cell: all scratch and caches ride the
+# cell, module resolution goes offline through the cell's own copy
+# of the pinned libraries (a file proxy over the download cache —
+# GOPROXY=off would forbid even that resolution).
+GO_ENV = """export TMPDIR="{cell}/env/tmp"
+export GOMODCACHE="{cell}/env/deps/gomod-cache"
+export GOCACHE="{cell}/env/deps/gocache"
+export GOPATH="{cell}/env/deps/gopath"
+export GOPROXY="file://{cell}/env/deps/gomod-cache/cache/download"
+export GOSUMDB=off
+export GOTOOLCHAIN=local
+"""
+
+JS_ENV = """export TMPDIR="{cell}/env/tmp"
+"""
+
+PY_ENV = """export TMPDIR="{cell}/env/tmp"
+export PATH="{cell}/env/venv/bin:{path}"
+"""
+
+RUST_ENV = """export TMPDIR="{cell}/env/tmp"
+export CARGO_HOME="{cell}/env/deps/cargo-home"
+export CARGO_NET_OFFLINE=true
+"""
+
+# The rust master is a vendored source tree: resolution and build
+# both run purely from the cell's own copy, no registry, no network.
+RUST_CONFIG = """[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "{cell}/env/deps/cargo-vendor"
+"""
+
+# The cpp stacks read the platform prefix through the plain
+# compiler variables; the -config wrapper rides PATH.
+CPP_ENV = """export TMPDIR="{cell}/env/tmp"
+export CPLUS_INCLUDE_PATH="{prefix}/include"
+export LIBRARY_PATH="{prefix}/lib"
+export LD_LIBRARY_PATH="{prefix}/lib"
+export PATH="{prefix}/bin:{path}"
+"""
+
+# The store-and-cache exports every cell rides: the service files
+# are commands, the cluster and the cache state live in the cell's
+# own scratch (TMPDIR), and the sockets bind behind CELL_PG and
+# CELL_REDIS — short public aliases (symlinks) of the cell's own
+# socket dirs: the kernel caps a unix socket path at 107 bytes and
+# a wave's deep cell tree blows that cap, so the alias keeps the
+# socket bytes inside the cell while the binding path stays short.
+# No product address exists outside the cell.
+SERVICES_ENV = """export PG_SERVICE="{cell}/env/service/pg.sh"
+export REDIS_SERVICE="{cell}/env/service/redis.sh"
+export CELL_PG="{run}-pg"
+export CELL_REDIS="{run}-rd"
+export PGHOST="$CELL_PG"
+export PGPORT="5432"
+export PGUSER="postgres"
+export PGDATABASE="postgres"
+export PGDATA="{cell}/env/tmp/pgdata"
+export REDIS_SOCK="$CELL_REDIS/redis.sock"
+"""
+
+# The cell's loopback ports, unique across the wave's cells and
+# below the OS's ephemeral span (nothing else grabs them either):
+# every cell's HTTP face takes SERVE_PORT; a conduit cell's route
+# listeners and bench target take their own three. One wave runs
+# at a time — the series law — so the cell's index alone keeps the
+# cells apart on the loopback.
+def cell_ports(index: int, sense: str) -> dict[str, int]:
+    ports = {"SERVE_PORT": 18100 + index}
+    if sense == "conduit":
+        base = 18300 + 3 * index
+        ports["INGRESS_PORT"] = base
+        ports["EGRESS_PORT"] = base + 1
+        ports["TARGET_PORT"] = base + 2
+    return ports
+
+
+def ports_env(ports: dict[str, int]) -> str:
+    """The cell's port exports, appended to its ENV."""
+    return "".join(f'export {name}="{value}"\n' for name, value in ports.items())
+
+# The cell's own store: one postgres cluster inside the cell's
+# scratch, a unix socket only (no TCP), bound behind the cell's
+# short alias, idempotent start/stop.
+SERVICE_PG = """#!/bin/sh
+# The cell's own PostgreSQL (platform bytes, not the product's):
+# cluster, socket and logs live in the cell's scratch; the socket
+# binds behind CELL_PG, a short alias of the cell's socket dir (a
+# unix socket path caps at 107 bytes); no TCP, no address outside
+# the cell. Usage: pg.sh [start|stop|status]
+set -e
+PREFIX="$HOME/.local"
+export LD_LIBRARY_PATH="$PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+RUN="${CELL_PG:?CELL_PG is not set}"
+REAL="$TMPDIR/sock-pg"
+export PGDATA="${PGDATA:-$TMPDIR/pgdata}"
+case "${1:-start}" in
+  start)
+    if "$PREFIX/bin/pg_ctl" -D "$PGDATA" status >/dev/null 2>&1; then
+      echo "pg: already running on socket $PGHOST"; exit 0
+    fi
+    mkdir -p "$REAL" "$(dirname "$RUN")"
+    rm -rf "$RUN"; ln -sn "$REAL" "$RUN"
+    if [ ! -f "$PGDATA/PG_VERSION" ]; then
+      "$PREFIX/bin/initdb" -D "$PGDATA" -U "${PGUSER:-postgres}" --no-locale -E UTF8 >/dev/null
+      printf "listen_addresses = ''\\nunix_socket_directories = '%s'\\n" "$RUN" >> "$PGDATA/postgresql.conf"
+    fi
+    "$PREFIX/bin/pg_ctl" -D "$PGDATA" -w -t 60 -l "$TMPDIR/pg.log" start >/dev/null
+    echo "pg: running on socket $PGHOST"
+    ;;
+  stop)
+    "$PREFIX/bin/pg_ctl" -D "$PGDATA" -w -m fast stop >/dev/null 2>&1 || true
+    rm -rf "$RUN"
+    echo "pg: stopped"
+    ;;
+  status)
+    if "$PREFIX/bin/pg_ctl" -D "$PGDATA" status >/dev/null 2>&1; then
+      echo "pg: running"
+    else
+      echo "pg: down"
+    fi
+    ;;
+  *)
+    echo "usage: pg.sh [start|stop|status]" >&2; exit 2 ;;
+esac
+"""
+
+# The cell's own cache: one redis server on a unix socket inside
+# the cell's scratch (TCP off), bound behind the cell's own short
+# alias, idempotent start/stop.
+SERVICE_REDIS = """#!/bin/sh
+# The cell's own Redis (platform bytes, not the product's): the
+# socket and the state directory live in the cell's scratch; the
+# socket binds behind CELL_REDIS, a short alias of the cell's
+# socket dir (a unix socket path caps at 107 bytes); no TCP, no
+# address outside the cell. Usage: redis.sh [start|stop|status]
+set -e
+PREFIX="$HOME/.local"
+export LD_LIBRARY_PATH="$PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+RUN="${CELL_REDIS:?CELL_REDIS is not set}"
+REAL="$TMPDIR/sock-redis"
+SOCK="${REDIS_SOCK:-$RUN/redis.sock}"
+RDIR="$TMPDIR/redis-state"
+PIDF="$RDIR/redis.pid"
+case "${1:-start}" in
+  start)
+    if [ -S "$SOCK" ] && [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF")" 2>/dev/null; then
+      echo "redis: already running on socket $SOCK"; exit 0
+    fi
+    mkdir -p "$REAL" "$RDIR" "$(dirname "$RUN")"
+    rm -rf "$RUN"; ln -sn "$REAL" "$RUN"
+    "$PREFIX/bin/redis-server" \\
+      --unixsocket "$SOCK" --port 0 --dir "$RDIR" \\
+      --daemonize yes --pidfile "$PIDF" --save "" --appendonly no >/dev/null
+    echo "redis: running on socket $SOCK"
+    ;;
+  stop)
+    if [ -f "$PIDF" ]; then
+      kill "$(cat "$PIDF")" 2>/dev/null || true
+      rm -f "$PIDF"
+    fi
+    rm -rf "$RUN"
+    echo "redis: stopped"
+    ;;
+  status)
+    if [ -S "$SOCK" ] && [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF")" 2>/dev/null; then
+      echo "redis: running"
+    else
+      echo "redis: down"
+    fi
+    ;;
+  *)
+    echo "usage: redis.sh [start|stop|status]" >&2; exit 2 ;;
+esac
+"""
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--wave", required=True, help="wave config file")
+    parser.add_argument("--root", required=True, help="directory for wave roots")
+    parser.add_argument(
+        "--machine",
+        required=True,
+        help="the pinned machine build; the system-installed punchtape must be it",
+    )
+    return parser.parse_args(argv)
+
+
+def copy_tree(src: Path, dst: Path) -> None:
+    shutil.copytree(src, dst)
+
+
+def copy_bytes(src: Path, dst: Path) -> None:
+    shutil.copyfile(src, dst)
+    dst.chmod(0o644)
+
+
+def tree_digest(root: Path) -> str:
+    """The content identity of a copied tree: sorted paths and bytes."""
+    digest = hashlib.sha256()
+    for path in sorted(p for p in root.rglob("*") if p.is_file()):
+        digest.update(str(path.relative_to(root)).encode())
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def check_system_machine(pin: Path) -> dict[str, str]:
+    """The system punchtape must be the pinned build, exactly.
+
+    The hand calls the machine by name; a stale or foreign system
+    binary would quietly measure the wrong machine.
+    """
+    system = shutil.which("punchtape")
+    if system is None:
+        print("punchtape is not installed on the system (command -v punchtape)", file=sys.stderr)
+        raise SystemExit(1)
+    system_path = Path(system).resolve()
+    pin_sha = hashlib.sha256(pin.read_bytes()).hexdigest()
+    sys_sha = hashlib.sha256(system_path.read_bytes()).hexdigest()
+    if pin_sha != sys_sha:
+        print(f"system punchtape ({sys_sha}) != pinned ({pin_sha}): install the pinned binary", file=sys.stderr)
+        raise SystemExit(1)
+    version = subprocess.run(
+        [str(system_path), "--version"], capture_output=True, text=True, check=True
+    ).stdout.strip()
+    return {"path": str(system_path), "version": version, "sha256": sys_sha}
+
+
+def wave_pairs(config: dict[str, Any]) -> list[tuple[str, str]]:
+    """The wave's meaning×stack pairs, the full-set law checked.
+
+    A brief entry may name one meaning (then the config's stacks must
+    be exactly the series' five) or one meaning×stack pair outright.
+    """
+    stacks = [str(s) for s in config.get("stacks", STACKS)]
+    out: list[tuple[str, str]] = []
+    for brief in [str(b) for b in config["briefs"]]:
+        if "/" in brief:
+            out.append(tuple(brief.split("/", 1)))  # type: ignore[arg-type]
+            continue
+        if sorted(stacks) != sorted(STACKS):
+            print(
+                f"the series' law: meaning {brief!r} runs in ALL FIVE stacks; "
+                f"the config names {sorted(stacks)}",
+                file=sys.stderr,
+            )
+            raise SystemExit(1)
+        out.extend((brief, stack) for stack in STACKS)
+    return out
+
+
+def check_masters(pairs: list[tuple[str, str]]) -> None:
+    """Every warmed master the wave stands on must exist, and the
+    platform prefix must carry its pieces — a wave never builds the
+    substrate it stands on."""
+    prefix = Path.home() / ".local"
+    for piece in PLATFORM_PIECES:
+        if not (prefix / piece).exists():
+            print(
+                f"the platform prefix misses {prefix / piece} — "
+                "platform maintenance installs it",
+                file=sys.stderr,
+            )
+            raise SystemExit(1)
+    for sense, stack in pairs:
+        master = MASTERS.get((sense, stack))
+        if master is not None and not (ENV_PREP / master).is_dir():
+            print(
+                f"no warmed master {master} at {ENV_PREP} for {sense}/{stack} — "
+                "platform maintenance warms the cache area",
+                file=sys.stderr,
+            )
+            raise SystemExit(1)
+        if stack == "cpp":
+            for piece in CPP_PREFIX_PIECES:
+                if not (prefix / piece).exists():
+                    print(
+                        f"the cpp platform prefix misses {prefix / piece} — "
+                        "platform maintenance installs it",
+                        file=sys.stderr,
+                    )
+                    raise SystemExit(1)
+
+
+def stage_services(cell: Path) -> None:
+    """The cell's store-and-cache service files: platform bytes the
+    hand runs as commands, bringing PostgreSQL and Redis up inside
+    the cell's own scratch."""
+    service = cell / "env" / "service"
+    service.mkdir(parents=True)
+    for name, text in (("pg.sh", SERVICE_PG), ("redis.sh", SERVICE_REDIS)):
+        script = service / name
+        script.write_text(text)
+        script.chmod(0o755)
+
+
+def stage_stack(
+    cell: Path, sense: str, stack: str, staged_path: str, ports: dict[str, int], run: Path
+) -> None:
+    """The stack's substrate into the cell and its ENV file: the
+    warmed M master (the stack's service pack with the sense's own
+    libraries), the common store-and-cache exports with the cell's
+    socket aliases, the cell's loopback ports, and — for cpp — the
+    vendored hiredis sources compiled in the cell."""
+    work = cell / "work"
+    if stack == "go":
+        copy_tree(ENV_PREP / MASTERS[(sense, "go")], cell / "env" / "deps" / "gomod-cache")
+        (cell / "env" / "deps" / "gocache").mkdir()
+        (cell / "env" / "deps" / "gopath").mkdir()
+        env_text = GO_ENV.format(cell=cell)
+    elif stack == "js":
+        copy_tree(ENV_PREP / MASTERS[(sense, "js")], work / "node_modules")
+        env_text = JS_ENV.format(cell=cell)
+    elif stack == "python":
+        copy_tree(ENV_PREP / MASTERS[(sense, "python")], cell / "env" / "venv")
+        env_text = PY_ENV.format(cell=cell, path=staged_path)
+    elif stack == "rust":
+        copy_tree(ENV_PREP / MASTERS[(sense, "rust")], cell / "env" / "deps" / "cargo-vendor")
+        (cell / "env" / "deps" / "cargo-home").mkdir(parents=True)
+        (work / ".cargo").mkdir()
+        (work / ".cargo" / "config.toml").write_text(RUST_CONFIG.format(cell=cell))
+        env_text = RUST_ENV.format(cell=cell)
+    elif stack == "cpp":
+        copy_tree(HIREDIS_SOURCE, cell / "env" / "deps" / "hiredis")
+        env_text = CPP_ENV.format(cell=cell, prefix=Path.home() / ".local", path=staged_path)
+    else:
+        print(f"unknown stack {stack!r}", file=sys.stderr)
+        raise SystemExit(1)
+    (work / "ENV").write_text(
+        env_text + SERVICES_ENV.format(cell=cell, run=run) + ports_env(ports)
+    )
+
+
+def main(argv: list[str]) -> int:
+    args = parse_args(argv)
+    wave_file = Path(args.wave).resolve()
+    root_dir = Path(args.root)
+    pin = Path(args.machine).resolve()
+    if not wave_file.is_file():
+        print(f"wave config not found: {wave_file}", file=sys.stderr)
+        return 1
+    config = yaml.safe_load(wave_file.read_text())
+    spawns = yaml.safe_load(SPAWN_SOURCE.read_text())
+    harness = HARNESS_SOURCE.read_text()
+    machine = check_system_machine(pin)
+    pairs = wave_pairs(config)
+    check_masters(pairs)
+
+    kinds = [str(k) for k in config["kinds"]]
+    hands_per_kind = int(config["hands_per_kind"])
+    model = str(config["model"])
+
+    stamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
+    wave_dir = root_dir / f"{stamp}-{wave_file.stem}"
+    if wave_dir.exists():
+        print(f"wave root already exists: {wave_dir}", file=sys.stderr)
+        return 1
+    cells_dir = wave_dir / "cells"
+    cells_dir.mkdir(parents=True)
+    (wave_dir / "operators").mkdir()
+
+    manifest: dict[str, Any] = {
+        "wave_config": str(wave_file),
+        "model": model,
+        "machine": machine,
+        "hands": [],
+    }
+    digests: dict[str, dict[str, str]] = {}
+    cell_index = 0
+
+    for brief in sorted({f"{sense}/{stack}" for sense, stack in pairs}):
+        sense, stack = brief.split("/", 1)
+        brief_file = CAMPAIGN / "briefs" / f"{brief}.md"
+        material_dir = CAMPAIGN / "materials" / sense
+        for source, name in ((brief_file, "brief"), (material_dir, "material")):
+            if not source.is_file() and not source.is_dir():
+                print(f"missing {name} for {brief}: {source}", file=sys.stderr)
+                return 1
+        for kind in kinds:
+            for n in range(1, hands_per_kind + 1):
+                hand = f"{brief.replace('/', '-')}-{kind}-{n}"
+                cell = cells_dir / hand
+                input_dir = cell / "input"
+                work_dir = cell / "work"
+                env_dir = cell / "env"
+                for d in (input_dir, work_dir, env_dir / "tmp"):
+                    d.mkdir(parents=True)
+                stage_services(cell)
+                copy_bytes(brief_file, input_dir / "brief.md")
+                copy_tree(material_dir, input_dir / "material")
+                stage_stack(
+                    cell,
+                    sense,
+                    stack,
+                    os.environ.get("PATH", ""),
+                    cell_ports(cell_index, sense),
+                    Path.home() / ".experiments/cellrun" / f"{stamp}-{hand}",
+                )
+                preamble = harness.replace("__WORK__", str(work_dir)).replace(
+                    "__INPUT__", str(input_dir)
+                )
+                text = str(spawns[kind]).replace("{{INPUT}}", str(input_dir))
+                prompt_file = wave_dir / f"{hand}.prompt"
+                prompt_file.write_text(preamble + "\n" + text)
+                digests.setdefault(brief, {})[hand] = tree_digest(input_dir)
+                manifest["hands"].append(
+                    {
+                        "hand": hand,
+                        "kind": kind,
+                        "brief": brief,
+                        "stack": stack,
+                        "model": model,
+                        "cell": str(cell),
+                        "input": str(input_dir),
+                        "work": str(work_dir),
+                        "prompt": str(prompt_file),
+                    }
+                )
+                cell_index += 1
+
+    for brief, hands in digests.items():
+        unique = set(hands.values())
+        if len(unique) != 1:
+            print(f"inputs of {brief} differ across hands: {hands}", file=sys.stderr)
+            return 1
+
+    (wave_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    print(f"wave: {wave_dir}")
+    print(f"machine: {machine['version']} {machine['sha256'][:12]} at {machine['path']}")
+    for hand in manifest["hands"]:
+        print(f"  {hand['hand']}: {hand['cell']}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

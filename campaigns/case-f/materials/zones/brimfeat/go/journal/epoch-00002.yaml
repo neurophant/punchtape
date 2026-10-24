@@ -1,0 +1,190 @@
+---
+kind: submission
+submission:
+  corpus-version: 1
+  build: ./build
+  requirements:
+  - id: R1
+    brief:
+    - W2..W3
+  - id: R2
+    brief:
+    - W4..W5
+    - W7..W9
+  - id: R3
+    brief:
+    - W10..W11
+  - id: R4
+    brief:
+    - W12..W14
+  - id: R5
+    brief:
+    - W15..W16
+  - id: R6
+    brief:
+    - W17..W18
+  not-a-requirement:
+  - lines:
+    - W1
+    quote: "# Brief: brimfeat — a JSON answer from the standing tool"
+    reason: a heading, not a demand
+  - lines:
+    - W6
+    quote: "## My want"
+    reason: a heading, not a demand
+  artifacts:
+  - brim
+  added:
+  - id: detect/answer
+    addr: d7447645f98377a87b026c4b3b3936c9e9eac8a3a15b38c9fc2d5f4f7be5c610
+  - id: detect/knob-refusals
+    addr: 3af402b7a22e93d1b09995721166e9ddf1fcb0aa3468ab297fd8f15ed3991e3d
+  - id: detect/picture-troubles
+    addr: c3572dd645ddd4214c82ae76d8ce3d1fa313ab7fd4e631b3e9bdbdd6208b869d
+  - id: tool/stack
+    addr: d3e280727d65e78f7482c88eed8016d3e38e2b1df58eb36d040733a346243fc3
+  - id: tool/purity
+    addr: a9cac55cefa096001359e06c91f63e87a15b15d3e4be3b2f2b2429a0c7d0a5d8
+  doc-addr: cb87993371f19d2b95418c5b6089e26c8b699f5d97acbeca64e3212f7c50a41f
+---
+kind: run
+run:
+  "n": 1
+  build:
+    exit: 0
+  rows:
+  - key: detect/answer/0
+    row: 7becbeff3ba1f39da4dc8d37a04c8d7d072bbf060d4db949e7e3c68db722a126
+    status: green
+    exit: 0
+    proof: 7c6c73fdab045a3165cf1cc4cd33d77cda2df13cefa174056e95a9b700532179
+  - key: detect/answer/1
+    row: d34dbb4f39718dfdaf34b8ac54a26d7d3d88a5f3ca3d88907e030250e196f8b0
+    status: green
+    exit: 0
+    proof: e022f4f8a324b5ef1b27896524ed902f5e9997fa0c321813010adbb119a945b3
+  - key: detect/answer/2
+    row: 25890faad240521c3aef61faec9cb43c5ebbcd4e93dc7e9e070e37f4c4c98dd6
+    status: green
+    exit: 0
+    proof: c908512ee91cc292fd9945d0e2333c2ce8659de1be8cb715c549af1e2b00a69d
+  - key: detect/answer/3
+    row: 51914eec4c392ed5eb1fe43fa928eb0c48632c0e8eb7a981c97240eff98f170e
+    status: green
+    exit: 0
+    proof: b29086a5bde7ba090685b0875217505a1349f9cf291ec3085b56d8baa89e56d8
+  - key: detect/answer/4
+    row: 5c4e68982fe5e598469d34ba04b348f4b2a8a199c77e36fa3f6a06c07d0bebfa
+    status: green
+    exit: 0
+    proof: 7b0631bb8580fbe3f58393b3882a642de21a0c0002a074806dc6fa45376b8ff5
+  - key: detect/answer/5
+    row: 81236dbb7871726883bb328f68942f9948856b4d4818680c5f6c7ef7dcc01cfe
+    status: green
+    exit: 0
+    proof: 26625a03ef74b557514febda94b5429716b0b9add65479520fd41859103b7698
+  - key: detect/answer/6
+    row: d81680c63e196eaafa47469211ea75d08d4504238e00986c9efc55b28bc3d205
+    status: green
+    exit: 0
+    proof: 6875ec5fc35739cf7cc06dbf0ffa7af0ed00935a10fa27fab1df4c1bd0ffd9d6
+  - key: detect/answer/7
+    row: aadaea5e05db5e90cf63188fd96cfc95dcc6b40b259e2f6ab4aa6531a34636c1
+    status: green
+    exit: 0
+    proof: e368271063f5a1fb78f2138b7ec4107b76bd9ac59dfa7524d9e9663b06d83864
+  - key: detect/answer/8
+    row: 7d501e60e3e521b71c51f49eeecaed56e5a4e47ada110b8f65d8947bd41a395f
+    status: green
+    exit: 0
+    proof: 6fd493de54cf717b0ef7f4e6f33c1488ded5387d3a43b726b82acd8ccd126e4f
+  - key: detect/answer/9
+    row: 22f1b08bf13f2ecf8bda24742d3fd36a8e2819216ed7f4dfcd982dcdaf1f94d2
+    status: green
+    exit: 0
+    proof: 238539eb0717f5bc1f5fbd20104176aeeefeae59a5fd78671cdb7c9dbb1c833b
+  - key: detect/knob-refusals/0
+    row: f7bb89bc6226f8afbc80eafea2258aa68174df74f04184db28efc3e8a61fd558
+    status: green
+    exit: 2
+    proof: 7847365a60c849ee3c7571019aa1b782799c519d841cedd564debd97a83193bc
+  - key: detect/knob-refusals/1
+    row: 3d4ef5e7774860a4352fc143999982b4d2e21ded42a125716519548c7215ab8b
+    status: green
+    exit: 2
+    proof: 81f6541edeecf24a702b4b7bdd213c4fd638d15a444e075c5f686cb0f6cf1b87
+  - key: detect/knob-refusals/2
+    row: c398efdb51dea324e22228d3ab835482be26c425e0c0269bca4a1381dd2e68f6
+    status: green
+    exit: 2
+    proof: eac8af9bec2ed20ace2e9b6f63370b4eb4bf5712307068d0c7330afbad6f5ac8
+  - key: detect/knob-refusals/3
+    row: 1b1d1b8e4252c09eb3f13f31ba8fa0451085029cc927b5362b926edec28a80ee
+    status: green
+    exit: 2
+    proof: ce8c9bce1e3a174a877229c2c31d1c4fb5c4963398d2ac8b06668b571e993a9b
+  - key: detect/knob-refusals/4
+    row: 2ade84fa7045506718e21a4090dbf8e34c468455dcd19c4f0fb6a136d4cf7e5c
+    status: green
+    exit: 2
+    proof: 14ac2b7b072bcb5638bd1b004c8c044040cfd1e5387de026f1e5e55b3bda8b59
+  - key: detect/knob-refusals/5
+    row: 1d605c03709034c244ce1d887634b0541eb8aa422384cc524fbf75373de8882c
+    status: green
+    exit: 2
+    proof: a12f364ca170dbec363fb82dc04064f94b3f1f442cae9f0cc424a39861110f1d
+  - key: detect/knob-refusals/6
+    row: bebd63cbd6e2a9e0c491a5f3421dda50e4f9abdbaadb4dcf27d5f0216e375eca
+    status: green
+    exit: 2
+    proof: fc13c8bd1384167fed4285b6c3ba551d157a8e0a1f81a68802fe311a39eebf19
+  - key: detect/knob-refusals/7
+    row: 7346a3a5afd1d663e35ec2e0cde13e40bfe39f32bda1b4f0e1389839bb224d61
+    status: green
+    exit: 2
+    proof: 3aab276232719d81555d4b19520c7c1aa9265540621d103114e470b5e39e5891
+  - key: detect/picture-troubles/0
+    row: 89c45fb0229ca9317e59eb77a376a0fc6891145fc49b821e82233f4d39257415
+    status: green
+    exit: 1
+    proof: 84ea45bb3d17c7dfac70774d3d215f58e5f3b1c8fc6fed58b2c013ed6f893ef6
+  - key: detect/picture-troubles/1
+    row: a69ad739bfb397c4b22238a0db5d51c5c58670dc5a90044f2872bd1f2a2811d9
+    status: green
+    exit: 1
+    proof: 86be8e9f9227970f7b8c8a88b2ef87266e48c35334107f73252212e7bd399c5f
+  - key: detect/picture-troubles/2
+    row: cb3bc5c70f0d3ff8b52db431722f43cb29f202ad10b5ebf4a4fbb6017a143c34
+    status: green
+    exit: 1
+    proof: 20cd28adcfca9ec2f29553504ee854c5fc7c9582b193392d86c07876d334f3bf
+  - key: tool/stack/0
+    row: 055f76426135aeba3a3b7aff1d487a47dea20708c27af10af1d758730324ef7d
+    status: green
+    exit: 0
+    proof: 7f6a371159cfe6b014658b9a564e5130aeeee9d6ebec2409351e3b52989bc900
+  - key: tool/stack/1
+    row: 73b4bc70248a3ecda384ef50991f03b212470d59e640d2d4f1491fc4da05dcc6
+    status: green
+    exit: 0
+    proof: 2bda2b844ed4f330fcfa95c9c9a1583023978bb0a5700acd19121d2c245aed40
+  - key: tool/stack/2
+    row: df72875a6e1cf9e1c9dbb1c9041770b1c66d0316221203727abb168155818211
+    status: green
+    exit: 0
+    proof: 17f0a8d8013a652893c3cf5efcf80e5d11aae89b7351ca505fd4139e3fd79f13
+  - key: tool/purity/0
+    row: 2cc6de34ab62769d4d401203568d692d097272724636be0eecfc0be4122b8ba2
+    status: green
+    exit: 0
+    proof: f05563a2d2f772cf053ddc8c708f8d1001481fa1f2cda07829ca3a1e02ae0eb0
+  - key: tool/purity/1
+    row: bb26602be0325b85a54697c7fddfc4577dc869397b4649507336ccc4c3ff502e
+    status: green
+    exit: 0
+    proof: b48388bd47191f55a69a0b86ebafd9d05f72b1a71fa0c304b450115241a03f24
+  - key: tool/purity/2
+    row: 8298d996d60dac4990517708bea15ec981e0d0d658e72aad666bbfd65b0f078c
+    status: green
+    exit: 0
+    proof: 4bb18db93803bd321a658d000486e024da1acf732f7a977d1bbe509cb55cc8cd

@@ -1,0 +1,15 @@
+# The campaign's single source of the spawn bytes — the exact texts
+# every hand of the wave receives, {{INPUT}} being the hand's cell
+# input directory. The machine knows none of these bytes; the texts
+# only point at what each hand must find on its own.
+machine: |
+  Do the development through punchtape: run it with no arguments and
+  follow the printed contract. Take the human's wish from `{{INPUT}}/brief.md`
+  and put it verbatim into `.punchtape/wish.md`. All communication with
+  the machine happens only through its zone's files. The work is complete
+  when the machine has recorded a verdict.
+solo: |
+  The brief lives at `{{INPUT}}/brief.md` — the only input. Build the
+  product from the brief right in the working directory. The report is
+  the file `report.md`: every brief requirement and its status (done /
+  partial / no) in your own words.

@@ -1,0 +1,134 @@
+---
+kind: submission
+submission:
+  corpus-version: 1
+  requirements:
+  - id: R1
+    brief:
+    - W2..W6
+  - id: R2
+    brief:
+    - W8..W10
+  - id: R3
+    brief:
+    - W11..W12
+  - id: R4
+    brief:
+    - W13..W15
+  not-a-requirement:
+  - lines:
+    - W1
+    quote: "# Brief: brimdrift — the tool must catch the night edit"
+    reason: a heading, not a demand
+  - lines:
+    - W7
+    quote: "## My want"
+    reason: a heading, not a demand
+  - lines:
+    - W16..W18
+    quote: "4. The edit itself is mine: after your work first stands accepted,\nI change one line of the measuring law and demand restoration.\nExpect it — the proofs you keep decide how fast it heals."
+    reason: the customer's own future act, announced — not a demand on the tool; the catch and the healing it promises ride R2 and R4
+  added:
+  - id: cli/detect
+    addr: 792ea2f6e06e62ee610100fcd2bfe941314ac0840bac96c3169a2d878dd1de2e
+  - id: cli/errors
+    addr: 0a3ca0368a02562b8741f2b1ebfb3198f3dae4f5a8f1c9b25ee39fd41301e1ab
+  doc-addr: c03a2f9085c0b2b3f90b28113a762cb6eaf2e9b9e305bc006a57392db5cb2d4c
+---
+kind: run
+run:
+  "n": 1
+  rows:
+  - key: cli/detect/0
+    row: 23e00e531d5b1bcabb58102b7de9ebae811a44961ebeef9c1a85da157e885dc5
+    status: green
+    exit: 0
+    proof: 040d5313033c534725decd56264b7ef23267363f71f701dd91d21f32734d0b46
+  - key: cli/detect/1
+    row: 741b7c673a3f086f27d63bbf6d7a4ea0cc6e2d5b05d94659dce8f980d9a5e9b1
+    status: green
+    exit: 0
+    proof: 673cff0023d7dd058a1d4db22333d09fc5d323a1f3adc8fc66d4bbdb82168fd5
+  - key: cli/detect/2
+    row: 06f1a3d666a59fbebf7e504e7a9083148b2e4b15c73873d4f6af0e4bc5c20b16
+    status: green
+    exit: 0
+    proof: d26a87a353be5fed01ac07ae384fab6b60c1fd786e12964e09ec43bf432cdff5
+  - key: cli/detect/3
+    row: bf6ec2fc0436993cd433f633df7306f2bed5c364bbec2c5968a3c3e99e298ad5
+    status: green
+    exit: 0
+    proof: e14273127511edafd7b6385136f1e82a77a55c9d0aaab5168eba9e0ce9cdd33b
+  - key: cli/detect/4
+    row: a44a47ac730b768f70e851a1427558bddc96b9d04e70dd9c35d3da9006adc7be
+    status: green
+    exit: 0
+    proof: d66e2fda9775e594801536b15330d7b8b6d7d35be93876bf004f2124bb2986b6
+  - key: cli/errors/0
+    row: 6459b9eeb16feba6ffce5d594367e57daddda24885a5ef2e6a987d8e129c103d
+    status: green
+    exit: 1
+    proof: bde028918d78b63a32d72a6959bbd6d5ec5e95f0a3d8ebb9a4f7cd90fb6f70e0
+  - key: cli/errors/1
+    row: 01797f9be38fda4a2911645511395e54fb410a5423977448ca75b8356d5c5e08
+    status: green
+    exit: 1
+    proof: 3ce57b71aebc3b67afc86fdfe9f290bcc02d70a2bad119cb094c4efe51b61a47
+  - key: cli/errors/2
+    row: c38bc73cc139ca905b7b004fdec869b1145c7bb56780a69fe33e59d3135f1936
+    status: green
+    exit: 1
+    proof: 65517786389463147e0b50929a92a0c5598c5fc4fb6362d0fff46e7fcf0f8cb5
+  - key: cli/errors/3
+    row: c4cd31dfa3d06d40d01fb2aa4ce6f9b19c46c56768aae32ade97969d2b622b52
+    status: green
+    exit: 1
+    proof: 2321f42e75987e2e220b4914c09a1e2962ed8eb5ab5d2ded30f5389053e792e1
+  - key: cli/errors/4
+    row: e9eb51315b686a180b1962d182098801d19f3b41bc9a2e634826a46d49a9a349
+    status: green
+    exit: 2
+    proof: f537b5a18583309567f1f753578ebd15337ec64195e4d4446f500221b3043f65
+  - key: cli/errors/5
+    row: 3cd621f5947510b0833add54579382c6e0bf44a32befce3c417ee480e892f343
+    status: green
+    exit: 2
+    proof: d49b4e44219c8d3786570534568c0de16fdf2d359d12280a9d9b4324c5f488c0
+  - key: cli/errors/6
+    row: 211b4645684872e3b8d6a3b38e56f90e0b6310b21619f8bbbacad914435260a1
+    status: green
+    exit: 2
+    proof: 1c2cfdce9fadf4dd55f9ee882f5cd724c13e126adb32d8832963da71420dded2
+  - key: cli/errors/7
+    row: 889e399d5eb833093cae52a66c830ff2ea19bb61810729569b025348992f4437
+    status: green
+    exit: 2
+    proof: 66c0b1614d708113572b7f1d3e99ebcb5a800a3a1771e270577c33b93652a8aa
+  - key: cli/errors/8
+    row: 6c3c75f90055d6e83dc420aa428ddad7c1197691ef40b1004b09e735ef32b1cb
+    status: green
+    exit: 2
+    proof: 2bb9f0dd2b1d65bad6b757726fd98a0fc92ae8c315113b08122aefb9da90af05
+  - key: cli/errors/9
+    row: 47a2b0ae51a2c7b74b32d2dbd89975bcc130423259d9e7eabaa58402354f052c
+    status: green
+    exit: 2
+    proof: 152a46e819350df8c9d11f442ff291598b3bda16a3ddb2d4b18d810980675384
+  - key: cli/errors/10
+    row: 875b48cb73f86b62ac75d57a878ed66949a594b49f7eac0516d5507417a89864
+    status: green
+    exit: 2
+    proof: 5de4fd8be47505b2f63261dd8e2f41c9860d265f8627fa625a52cf920582fa10
+---
+kind: verdict
+verdict:
+  "n": 1
+  corpus-version: 1
+  signature: c4f63e088b1d01e205d4255155b1e087dc093375cbff88b00b6d90e59a8456f6
+  registry-digest: 809a1b644cb27f3a778f43e7eebbdf00339009131c870dba7562bb15db329280
+  scopes:
+  - id: cli/detect
+    pointer: ab01e0ba929d3697f904fa6a1097b1cf1b069181279bd2f056ecd278513c5b2f
+  - id: cli/errors
+    pointer: ab01e0ba929d3697f904fa6a1097b1cf1b069181279bd2f056ecd278513c5b2f
+  run: 1

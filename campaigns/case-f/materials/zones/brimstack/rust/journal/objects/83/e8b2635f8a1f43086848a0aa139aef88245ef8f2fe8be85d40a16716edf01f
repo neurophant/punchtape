@@ -1,0 +1,32 @@
+id: brim/detect
+name: the four-number answer on the materials
+prose: brim detect on a picture prints four numbers — top, bottom, left, right — the even margin found from each edge. On the framed material all four sides answer 4, on the clear material all four answer 0, and a mid-range sensitivity keeps the framed answer.
+scope:
+- src/**
+- Makefile
+- materials/bordered.jpg
+- materials/clear.jpg
+covers:
+- R1
+- R4
+rows:
+- run: ./brim detect materials/bordered.jpg
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+- run: ./brim detect materials/clear.jpg
+  expect:
+    rc: 0
+    out: |
+      0 0 0 0
+- run: ./brim detect materials/bordered.jpg --threshold 0.3
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+- run: ./brim detect materials/bordered.jpg --threshold 0.7
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4

@@ -1,9 +1,0 @@
-build.timeout-s: 300
-check.timeout-default-s: 60
-check.timeout-max-s: 300
-compact.journal-entries: 40
-digest-cache-max: 4096
-expect.contains-min-runes: 4
-language.cyrillic-share: 30
-language.han-share: 30
-slot.list-budget: 10

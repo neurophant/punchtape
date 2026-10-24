@@ -1,0 +1,21 @@
+id: brim/band
+name: the search band knob
+prose: "The --band knob bounds how deep from the edge the margin is hunted: a band shallower than the frame cuts the found numbers down (0.01 answers 2), a deeper one leaves them (0.05 answers 4)."
+scope:
+- src/**
+- Makefile
+- materials/bordered.jpg
+covers:
+- R1
+- R3
+rows:
+- run: ./brim detect materials/bordered.jpg --band 0.01
+  expect:
+    rc: 0
+    out: |
+      2 2 2 2
+- run: ./brim detect materials/bordered.jpg --band 0.05
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4

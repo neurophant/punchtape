@@ -1,0 +1,35 @@
+id: detect/knob-refusals
+name: a clumsy invocation is an honest refusal naming the knob and its requirement
+prose: "A bad knob value, a knob without its value, an unknown option, an extra file argument, or no picture at all is refused with exit code 2 and a brief English message on stderr; each invalid knob value is named along with what the knob requires: --band wants a fraction of the side greater than 0 and at most 0.5, --threshold wants a fraction from 0 to 1."
+scope:
+- main.go
+- picture.go
+- testdata/bordered.jpg
+- testdata/clear.jpg
+covers:
+- R1
+rows:
+- run: ./brim
+  expect:
+    rc: 2
+- run: ./brim detect
+  expect:
+    rc: 2
+- run: ./brim detect --band abc testdata/bordered.jpg
+  expect:
+    rc: 2
+- run: ./brim detect --band 0 testdata/bordered.jpg
+  expect:
+    rc: 2
+- run: ./brim detect --band 0.6 testdata/bordered.jpg
+  expect:
+    rc: 2
+- run: ./brim detect --threshold 1.5 testdata/bordered.jpg
+  expect:
+    rc: 2
+- run: ./brim detect --wibble testdata/bordered.jpg
+  expect:
+    rc: 2
+- run: ./brim detect testdata/bordered.jpg testdata/clear.jpg
+  expect:
+    rc: 2

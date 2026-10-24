@@ -1,0 +1,351 @@
+---
+kind: submission
+submission:
+  corpus-version: 1
+  build: cargo build --release --offline && cp target/release/brim brim
+  requirements:
+  - id: R1
+    brief:
+    - W2..W6
+  - id: R2
+    brief:
+    - W8..W10
+  - id: R3
+    brief:
+    - W11..W12
+  - id: R4
+    brief:
+    - W13..W15
+  not-a-requirement:
+  - lines:
+    - W1
+    quote: "# Brief: brimdrift — the tool must catch the night edit"
+    reason: a heading, not a demand
+  - lines:
+    - W7
+    quote: "## My want"
+    reason: a heading, not a demand
+  - lines:
+    - W16..W18
+    quote: "4. The edit itself is mine: after your work first stands accepted,\nI change one line of the measuring law and demand restoration.\nExpect it — the proofs you keep decide how fast it heals."
+    reason: the customer's own future act, announced — not a demand on the tool; the catch and the healing it promises ride R2 and R4
+  artifacts:
+  - brim
+  - target/**
+  added:
+  - id: detect/frame
+    addr: 5bdace924a104fc674812f2e5c9e8af60e0f8acdffd2dd5664bafffac2be0ea5
+  - id: detect/clear
+    addr: 6f87cf1058fa89713e0887951a2111ed80c6862d2eef5fcfa0167eaf5058162b
+  - id: detect/repeatable
+    addr: 3decb976e49b0cdb686fe22b40be9908755b9f070f1eaa7cf8c9695223d20a7c
+  - id: refusal/bad-file
+    addr: 3344a4989c1e7f175174f98ed5db716270569381d8a1e56ce4c57ea0e21422ab
+  - id: refusal/bad-knob
+    addr: 9175b0da558ec269ebada7dd8408d88050ff575e065533f2ec8891fddfde9ac2
+  - id: refusal/bad-usage
+    addr: 518f85206743556c5b98d8c337ea60ade2f020d80ddbba592defbff9a9f335a8
+  - id: stack/image-only
+    addr: d3051da979198941b78b2edbb93fb8af2af1ff518e1342db794912f25b8272f9
+  - id: safety/read-only-run
+    addr: 2209ff1bfca5637fa932dd139c21d37e705aff193678ff99487b20b863fa2e8d
+  doc-addr: e8f782e2e29321b642a4b6e7307d3e5c09690738134d0f27b8e2323b2a2760cc
+---
+kind: run
+run:
+  "n": 1
+  build:
+    exit: 0
+  rows:
+  - key: detect/frame/0
+    row: 60aa18662af851bec681127f74f25a607bcd0f1230582925c6134aaa81ddbfe8
+    status: green
+    exit: 0
+    proof: 600a9c77229682f9870584e70c49db820b5b03daadea6b64baed3fd6ca60ab7e
+  - key: detect/frame/1
+    row: 46b0cf2ce96715d83dcc9e0d7cf7bde556b81a6145a12883ba9c3d9b97da7679
+    status: green
+    exit: 0
+    proof: d6faa512f86c82057e0db1cae74b0b2d6b742d1f94ef413972d377de25f8f0b7
+  - key: detect/frame/2
+    row: e6ac801bafb849308f9a5676f1abec5a6f0e8442974d4b601e91e379a00630eb
+    status: green
+    exit: 0
+    proof: 656db091697ea08322046e7317cececaff7baf9419025785888eea15adcda32b
+  - key: detect/frame/3
+    row: 9143ab163827d056cbc5490e00f8f78ca9a1e198008d02ebfbb8d2b87ad40b94
+    status: green
+    exit: 0
+    proof: a2749a7d389ef2941213f99da43dd6ad341872d5898585f4a652fd519d5b7840
+  - key: detect/frame/4
+    row: 35758c69387aed7b8f682888a76a1926966e1c9c2bf360918cf7eda8ca7e6a92
+    status: green
+    exit: 0
+    proof: 5d9fb870a046b52ba8b6f7d78511dc839ed84babd4d21d9089fc649bff90d66c
+  - key: detect/frame/5
+    row: 2a7d162144dc83a75cf7a94d28e4a8fcf5da42e08481fe4a06670cafd39b8596
+    status: green
+    exit: 0
+    proof: 75172c9f53f828cff9f3fb66830fec9c5f8cab0150280703d768de6404dc017b
+  - key: detect/clear/0
+    row: 9da863106e03693c6c4657b1b2bd3f56d8fdf8397338ae20d2474b6656827070
+    status: green
+    exit: 0
+    proof: 3c4bdfd840a6633e5485007eb3d61d5df348fc01bab8ebe0e7b0785cd1dd740b
+  - key: detect/repeatable/0
+    row: 628a3c0a0066ddcf8d726d0580a73d4c249a4956af6964767de078c2820623e4
+    status: green
+    exit: 0
+    proof: 66fea2bea6d92841a33d25a7a6aae4f44e66abd32fa2c7c5bab32d2232257aae
+  - key: refusal/bad-file/0
+    row: 96f0555e117bdbee520e214335a21102fb79bfec454ddcd0b16eefaa99da862d
+    status: green
+    exit: 1
+    proof: 8d6a538b4564c6fca72010a58ac25c19a2b0e7b254a67e7b7a86558cf2286ad7
+  - key: refusal/bad-file/1
+    row: 0e2ca4e537a8e84961f3955611b24b87ec76b7cc3330f5c1f201ddc9f1da9b73
+    status: green
+    exit: 1
+    proof: e99c28537d03cf9fc3986b97c03256b8b96d476e86dd0bd75ddb8eb58548bc14
+  - key: refusal/bad-file/2
+    row: 2e00a41f42d01c4c8bbf07b6cc4b4c5db6224574ea57a19bd31db2f8c7f5ca91
+    status: green
+    exit: 1
+    proof: 27bd6b5406ccd2946080f5da329a30b0b7d2c6c87a43580e8a3fbfadf27645d9
+  - key: refusal/bad-file/3
+    row: f11e6bc2a837ca4e2556d1650e66a698f4474b5c670124f2c8705126d58f8ba0
+    status: green
+    exit: 1
+    proof: 5e8a776fdd4eb64fe4d590c08dfc7fef53bb61543baa09701ff1100713e7fbf0
+  - key: refusal/bad-knob/0
+    row: f970f8db0f56c3214249625925b0a4ab4757c5c6bdff0e6cde81f0017cabcc32
+    status: green
+    exit: 2
+    proof: 4928f26464fa57614845062449f019708613efc76910aca2508e815290804a1c
+  - key: refusal/bad-knob/1
+    row: 0f5b705e0f0e2f20211f795fcff9dd5f972527784182156dabe647d7f08a709b
+    status: green
+    exit: 2
+    proof: aa7e1192e1fe10a28564a57f20e95211938fc98a66f99df06cb674bf80ca3edc
+  - key: refusal/bad-knob/2
+    row: ee225f151519dca1baf6ec9d282378e3c55b9e93561ac9643799628777d9a3ff
+    status: green
+    exit: 2
+    proof: 3c08e856903d9e1a24124dbc3c5b462d6c086a277d6744fd7a92b8e0ad173014
+  - key: refusal/bad-knob/3
+    row: 416505b450a6b3af1d484b92964656f5189838378d88a1ed146b1981dcbf5d25
+    status: green
+    exit: 2
+    proof: d853557265da8bca2770a413a0ac669957cb4373e85b3948363b37cab4be2faf
+  - key: refusal/bad-knob/4
+    row: 201602c35774490358daaa2d417e6c45c955f558657dada5219059032cfc1908
+    status: green
+    exit: 2
+    proof: 281d1f01d313befb2e8d5bdf03b0658d150e3ceb92c76afb528b7f6834c6087c
+  - key: refusal/bad-knob/5
+    row: 9e273119ca6c45bb95d63182eb00423bf69ec25d4808caf87fde6f1561635b73
+    status: green
+    exit: 2
+    proof: 3779ca76b1d0c6b8defed7720aa557224e97bb34b47be75d7840a67f54f98646
+  - key: refusal/bad-usage/0
+    row: 3d4ef5e7774860a4352fc143999982b4d2e21ded42a125716519548c7215ab8b
+    status: green
+    exit: 2
+    proof: 8e44725f9199e7d00354e0c5b69a0f95ca8d2e8a77f85606f02ae798db8dc06d
+  - key: refusal/bad-usage/1
+    row: 18b810020726cb73e9caf0a8736f3735c80515ff84c036496ca2304d232a408d
+    status: green
+    exit: 2
+    proof: f8480e3240e795a02d6955346e6f8352a7d0c23aed365746f9090e405cf23448
+  - key: refusal/bad-usage/2
+    row: 77c73df291607d2270ee5c1349ccbffd6fe3484a482a746496070921ebf09416
+    status: green
+    exit: 2
+    proof: ff87eabe47dbc4c2919607fda2557b7b8421536d3766756d952e31de62f22ba3
+  - key: refusal/bad-usage/3
+    row: 478a92ee632fe765cc0d4dcd8417e7a0f69bf158f9276e5faefd16f62ad844ed
+    status: green
+    exit: 2
+    proof: e2fb05cf52418059aabbba05fe588920c6b99b28294f689fbb869f332660fb13
+  - key: refusal/bad-usage/4
+    row: f7bb89bc6226f8afbc80eafea2258aa68174df74f04184db28efc3e8a61fd558
+    status: green
+    exit: 2
+    proof: c133946420e4ff0e941cfc5b948da994b1f3b0a1309b1d40bc023dbc9fc87947
+  - key: stack/image-only/0
+    row: 59ea7ed81c2e204110a3fbd4c23f5b875a965503ebcb3577f84d1c7673dca798
+    status: green
+    exit: 0
+    proof: e5dc19fddb4559788f990505f96863c6000052f69189ff2612ca5e03f6aaa506
+  - key: safety/read-only-run/0
+    row: d3ee301fd2909637bf48c31ec70d2c814f4b6688f397f8c2b23e91504018a31d
+    status: green
+    exit: 0
+    proof: bcbd42d4ceaa943ad4f44d2b97712afc61f0f38790c70f9d50b4867667bbe21d
+  - key: safety/read-only-run/1
+    row: 8871ada78f5d3a7320c49eb83b11e93024bf32dc9032c2f725daccf8dea51638
+    status: green
+    exit: 0
+    proof: 2f3ca0a467f531097ed542aafeb06601b7e7989d9bcf35fa44b64c8320f1a890
+---
+kind: run
+run:
+  "n": 2
+  build:
+    exit: 0
+  rows:
+  - key: detect/frame/0
+    row: 60aa18662af851bec681127f74f25a607bcd0f1230582925c6134aaa81ddbfe8
+    status: green
+    exit: 0
+    proof: eb0030aa5435d1ba911ee4910c8d20b6b6b24dd91ec82cfa2d7977b144e348de
+  - key: detect/frame/1
+    row: 46b0cf2ce96715d83dcc9e0d7cf7bde556b81a6145a12883ba9c3d9b97da7679
+    status: green
+    exit: 0
+    proof: 3d1717b4c9918eb223490de6e06e404c0346099e4a43ab26a0cacdb0bef7daa6
+  - key: detect/frame/2
+    row: e6ac801bafb849308f9a5676f1abec5a6f0e8442974d4b601e91e379a00630eb
+    status: green
+    exit: 0
+    proof: 8af911d0ec4cb3621e994da84ce075453db7b68bdd087f0b40f7bcd75e505e9f
+  - key: detect/frame/3
+    row: 9143ab163827d056cbc5490e00f8f78ca9a1e198008d02ebfbb8d2b87ad40b94
+    status: green
+    exit: 0
+    proof: 2accaac888c33b5120b3408a861c1d09bf79830a2b06c6af9839100bc69759f2
+  - key: detect/frame/4
+    row: 35758c69387aed7b8f682888a76a1926966e1c9c2bf360918cf7eda8ca7e6a92
+    status: green
+    exit: 0
+    proof: dd4c5be6bae6b6cd36fcce67fa02040f85236381d49eab16a4b452faeec7647c
+  - key: detect/frame/5
+    row: 2a7d162144dc83a75cf7a94d28e4a8fcf5da42e08481fe4a06670cafd39b8596
+    status: green
+    exit: 0
+    proof: feab4cbd599b572a1fbe5c931cbcd9eaaaf4a333706c848e4dce96b98537be72
+  - key: detect/clear/0
+    row: 9da863106e03693c6c4657b1b2bd3f56d8fdf8397338ae20d2474b6656827070
+    status: green
+    exit: 0
+    proof: a29b4a2b56b48b6908dcc78202a8632eb7066d896431d7da0f46502c75701783
+  - key: detect/repeatable/0
+    row: 628a3c0a0066ddcf8d726d0580a73d4c249a4956af6964767de078c2820623e4
+    status: green
+    exit: 0
+    proof: b89204eb1e9cf23e0f2a12aa974c9336fc7dac8077525e13870e37e90ce062a6
+  - key: refusal/bad-file/0
+    row: 96f0555e117bdbee520e214335a21102fb79bfec454ddcd0b16eefaa99da862d
+    status: green
+    exit: 1
+    proof: 2e3d84573eb767eaddf85b8209ff2bc247f511601af1b660815a66ac60687f8f
+  - key: refusal/bad-file/1
+    row: 0e2ca4e537a8e84961f3955611b24b87ec76b7cc3330f5c1f201ddc9f1da9b73
+    status: green
+    exit: 1
+    proof: bf056daf8cd87f107cb310b1ffadfd8ac56a972cdf8c904da60230f82776d90d
+  - key: refusal/bad-file/2
+    row: 2e00a41f42d01c4c8bbf07b6cc4b4c5db6224574ea57a19bd31db2f8c7f5ca91
+    status: green
+    exit: 1
+    proof: 856f79f48ecb376d1836f1fe6a890f7a1648591eff77191ded190bfe574c34b5
+  - key: refusal/bad-file/3
+    row: f11e6bc2a837ca4e2556d1650e66a698f4474b5c670124f2c8705126d58f8ba0
+    status: green
+    exit: 1
+    proof: de0fc190ef5fe04121529f5fba4f0a55ed1d7d9d11c388f8ca9991f171c17d28
+  - key: refusal/bad-knob/0
+    row: f970f8db0f56c3214249625925b0a4ab4757c5c6bdff0e6cde81f0017cabcc32
+    status: green
+    exit: 2
+    proof: 256d6773286ceeb4331dbba9f74da5d69dd40a8c27cd7c3d0135c062d07f4184
+  - key: refusal/bad-knob/1
+    row: 0f5b705e0f0e2f20211f795fcff9dd5f972527784182156dabe647d7f08a709b
+    status: green
+    exit: 2
+    proof: db3dda81c1eec2b9f9be1e59c30505b8e7f78c65c007c94d64bc221e322a2267
+  - key: refusal/bad-knob/2
+    row: ee225f151519dca1baf6ec9d282378e3c55b9e93561ac9643799628777d9a3ff
+    status: green
+    exit: 2
+    proof: 4803b5ff70945428478a09c2e33958bc2416dc13bdc12cc8d1498bb7bd800073
+  - key: refusal/bad-knob/3
+    row: 416505b450a6b3af1d484b92964656f5189838378d88a1ed146b1981dcbf5d25
+    status: green
+    exit: 2
+    proof: 345479c561768850534972eebc6f024c1d21057b2e12ee3587d57460920ce21b
+  - key: refusal/bad-knob/4
+    row: 201602c35774490358daaa2d417e6c45c955f558657dada5219059032cfc1908
+    status: green
+    exit: 2
+    proof: 6ad06cafc091845be87ef05d7919df7001fd0fc9fc55e731f9910cf14cda6d1e
+  - key: refusal/bad-knob/5
+    row: 9e273119ca6c45bb95d63182eb00423bf69ec25d4808caf87fde6f1561635b73
+    status: green
+    exit: 2
+    proof: 59d762a2e441eefebddafe2800a6fb8da80e1362e4459074f2e635f102a5eb62
+  - key: refusal/bad-usage/0
+    row: 3d4ef5e7774860a4352fc143999982b4d2e21ded42a125716519548c7215ab8b
+    status: green
+    exit: 2
+    proof: f0c68365f71d84f6b7b3fc10737fb067c99a4d2ca1e7559090f3635f1186e444
+  - key: refusal/bad-usage/1
+    row: 18b810020726cb73e9caf0a8736f3735c80515ff84c036496ca2304d232a408d
+    status: green
+    exit: 2
+    proof: fe50c14589cf6afe3700ad3703c1f8998730db67f2710d76870c384221351821
+  - key: refusal/bad-usage/2
+    row: 77c73df291607d2270ee5c1349ccbffd6fe3484a482a746496070921ebf09416
+    status: green
+    exit: 2
+    proof: 23258d76db533e232aed6ddfb1f72dfe0158f34e388889ef839a7fde7567e02a
+  - key: refusal/bad-usage/3
+    row: 478a92ee632fe765cc0d4dcd8417e7a0f69bf158f9276e5faefd16f62ad844ed
+    status: green
+    exit: 2
+    proof: a2def1651bad95ba2e593838a76b3d7ba1700506d3378e991e66fc2a724b90dd
+  - key: refusal/bad-usage/4
+    row: f7bb89bc6226f8afbc80eafea2258aa68174df74f04184db28efc3e8a61fd558
+    status: green
+    exit: 2
+    proof: f5e9864b7af0f753c75b800ec3daf0284ad38a54e098a30e2456ee36b4e6fd86
+  - key: stack/image-only/0
+    row: 59ea7ed81c2e204110a3fbd4c23f5b875a965503ebcb3577f84d1c7673dca798
+    status: green
+    exit: 0
+    proof: 9b63859927409de40583e9f1dfe54bf80bf325da08952edd534d15d818657689
+  - key: safety/read-only-run/0
+    row: d3ee301fd2909637bf48c31ec70d2c814f4b6688f397f8c2b23e91504018a31d
+    status: green
+    exit: 0
+    proof: eb3656327014e5f1f24cd302f511dc16a352a49f97ad1699a6445793cd050e36
+  - key: safety/read-only-run/1
+    row: 8871ada78f5d3a7320c49eb83b11e93024bf32dc9032c2f725daccf8dea51638
+    status: green
+    exit: 0
+    proof: 4f1e37c552df48d4b2dae1da4e4a5aa724bc3b31b534c7cb563acaacf41250e9
+---
+kind: verdict
+verdict:
+  "n": 1
+  corpus-version: 1
+  signature: 6770fb368ea324d4cbcee229547e93795afd8fa0fd473c3173d40db34325c8e9
+  registry-digest: 809a1b644cb27f3a778f43e7eebbdf00339009131c870dba7562bb15db329280
+  scopes:
+  - id: detect/clear
+    pointer: 500731d1ea56be14e5f5fdc50cf45b5da7e10464afbd94e66b708fe7efad97b0
+  - id: detect/frame
+    pointer: 41177d65c6a17a209d03ac7cd8564afcf4ed9fe027d8ce5a1c34fd90d89d3a79
+  - id: detect/repeatable
+    pointer: 6bd1f6d7a12cd3defa8f205bdfcb8851aecdfb2d2b82311fa41bf9c964bd4fb0
+  - id: refusal/bad-file
+    pointer: f158c72bc3c00ee11f540140287e8b6ff52176a55709c1ebe6c24f18fdd7e6ac
+  - id: refusal/bad-knob
+    pointer: 41177d65c6a17a209d03ac7cd8564afcf4ed9fe027d8ce5a1c34fd90d89d3a79
+  - id: refusal/bad-usage
+    pointer: 41177d65c6a17a209d03ac7cd8564afcf4ed9fe027d8ce5a1c34fd90d89d3a79
+  - id: safety/read-only-run
+    pointer: 41177d65c6a17a209d03ac7cd8564afcf4ed9fe027d8ce5a1c34fd90d89d3a79
+  - id: stack/image-only
+    pointer: 16fe9e98231d7d214c9a3f8e171ead4255ad92512adfaaa242980fb10bdb4a27
+  run: 2

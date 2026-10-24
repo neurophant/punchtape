@@ -1,0 +1,86 @@
+== world lock (series M) ==
+The platform cache area ~/.experiments/cache/env-prep carries one
+master per meaning×stack combo (twenty _*-m-* masters); every wave
+copies, never builds. The cpp stacks read the platform prefix
+~/.local. Cells: python on pyenv 3.12.12, js on the system node,
+rust vendored (resolution and build purely from the cell's copy),
+go through the cell's file proxy, cpp from the prefix headers plus
+the vendored hiredis sources; network closed by rule and by
+construction. Every cell brings its own PostgreSQL and Redis up as
+service files (env/service/{pg,redis}.sh) on unix sockets inside
+the cell's scratch — listen_addresses empty, --port 0: no TCP
+listener exists anywhere in a wave.
+
+-- python (venv masters, python 3.12.12; service pack FastAPI
+0.162.0 + uvicorn 0.54.0 + pg8000 1.31.6 + redis 8.1.0 in each)
+_venv-m-quire: Markdown 3.11.2, Jinja2 3.1.6, PyYAML 6.0.3
+_venv-m-brim: Pillow 13.0.0, numpy 2.5.4
+_venv-m-conduit: the sense is the stdlib's asyncio — no extra
+_venv-m-errand: the sense's client is the pack's redis 8.1.0
+_venv-m-pressmark: PyYAML 6.0.3, Markdown 3.11.2, Jinja2 3.1.6,
+  pydantic 2.14.2, python-slugify 9.1.3
+
+-- npm (node_modules masters, system node v24.14.1; service pack
+Fastify 5.12.7 + pg 8.23.1 + redis 6.3.1 in each)
+_nodemods-m-quire: marked 17.0.5, yeahjs 0.3.1, @mourner/yeahml
+  1.0.0
+_nodemods-m-brim: jimp 1.6.1
+_nodemods-m-conduit: the sense is the builtin node:net — no extra
+_nodemods-m-errand: ioredis 5.8.2 (the sense's own client rides in
+  place of the pack's), identifiers from node:crypto
+_nodemods-m-pressmark: js-yaml 4.1.0, marked 17.0.5, nunjucks 3.2.4
+
+-- go modules (download-proxy masters, go 1.27.3; service pack
+labstack/echo/v4 v4.16.3 + jackc/pgx/v5 v5.12.0 +
+redis/go-redis/v9 v9.23.0 in each)
+_gomod-m-quire: goldmark v1.8.7, gopkg.in/yaml.v3 v3.0.1
+_gomod-m-brim: the sense is the stdlib's image/image/jpeg
+_gomod-m-conduit: the sense is the stdlib's net
+_gomod-m-errand: github.com/google/uuid v1.6.0 (the sense's client
+  is the pack's go-redis)
+_gomod-m-pressmark: goldmark v1.8.7, gopkg.in/yaml.v3 v3.0.1
+
+-- rust (vendored masters, rustc/cargo 1.98.1; service pack axum
+0.8.9 over tokio 1.54.1 + tokio-postgres 0.7.18 + redis 0.32.7
+with the tokio comp in each)
+_cargo-m-quire: comrak 0.42.0, tera 1.20.1, serde_yaml 0.9.34
+_cargo-m-brim: image 0.25.10
+_cargo-m-conduit: the sense is the runtime's own tokio
+_cargo-m-errand: uuid 1.29.0 (the sense's client is the pack's
+  redis)
+_cargo-m-pressmark: serde_yaml 0.9.34, comrak 0.42.0, tera 1.20.1,
+  serde 1.0.229, serde_json 1.0.154
+
+-- cpp platform prefix (~/.local; read, never written by a wave)
+md4c 0.5.2, libyaml 0.2.5, inja 3.4.0, nlohmann/json 3.11.3
+(headers), GraphicsMagick 1.3.46 (with the -config wrapper), plus
+the M service line: Crow 1.3.4 (include/crow/crow_all.h),
+standalone Asio 1.38.2 (include/asio.hpp), the system libpq 18.6
+client headers (runtime libpq.so.5 linked by name), and the hiredis
+1.5.0 sources at ~/.local/src/hiredis — vendored into every cpp
+cell and compiled there.
+
+-- store-and-cache platform (~/.local; run by the cell service
+files, state inside each cell's scratch only)
+postgresql 18.6 (bin/postgres, bin/initdb, bin/pg_ctl, the server
+plugin libs incl. dict_snowball.so), redis-server 8.0.5
+(liblzf.so.1; the service script sets LD_LIBRARY_PATH itself).
+
+-- the loopback port scheme (cells.py; unique across a wave's ten
+cells, one wave at a time by the series law)
+SERVE_PORT = 18100 + cell index (every cell's HTTP face); a
+conduit cell also INGRESS/EGRESS/TARGET_PORT = 18300+3i .. 18302+3i
+(route listeners and the bench target). Both ranges sit below the
+OS's ephemeral span (32768+), so the OS hands out no collisions
+either.
+
+-- system
+punchtape 0.4.0 (the system install equals the dist pin; cells.py
+checks the sha before every wave)
+go 1.27.3 (snap; the direct binary /snap/go/<rev>/bin/go runs in
+network-cut namespaces, the /snap/bin wrapper does not)
+node v24.14.1 (nvm; the briefs' "system node")
+python 3.12.12 (pyenv, for cells; the default 3.14.4 lacks wheels
+for the pinned libs)
+rustc 1.98.1 / cargo 1.98.1
+g++ 15.2.0

@@ -1,0 +1,15 @@
+id: brim/purity
+name: reads the picture, writes nothing
+prose: "The tool only reads the picture and prints the answer: run from an empty directory it leaves that directory empty — nothing written to disk, no settings kept in files."
+scope:
+- src/**
+- Makefile
+- materials/bordered.jpg
+covers:
+- R1
+rows:
+- run: mkdir .purity-check && cd .purity-check && ../brim detect ../materials/bordered.jpg > /dev/null && ls -A | wc -l; cd .. && rm -rf .purity-check
+  expect:
+    rc: 0
+    out: |
+      0

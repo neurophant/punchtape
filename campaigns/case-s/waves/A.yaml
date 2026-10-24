@@ -1,0 +1,7 @@
+# The stage A smoke wave: one brief, both hand kinds, two hands a
+# kind, one model pin. Nothing else parameterizes the wave.
+briefs:
+  - quire/go
+kinds: [machine, solo]
+hands_per_kind: 2
+model: GLM-5.3

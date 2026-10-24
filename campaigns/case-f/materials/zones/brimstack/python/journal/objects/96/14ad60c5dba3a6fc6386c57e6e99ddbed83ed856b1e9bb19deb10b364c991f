@@ -1,0 +1,43 @@
+id: brim/knobs
+name: the two knobs with valid values
+prose: "--band sets how deep from the edge to search, a fraction of each side no greater than half; --threshold sets the sensitivity, a fraction from 0 to 1. Evenness stretching through the whole band makes the whole band the answer (uniform.jpg: bands of 15 rows and 20 columns at the default quarter), and each side is measured on its own (asym.jpg: frame of 4 top, 7 bottom, 3 left, 5 right).\n"
+scope:
+- brim
+- package.json
+- src/**
+- material/**
+- fixtures/**
+- node_modules/**
+covers:
+- R1
+rows:
+- run: ./brim detect material/bordered.jpg --band 0.5
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+- run: ./brim detect material/bordered.jpg --threshold 0.3
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+- run: ./brim detect material/bordered.jpg --threshold 0.7
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+- run: ./brim detect fixtures/uniform.jpg
+  expect:
+    rc: 0
+    out: |
+      15 15 20 20
+- run: ./brim detect fixtures/uniform.jpg --band 0.5
+  expect:
+    rc: 0
+    out: |
+      30 30 40 40
+- run: ./brim detect fixtures/asym.jpg
+  expect:
+    rc: 0
+    out: |
+      4 7 3 5

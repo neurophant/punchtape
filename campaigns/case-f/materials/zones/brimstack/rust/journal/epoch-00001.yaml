@@ -1,0 +1,6 @@
+---
+kind: birth
+birth:
+  addr: d4b0dbf103b6099968a7a5b00e09bdc7a09e1f84f523053506ed339d5bbeaa2e
+  digest: d4b0dbf103b6099968a7a5b00e09bdc7a09e1f84f523053506ed339d5bbeaa2e
+  version: 0.4.0

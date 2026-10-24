@@ -1,0 +1,63 @@
+# The brimdrift wave's planned edit: ONE line of the measuring
+# law per stack — the band ceiling (how deep from the edge the
+# search may go) moves past half the side, so the standing
+# over-ceiling refusal row (0.6/0.7/0.9 per stack's corpus)
+# breaks on the next run. The driver applies the cell's stack
+# section after the operator's first ACCEPT; the bytes are the
+# same for every cell of the wave.
+
+--- a/main.go (go)
++++ go/main.go
+@@ -15,7 +15,7 @@
+ const (
+ 	defaultBand      = 0.25
+ 	defaultThreshold = 0.5
+-	maxBand          = 0.5
++	maxBand          = 1.0
+ )
+ 
+ const (
+--- a/src/cli.js (js)
++++ js/cli.js
+@@ -32,7 +32,7 @@
+ 
+ function bandValue(text) {
+   const value = parseFraction(text);
+-  if (value === null || value <= 0 || value > 0.5) {
++  if (value === null || value <= 0 || value > 1.0) {
+     refuse(
+       `bad --band value '${text}': a fraction of the side, greater than 0 and at most 0.5`
+     );
+--- a/src/cli.cpp (cpp)
++++ cpp/cli.cpp
+@@ -57,7 +57,7 @@
+     const char* arg = argv[i];
+     if (std::strcmp(arg, "--band") == 0) {
+       options.band = KnobValue(
+-          "--band", NextValue(argc, argv, &i, "--band"), 0.0, false, 0.5,
++          "--band", NextValue(argc, argv, &i, "--band"), 0.0, false, 1.0,
+           "a fraction of the side, greater than 0 and at most 0.5");
+     } else if (std::strcmp(arg, "--threshold") == 0) {
+       options.threshold =
+--- a/brim (python)
++++ python/brim
+@@ -38,7 +38,7 @@
+ 
+ def parse_band(raw: str) -> float:
+     value = parse_number(raw)
+-    if value is None or not 0 < value <= 0.5:
++    if value is None or not 0 < value <= 1.0:
+         fail(
+             f"invalid --band {raw}: want a fraction of the side,"
+             " greater than 0 and at most 0.5",
+--- a/src/main.rs (rust)
++++ rust/main.rs
+@@ -10,7 +10,7 @@
+ 
+ const USAGE: &str = "usage: brim detect <image.jpg> [--band F] [--threshold F]";
+ 
+-const MAX_BAND: f64 = 0.5;
++const MAX_BAND: f64 = 1.0;
+ const DEFAULT_BAND: f64 = 0.25;
+ const DEFAULT_THRESHOLD: f64 = 0.5;
+ const MIN_SIDE: u32 = 2;

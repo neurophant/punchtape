@@ -1,0 +1,23 @@
+id: detect/repeatable
+name: Repeat runs answer the same to the letter
+prose: |
+  Running detect twice on each test picture prints byte-identical answers, as the wish demands of a repeat run.
+scope:
+- src/**
+- Cargo.toml
+- Cargo.lock
+- build
+- materials/bordered.jpg
+- materials/clear.jpg
+covers:
+- R1
+- R4
+rows:
+- run: ./brim detect materials/bordered.jpg && ./brim detect materials/bordered.jpg && ./brim detect materials/clear.jpg && ./brim detect materials/clear.jpg
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+      4 4 4 4
+      0 0 0 0
+      0 0 0 0

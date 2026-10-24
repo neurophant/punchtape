@@ -1,0 +1,239 @@
+build: cargo build --release --offline && cp target/release/brim brim
+requirements:
+- id: R1
+  brief:
+  - W2..W4
+- id: R2
+  brief:
+  - W6..W10
+- id: R3
+  brief:
+  - W11..W14
+- id: R4
+  brief:
+  - W15..W16
+- id: R5
+  brief:
+  - W17..W18
+not-a-requirement:
+- lines:
+  - W1
+  quote: "# Brief: brimstack — the same tool on go"
+  reason: a heading, not a demand
+- lines:
+  - W5
+  quote: "## My want"
+  reason: a heading, not a demand
+artifacts:
+- brim
+- target/**
+behaviors:
+- id: detect/frame
+  name: Frame margins found on the bordered test picture
+  prose: |
+    brim detect on a JPEG with a thin even frame answers the four margin depths in pixels (top bottom left right); the band knob caps the search depth and shallower bands cut the answer down, the threshold knob steers how much disorder still counts as even.
+  scope:
+  - src/**
+  - Cargo.toml
+  - Cargo.lock
+  - build
+  - materials/bordered.jpg
+  covers:
+  - R1
+  - R4
+  rows:
+  - run: ./brim detect materials/bordered.jpg
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect materials/bordered.jpg --band 0.01
+    expect:
+      rc: 0
+      out: |
+        2 2 2 2
+  - run: ./brim detect materials/bordered.jpg --band 0.05
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect materials/bordered.jpg --band 0.5
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect materials/bordered.jpg --threshold 0.7
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect materials/bordered.jpg --threshold 0.9
+    expect:
+      rc: 0
+      out: |
+        62 62 62 62
+- id: detect/clear
+  name: No margin on the free-content picture
+  prose: |
+    A picture whose edges carry content and no even strip answers zeros on all four sides.
+  scope:
+  - src/**
+  - Cargo.toml
+  - Cargo.lock
+  - build
+  - materials/clear.jpg
+  covers:
+  - R1
+  - R4
+  rows:
+  - run: ./brim detect materials/clear.jpg
+    expect:
+      rc: 0
+      out: |
+        0 0 0 0
+- id: detect/repeatable
+  name: Repeat runs answer the same to the letter
+  prose: |
+    Running detect twice on each test picture prints byte-identical answers, as the wish demands of a repeat run.
+  scope:
+  - src/**
+  - Cargo.toml
+  - Cargo.lock
+  - build
+  - materials/bordered.jpg
+  - materials/clear.jpg
+  covers:
+  - R1
+  - R4
+  rows:
+  - run: ./brim detect materials/bordered.jpg && ./brim detect materials/bordered.jpg && ./brim detect materials/clear.jpg && ./brim detect materials/clear.jpg
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+        4 4 4 4
+        0 0 0 0
+        0 0 0 0
+- id: refusal/bad-file
+  name: File trouble reported briefly and clearly
+  prose: |
+    A missing or unreadable file, a file that is not a picture at all, a picture in another format than JPEG, and a picture too small to search (a side shorter than two pixels) are each refused with a one-line English error and a nonzero exit.
+  scope:
+  - src/**
+  - Cargo.toml
+  - Cargo.lock
+  - build
+  - materials/notpic.jpg
+  - materials/picture.png
+  - materials/tiny.jpg
+  covers:
+  - R1
+  rows:
+  - run: ./brim detect materials/missing.jpg
+    expect:
+      rc: 1
+  - run: ./brim detect materials/notpic.jpg
+    expect:
+      rc: 1
+  - run: ./brim detect materials/picture.png
+    expect:
+      rc: 1
+  - run: ./brim detect materials/tiny.jpg
+    expect:
+      rc: 1
+- id: refusal/bad-knob
+  name: Invalid knob values named with their requirement
+  prose: |
+    Each invalid --band or --threshold value is refused with the value and its requirement named on the line.
+  scope:
+  - src/**
+  - Cargo.toml
+  - Cargo.lock
+  - build
+  - materials/bordered.jpg
+  covers:
+  - R1
+  rows:
+  - run: ./brim detect materials/bordered.jpg --band 0.7
+    expect:
+      rc: 2
+  - run: ./brim detect materials/bordered.jpg --band 0
+    expect:
+      rc: 2
+  - run: ./brim detect materials/bordered.jpg --band abc
+    expect:
+      rc: 2
+  - run: ./brim detect materials/bordered.jpg --threshold 1.5
+    expect:
+      rc: 2
+  - run: ./brim detect materials/bordered.jpg --threshold -0.5
+    expect:
+      rc: 2
+  - run: ./brim detect materials/bordered.jpg --threshold xyz
+    expect:
+      rc: 2
+- id: refusal/bad-usage
+  name: Clumsy invocation refused honestly
+  prose: |
+    A missing image argument, an extra file argument, an unknown command, and an unknown option are each refused with a nonzero exit and the usage line.
+  scope:
+  - src/**
+  - Cargo.toml
+  - Cargo.lock
+  - build
+  - materials/bordered.jpg
+  covers:
+  - R1
+  rows:
+  - run: ./brim detect
+    expect:
+      rc: 2
+  - run: ./brim detect materials/bordered.jpg extra.jpg
+    expect:
+      rc: 2
+  - run: ./brim scan materials/bordered.jpg
+    expect:
+      rc: 2
+  - run: ./brim detect materials/bordered.jpg --wat
+    expect:
+      rc: 2
+  - run: ./brim
+    expect:
+      rc: 2
+- id: stack/image-only
+  name: The image crate is the only third-party dependency
+  prose: "The wish fixes the stack as the executor's constraint: Rust with cargo, the image crate for reading and decoding, and no other third-party dependencies. The row pins the dependency declaration of Cargo.toml byte for byte: the [dependencies] section to the end of the file names image alone, so any added crate turns the row red. Cargo.lock sits in the scope, so a changed dependency graph re-runs the pin. The same declaration is what keeps the program off the network: the linked set is the standard library plus the image decode chain, nothing network-capable.\n"
+  scope:
+  - Cargo.toml
+  - Cargo.lock
+  covers:
+  - R1
+  rows:
+  - run: "sed -n '/^\\[dependencies\\]/,$p' Cargo.toml"
+    expect:
+      rc: 0
+      out: "[dependencies]\nimage = { version = \"0.25.10\", default-features = false, features = [\"jpeg\"] }\n"
+- id: safety/read-only-run
+  name: The run reads the picture and writes nothing anywhere
+  prose: "The wish's \"what must not happen\": the program only reads the picture and prints the answer — it writes nothing to disk, goes to no network, keeps no settings in files. One row snapshots every file in the working tree (the machine's own .punchtape zone and the snapshot's own scratch excluded) with size and mtime, runs a detect, and snapshots again; the two snapshots must be identical, which catches any file created, removed, rewritten, or re-timed by the run. The other row runs a detect under a fresh empty HOME and demands that HOME stay empty — a settings file is a disk write, so the two checks carry both bans."
+  scope:
+  - src/**
+  - Cargo.toml
+  - Cargo.lock
+  - build
+  - materials/bordered.jpg
+  covers:
+  - R1
+  rows:
+  - run: "mkdir -p .snap && find . \\( -path ./.punchtape -o -path ./.snap \\) -prune -o -type f -printf \"%p %s %T@\\n\" | sort > .snap/before && ./brim detect materials/bordered.jpg && find . \\( -path ./.punchtape -o -path ./.snap \\) -prune -o -type f -printf \"%p %s %T@\\n\" | sort > .snap/after && diff .snap/before .snap/after && rm -rf .snap && echo NO_WRITES"
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+        NO_WRITES
+  - run: rm -rf .probe-home && mkdir .probe-home && HOME="$PWD/.probe-home" ./brim detect materials/bordered.jpg && [ -z "$(ls -A .probe-home)" ] && rm -rf .probe-home && echo "keeps no settings in files"
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+        keeps no settings in files

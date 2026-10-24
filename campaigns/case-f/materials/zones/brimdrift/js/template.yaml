@@ -1,0 +1,30 @@
+# The document: copy me, edit, submit as .punchtape/inbox.yaml.
+# The behaviors listed are added or merged by id; removal is the
+# remove list of standing ids. Paths are relative to the working root.
+# Rows merge by run — send only the changed rows: the same run
+# replaces its whole row, the rest stand.
+notes:
+  - text: a free-text note; a longer note continues
+      on the next line, indented deeper than its key
+# build: "./build all"   # one build command; uncomment and edit if needed
+remove: []
+# requirements:
+#   - id: R1             # R then letters, digits, dots
+#     brief: [W1..W3]    # the wish lines this requirement occupies
+# not-a-requirement:
+#   - lines: [W4]
+#     quote: a heading   # the marked lines' own text, verbatim
+#     reason: a heading, not a demand
+# artifacts: [out/**]    # the work's declared outputs
+behaviors:
+  - id: tool/first   # [a-z0-9-] segments joined by /
+    name: one line
+    prose: what the user gets and why
+    scope: [src/**]  # the behavior's files, globs from the root
+    # covers: [R1]   # the requirements this behavior proves
+    rows:
+      - run: "./tool src out"   # one command: a shell line or an argv list
+        expect:                 # at least one of rc, out, files must stand
+          rc: 0
+          out: "contains: ok"
+          files: { out/built.txt: "contains: done" }

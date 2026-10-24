@@ -1,0 +1,46 @@
+id: detect/frame
+name: Frame margins found on the bordered test picture
+prose: |
+  brim detect on a JPEG with a thin even frame answers the four margin depths in pixels (top bottom left right); the band knob caps the search depth and shallower bands cut the answer down, the threshold knob steers how much disorder still counts as even.
+scope:
+- src/**
+- Cargo.toml
+- Cargo.lock
+- build
+- materials/bordered.jpg
+covers:
+- R1
+- R2
+- R3
+- R4
+rows:
+- run: ./brim detect materials/bordered.jpg
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+- run: ./brim detect materials/bordered.jpg --band 0.01
+  expect:
+    rc: 0
+    out: |
+      2 2 2 2
+- run: ./brim detect materials/bordered.jpg --band 0.05
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+- run: ./brim detect materials/bordered.jpg --band 0.5
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+- run: ./brim detect materials/bordered.jpg --threshold 0.7
+  expect:
+    rc: 0
+    out: |
+      4 4 4 4
+- run: ./brim detect materials/bordered.jpg --threshold 0.9
+  expect:
+    rc: 0
+    out: |
+      62 62 62 62

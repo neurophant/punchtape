@@ -1,0 +1,12 @@
+# The brimfield wave of the field cases: ALL FIVE stacks (the series
+# law), both kinds, one hand a kind, one model pin, the scenario's
+# seed manifest and spawn pair. Nothing else parameterizes the wave.
+briefs:
+  - brimfield
+stacks: [go, js, python, rust, cpp]
+kinds: [machine, solo]
+hands_per_kind: 1
+model: GLM-5.3
+master_sense: brim
+spawns: {machine: brimfield-machine, solo: brimfield-solo}
+seed: seeds/brimfield.yaml

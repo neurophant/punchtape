@@ -1,2 +1,0 @@
-- id: idempotent-resubmit
-  advice: "this submission key was already used: the work is done, nothing re-applied — take the fresh key from the slot example"

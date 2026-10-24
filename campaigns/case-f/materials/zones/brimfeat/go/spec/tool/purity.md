@@ -1,0 +1,34 @@
+# tool/purity — the run only reads the picture and prints the answer
+
+run: 1
+
+What must not happen, does not happen: the program writes nothing to disk, goes to no network, keeps no settings in files. A detection run in a scratch directory leaves exactly the one input file it was given, byte-identical to what was copied in, and creates nothing else. A run with a fresh empty HOME leaves that HOME empty — no settings file is ever kept. And the program's whole transitive package closure excludes the net stack, so no network code is even linked into the binary — a socket cannot be opened by code that does not exist.
+
+scope: main.go, picture.go, entropy.go, margin.go, go.mod, build, testdata/bordered.jpg
+
+## row 0
+
+command: rm -rf .probe && mkdir .probe && cp testdata/bordered.jpg .probe/pic.jpg && ./brim detect .probe/pic.jpg && [ "$(ls -A .probe)" = "pic.jpg" ] && cmp .probe/pic.jpg testdata/bordered.jpg && rm -rf .probe && echo "writes nothing to disk"
+exit: 0
+stdout: 4 4 4 4
+writes nothing to disk
+
+proof: green (f05563a2d2f7)
+
+## row 1
+
+command: rm -rf .probe-home && mkdir .probe-home && HOME="$PWD/.probe-home" ./brim detect testdata/bordered.jpg && [ -z "$(ls -A .probe-home)" ] && rm -rf .probe-home && echo "keeps no settings in files"
+exit: 0
+stdout: 4 4 4 4
+keeps no settings in files
+
+proof: green (b48388bd4719)
+
+## row 2
+
+command: test -z "$(go list -deps . | grep -x -e net -e net/http)" && echo "no network stack linked"
+exit: 0
+stdout: no network stack linked
+
+proof: green (4bb18db93803)
+

@@ -1,0 +1,24 @@
+== world lock (the field cases on the S basis) ==
+
+The waves stand on the source series' read-only wave roots
+(~/.experiments/waves/81wz7vla*): the seed manifests pin every
+seeded product and zone file by sha256 — B-brim (solo products for
+brimfield, machine products for the feat/drift/stack family). The
+substrate is the case-s master set
+(_gomod/_nodemods/_venv/_cargo of brim) plus the
+cpp platform prefix ~/.local — no service platform, no ports: the
+S products are command-line tools.
+
+-- machine
+punchtape 0.4.0 (the system install equals the dist pin; cells.py
+checks the sha before every wave; the current pin 6e38bdd13e86 —
+the P1 canon build)
+
+-- the platform toolchain home (~/.local)
+The agents' sessions resolve their tools through the platform
+prefix first (~/.local/bin leads every hand's PATH). The snap go
+wrapper is unusable from agent sessions (snap-confine), so the
+platform go and gofmt live in the prefix itself (~/.local/bin/go,
+~/.local/bin/gofmt — shims over /snap/go/11382/bin, go 1.27.3),
+beside postgres, redis-server and the cpp prefix pieces; verified
+green in a subagent context (build of a fresh module).

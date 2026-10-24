@@ -1,0 +1,214 @@
+build: ./build
+requirements:
+- id: R1
+  brief:
+  - W2..W3
+- id: R2
+  brief:
+  - W4..W5
+  - W7..W9
+- id: R3
+  brief:
+  - W10..W11
+- id: R4
+  brief:
+  - W12..W14
+- id: R5
+  brief:
+  - W15..W16
+- id: R6
+  brief:
+  - W17..W18
+not-a-requirement:
+- lines:
+  - W1
+  quote: "# Brief: brimfeat — a JSON answer from the standing tool"
+  reason: a heading, not a demand
+- lines:
+  - W6
+  quote: "## My want"
+  reason: a heading, not a demand
+artifacts:
+- brim
+behaviors:
+- id: detect/answer
+  name: brim detect answers with the four margin numbers
+  prose: "Given a JPEG picture the tool prints one line of four numbers — margin pixels on the top, bottom, left, and right, each side measured on its own. On the attached bordered.jpg (an even 4-pixel frame) it says 4 4 4 4; on clear.jpg (no margin) it says 0 0 0 0. A search band shallower than the frame cuts the numbers down to the band depth: --band 0.01 gives 2 2 2 2 on the 250-pixel side, because evenness stretches to the end of the band and the whole band is the answer. A deeper one leaves the numbers at the frame: --band 0.05 gives 4 4 4 4, and the stated ceiling --band 0.5 (half the side, no more is allowed) works the same. The threshold knob works across its whole valid range: 0.5 given explicitly matches the default; 0, the least aggressive bar, lets evenness stretch through the whole default band, so the answer is the whole band — 62 pixels, a quarter of the 250-pixel side, and on the non-square clear.jpg a fraction of each side on its own: 87 top and bottom of the 350-pixel height, 127 left and right of the 510-pixel width; 1, the most aggressive, leaves nothing even enough, so no margin is found and the answer is zeros. A repeat run on the same picture prints the same line to the letter."
+  scope:
+  - main.go
+  - picture.go
+  - entropy.go
+  - margin.go
+  - go.mod
+  - testdata/bordered.jpg
+  - testdata/clear.jpg
+  covers:
+  - R1
+  - R3
+  rows:
+  - run: ./brim detect testdata/bordered.jpg
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect testdata/clear.jpg
+    expect:
+      rc: 0
+      out: |
+        0 0 0 0
+  - run: ./brim detect testdata/bordered.jpg --band 0.01
+    expect:
+      rc: 0
+      out: |
+        2 2 2 2
+  - run: ./brim detect testdata/bordered.jpg --band 0.05
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: "a=$(./brim detect testdata/bordered.jpg) && b=$(./brim detect testdata/bordered.jpg) && [ \"$a\" = \"$b\" ] && printf '%s\\n' \"$a\""
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect testdata/bordered.jpg --threshold 0.5
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+  - run: ./brim detect testdata/bordered.jpg --threshold 0
+    expect:
+      rc: 0
+      out: |
+        62 62 62 62
+  - run: ./brim detect testdata/bordered.jpg --threshold 1
+    expect:
+      rc: 0
+      out: |
+        0 0 0 0
+  - run: ./brim detect testdata/clear.jpg --threshold 0
+    expect:
+      rc: 0
+      out: |
+        87 87 127 127
+  - run: ./brim detect testdata/bordered.jpg --band 0.5
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+- id: detect/knob-refusals
+  name: a clumsy invocation is an honest refusal naming the knob and its requirement
+  prose: "A bad knob value, a knob without its value, an unknown option, an extra file argument, or no picture at all is refused with exit code 2 and a brief English message on stderr; each invalid knob value is named along with what the knob requires: --band wants a fraction of the side greater than 0 and at most 0.5, --threshold wants a fraction from 0 to 1."
+  scope:
+  - main.go
+  - picture.go
+  - testdata/bordered.jpg
+  - testdata/clear.jpg
+  covers:
+  - R1
+  rows:
+  - run: ./brim
+    expect:
+      rc: 2
+  - run: ./brim detect
+    expect:
+      rc: 2
+  - run: ./brim detect --band abc testdata/bordered.jpg
+    expect:
+      rc: 2
+  - run: ./brim detect --band 0 testdata/bordered.jpg
+    expect:
+      rc: 2
+  - run: ./brim detect --band 0.6 testdata/bordered.jpg
+    expect:
+      rc: 2
+  - run: ./brim detect --threshold 1.5 testdata/bordered.jpg
+    expect:
+      rc: 2
+  - run: ./brim detect --wibble testdata/bordered.jpg
+    expect:
+      rc: 2
+  - run: ./brim detect testdata/bordered.jpg testdata/clear.jpg
+    expect:
+      rc: 2
+- id: detect/picture-troubles
+  name: a missing, foreign, or too small picture is reported briefly and clearly
+  prose: A missing or unreadable file, a file that is not a JPEG picture, and a picture with a side shorter than two pixels — too small to search for a margin in — are each reported in one brief English line on stderr with exit code 1.
+  scope:
+  - main.go
+  - picture.go
+  - testdata/not-jpeg.txt
+  - testdata/tiny.jpg
+  covers:
+  - R1
+  rows:
+  - run: ./brim detect testdata/missing.jpg
+    expect:
+      rc: 1
+  - run: ./brim detect testdata/not-jpeg.txt
+    expect:
+      rc: 1
+  - run: ./brim detect testdata/tiny.jpg
+    expect:
+      rc: 1
+- id: tool/stack
+  name: a Go program on the standard library alone, no third-party dependencies
+  prose: "The stack is the customer's demand, not the executor's choice: the tool is a Go program and it uses the standard library only. The module declares no requirements — go.mod carries the single module line and the go directive, nothing else; go list -m all names the main module and nothing but it; and the built binary's own build info contains no dependency line, so no third-party package rides inside the delivered program."
+  scope:
+  - go.mod
+  - build
+  - main.go
+  - picture.go
+  - entropy.go
+  - margin.go
+  covers:
+  - R1
+  rows:
+  - run: cat go.mod
+    expect:
+      rc: 0
+      out: |
+        module brim
+        
+        go 1.27
+  - run: go list -m all
+    expect:
+      rc: 0
+      out: |
+        brim
+  - run: test -z "$(go version -m ./brim | grep "^dep")" && echo "no third-party dependencies"
+    expect:
+      rc: 0
+      out: |
+        no third-party dependencies
+- id: tool/purity
+  name: the run only reads the picture and prints the answer
+  prose: "What must not happen, does not happen: the program writes nothing to disk, goes to no network, keeps no settings in files. A detection run in a scratch directory leaves exactly the one input file it was given, byte-identical to what was copied in, and creates nothing else. A run with a fresh empty HOME leaves that HOME empty — no settings file is ever kept. And the program's whole transitive package closure excludes the net stack, so no network code is even linked into the binary — a socket cannot be opened by code that does not exist."
+  scope:
+  - main.go
+  - picture.go
+  - entropy.go
+  - margin.go
+  - go.mod
+  - build
+  - testdata/bordered.jpg
+  covers:
+  - R1
+  rows:
+  - run: rm -rf .probe && mkdir .probe && cp testdata/bordered.jpg .probe/pic.jpg && ./brim detect .probe/pic.jpg && [ "$(ls -A .probe)" = "pic.jpg" ] && cmp .probe/pic.jpg testdata/bordered.jpg && rm -rf .probe && echo "writes nothing to disk"
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+        writes nothing to disk
+  - run: rm -rf .probe-home && mkdir .probe-home && HOME="$PWD/.probe-home" ./brim detect testdata/bordered.jpg && [ -z "$(ls -A .probe-home)" ] && rm -rf .probe-home && echo "keeps no settings in files"
+    expect:
+      rc: 0
+      out: |
+        4 4 4 4
+        keeps no settings in files
+  - run: test -z "$(go list -deps . | grep -x -e net -e net/http)" && echo "no network stack linked"
+    expect:
+      rc: 0
+      out: |
+        no network stack linked
