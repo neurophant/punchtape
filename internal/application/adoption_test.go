@@ -89,7 +89,7 @@ func TestExternalAgentAdoptsTheMachine(t *testing.T) {
 		t.Fatalf("the machine's binary must build: %v\n%s", err, out)
 	}
 
-	// The wish every scenario shares.
+	// The stream every scenario shares.
 	const wish = "a tiny counter tool: count.sh prints how many lines count.txt has"
 
 	scenarios := []struct {
@@ -101,32 +101,32 @@ func TestExternalAgentAdoptsTheMachine(t *testing.T) {
 		{
 			name:  "first contact",
 			setup: func(t *testing.T, dir string) {},
-			task:  "the human's wish, verbatim: \"" + wish + "\" — establish the project through the machine",
+			task:  "the human's words, verbatim: \"" + wish + "\" — establish the project through the machine",
 			grade: func(t *testing.T, dir string) {
-				wishBytes, err := os.ReadFile(filepath.Join(dir, zone.Dirname, zone.WishSlot))
+				wishBytes, err := os.ReadFile(filepath.Join(dir, zone.Dirname, zone.DemandsSlot))
 				if err == nil && string(wishBytes) == wish && !journalExists(dir) {
 					return // the correct next action, not yet run again
 				}
 				if !journalExists(dir) {
-					t.Fatalf("first contact: neither the wish slot nor the birth happened")
+					t.Fatalf("first contact: neither the demand stream nor the birth happened")
 				}
-				if stateOf(t, dir) == "" || !strings.Contains(stateOf(t, dir), "goal:") {
-					t.Fatalf("first contact: the birth must fix the goal")
+				if stateOf(t, dir) == "" || !strings.Contains(stateOf(t, dir), "demands: ") {
+					t.Fatalf("first contact: the birth must number the stream")
 				}
 			},
 		},
 		{
 			name: "birth",
 			setup: func(t *testing.T, dir string) {
-				writeZone(t, dir, zone.WishSlot, wish)
+				writeZone(t, dir, zone.DemandsSlot, wish)
 			},
 			task: "run the machine and do what it says until the instance lives",
 			grade: func(t *testing.T, dir string) {
 				if !journalExists(dir) {
 					t.Fatal("birth: the journal must exist")
 				}
-				if _, err := os.Stat(filepath.Join(dir, zone.Dirname, zone.WishSlot)); !os.IsNotExist(err) {
-					t.Fatal("birth: the wish slot must be consumed")
+				if data, err := os.ReadFile(filepath.Join(dir, zone.Dirname, zone.DemandsSlot)); err != nil || string(data) != wish {
+					t.Fatal("birth: the demand stream survives, open forever")
 				}
 				for _, name := range []string{zone.ContractFile, zone.TemplateFile, zone.CorpusFile, zone.StateFile} {
 					if _, err := os.Stat(filepath.Join(dir, zone.Dirname, name)); err != nil {
@@ -138,7 +138,7 @@ func TestExternalAgentAdoptsTheMachine(t *testing.T) {
 		{
 			name: "submission",
 			setup: func(t *testing.T, dir string) {
-				writeZone(t, dir, zone.WishSlot, wish)
+				writeZone(t, dir, zone.DemandsSlot, wish)
 				runIn(t, dir)
 			},
 			task: "write the project's first document (one behavior is enough — a trivially true row) and get the machine to accept it",
@@ -155,7 +155,7 @@ func TestExternalAgentAdoptsTheMachine(t *testing.T) {
 		{
 			name: "refusal",
 			setup: func(t *testing.T, dir string) {
-				writeZone(t, dir, zone.WishSlot, wish)
+				writeZone(t, dir, zone.DemandsSlot, wish)
 				runIn(t, dir)
 			},
 			task: "submit EXACTLY this document first — behaviors:\n  - id: tool/x\n    name: X\n    rows:\n      - run: \"true\"\n        expect:\n          files:\n            /abs/path: \"contains: x\"\n— observe the machine's answer, then continue correctly until a submission is accepted",
@@ -169,16 +169,18 @@ func TestExternalAgentAdoptsTheMachine(t *testing.T) {
 		{
 			name: "iteration",
 			setup: func(t *testing.T, dir string) {
-				writeZone(t, dir, zone.WishSlot, wish)
+				writeZone(t, dir, zone.DemandsSlot, wish)
 				runIn(t, dir)
-				writeZone(t, dir, zone.InboxSlot, `behaviors:
+				writeZone(t, dir, zone.InboxSlot, `
+work: the broken expectation
+behaviors:
     - id: tool/broken
       name: Broken
       prose: Expects the impossible.
       rows:
-        - run: "true"
+        - run: printf ok
           expect:
-            rc: 1
+            out: nope
 `)
 				runIn(t, dir)
 			},
@@ -196,27 +198,31 @@ func TestExternalAgentAdoptsTheMachine(t *testing.T) {
 		{
 			name: "row edit",
 			setup: func(t *testing.T, dir string) {
-				writeZone(t, dir, zone.WishSlot, wish)
+				writeZone(t, dir, zone.DemandsSlot, wish)
 				runIn(t, dir)
 				if err := os.WriteFile(filepath.Join(dir, "count.txt"), []byte("one\ntwo\n"), 0o644); err != nil {
 					t.Fatal(err)
 				}
-				writeZone(t, dir, zone.InboxSlot, `behaviors:
+				writeZone(t, dir, zone.InboxSlot, `
+work: three rows, one red
+behaviors:
     - id: tool/three
       name: Three rows
       prose: Two stand green, one is red.
-      scope:
-        - count.txt
+      claims:
+        - count.txt:1-2
       rows:
         - run: "true"
           expect:
             rc: 0
+            out: ""
         - run: sh -c "echo one"
           expect:
-            out: "contains: one"
+            out: "one\n"
         - run: "false"
           expect:
             rc: 0
+            out: ""
 `)
 				runIn(t, dir)
 			},
@@ -264,16 +270,18 @@ func TestExternalAgentAdoptsTheMachine(t *testing.T) {
 		{
 			name: "completion act",
 			setup: func(t *testing.T, dir string) {
-				writeZone(t, dir, zone.WishSlot, wish)
+				writeZone(t, dir, zone.DemandsSlot, wish)
 				runIn(t, dir)
-				writeZone(t, dir, zone.InboxSlot, `behaviors:
+				writeZone(t, dir, zone.InboxSlot, `
+work: the ping document
+behaviors:
     - id: tool/ping
       name: Ping
       prose: A trivially true row.
       rows:
-        - run: "true"
+        - run: printf ok
           expect:
-            rc: 0
+            out: ok
 `)
 				runIn(t, dir)
 			},
@@ -287,23 +295,28 @@ func TestExternalAgentAdoptsTheMachine(t *testing.T) {
 		{
 			name: "standing verdict",
 			setup: func(t *testing.T, dir string) {
-				writeZone(t, dir, zone.WishSlot, wish)
+				writeZone(t, dir, zone.DemandsSlot, wish)
 				runIn(t, dir)
-				writeZone(t, dir, zone.InboxSlot, `requirements:
+				writeZone(t, dir, zone.InboxSlot, `
+work: the covered ping
+requirements:
     - id: R1
-      brief: [W1]
+      lines: [D1]
+      prose: the counter and its check
 behaviors:
     - id: tool/ping
       name: Ping
       prose: A trivially true row.
+      claims:
+        - count.txt:1-2
       covers: [R1]
       rows:
-        - run: "true"
+        - run: printf ok
           expect:
-            rc: 0
+            out: ok
 `)
 				runIn(t, dir)
-				writeZone(t, dir, zone.InboxSlot, zoneFile(t, dir, zone.CorpusFile))
+				writeZone(t, dir, zone.InboxSlot, "done: true\n")
 				runIn(t, dir)
 			},
 			task: "a fresh session: run the machine once and report the standing to the human; do not start new work",
@@ -326,28 +339,31 @@ behaviors:
 		{
 			name: "drift",
 			setup: func(t *testing.T, dir string) {
-				writeZone(t, dir, zone.WishSlot, wish)
+				writeZone(t, dir, zone.DemandsSlot, wish)
 				runIn(t, dir)
 				if err := os.WriteFile(filepath.Join(dir, "count.txt"), []byte("one\ntwo\n"), 0o644); err != nil {
 					t.Fatal(err)
 				}
-				writeZone(t, dir, zone.InboxSlot, `requirements:
+				writeZone(t, dir, zone.InboxSlot, `
+work: the counting row
+requirements:
     - id: R1
-      brief: [W1]
+      lines: [D1]
+      prose: the counter and its check
 behaviors:
     - id: tool/count
       name: Count
       prose: Counts the lines.
-      scope:
-        - count.txt
+      claims:
+        - count.txt:1-2
       covers: [R1]
       rows:
         - run: sh -c "wc -l < count.txt"
           expect:
-            out: "2"
+            out: "2\n"
 `)
 				runIn(t, dir)
-				writeZone(t, dir, zone.InboxSlot, zoneFile(t, dir, zone.CorpusFile))
+				writeZone(t, dir, zone.InboxSlot, "done: true\n")
 				runIn(t, dir)
 				os.WriteFile(filepath.Join(dir, "count.txt"), []byte("one\n"), 0o644)
 			},
@@ -364,23 +380,29 @@ behaviors:
 		{
 			name: "new agent on a live instance",
 			setup: func(t *testing.T, dir string) {
-				writeZone(t, dir, zone.WishSlot, wish)
+				writeZone(t, dir, zone.DemandsSlot, wish)
 				runIn(t, dir)
-				writeZone(t, dir, zone.InboxSlot, `behaviors:
+				writeZone(t, dir, zone.InboxSlot, `
+work: one green row and one red row
+behaviors:
     - id: tool/ok
       name: Ok
       prose: Stands green.
+      claims:
+        - count.txt:1-2
       rows:
-        - run: "true"
+        - run: printf ok
           expect:
-            rc: 0
+            out: ok
     - id: tool/bad
       name: Bad
       prose: Stands red.
+      claims:
+        - count.txt:1-2
       rows:
-        - run: "true"
+        - run: printf ok
           expect:
-            rc: 1
+            out: nope
 `)
 				runIn(t, dir)
 			},

@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/neurophant/punchtape/internal/domain"
 	"github.com/neurophant/punchtape/internal/domain/zone"
 )
 
@@ -46,15 +45,15 @@ func TestZoneFoundFromASubdirectory(t *testing.T) {
 	if err := os.MkdirAll(near, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(near, zone.WishSlot), []byte("a nearer goal"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(near, zone.DemandsSlot), []byte("a nearer goal"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	runIn(t, sub)
 	if _, err := os.Stat(filepath.Join(near, zone.JournalDir)); err != nil {
 		t.Fatalf("the nearer zone must win: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(near, zone.WishSlot)); !os.IsNotExist(err) {
-		t.Fatalf("the nearer zone's birth must consume its own wish")
+	if data, err := os.ReadFile(filepath.Join(near, zone.DemandsSlot)); err != nil || string(data) != "a nearer goal" {
+		t.Fatalf("the nearer zone's birth keeps its own stream, open forever: %v %q", err, data)
 	}
 }
 
@@ -91,50 +90,32 @@ func TestTmpClearedAtTheRunEnd(t *testing.T) {
 	}
 }
 
-// TestWishAfterBirthIgnoredAndOverwriteBeforeConsumption — the goal
-// is fixed at the birth forever: a later wish is ignored; before the
-// consumption the bytes at the moment of the look are the goal.
-func TestWishAfterBirthIgnoredAndOverwriteBeforeConsumption(t *testing.T) {
+// TestStreamOpenAfterBirthAndLastWordingWins — the stream is open
+// forever: a later line lands as the unjournaled tail and shows in
+// the state's demands map. Before the birth, the bytes at the moment
+// of the look are the universe: the last wording wins.
+func TestStreamOpenAfterBirthAndLastWordingWins(t *testing.T) {
 	mountPorts()
 	root := newBornRoot(t)
 	runIn(t, root) // settle the row's output into the standing first
-	stateBefore := zoneFile(t, root, zone.StateFile)
-	writeZone(t, root, zone.WishSlot, "a different goal entirely")
+	writeZone(t, root, zone.DemandsSlot, "a checked tool\na late word\n")
 	runIn(t, root)
-	if zoneFile(t, root, zone.StateFile) != stateBefore {
-		t.Fatalf("a wish after the birth must change nothing")
-	}
-	if _, err := os.Stat(filepath.Join(root, zone.Dirname, zone.WishSlot)); err != nil {
-		t.Fatalf("the ignored wish stays where it is: %v", err)
+	state := zoneFile(t, root, zone.StateFile)
+	if !strings.Contains(state, "demands: 1/2 lines") {
+		t.Fatalf("the late word must land as the open tail, state:\n%s", state)
 	}
 
 	fresh := t.TempDir()
-	writeZone(t, fresh, zone.WishSlot, "the first wording")
-	writeZone(t, fresh, zone.WishSlot, "the wording that counts")
+	writeZone(t, fresh, zone.DemandsSlot, "the first wording\nand its second line\n")
+	writeZone(t, fresh, zone.DemandsSlot, "the wording that counts\n")
 	runIn(t, fresh)
-	state := zoneFile(t, fresh, zone.StateFile)
-	if !strings.Contains(state, "goal: "+domain.Digest([]byte("the wording that counts"))[:12]) {
-		t.Fatalf("the goal is the bytes at the moment of the look, state:\n%s", state)
+	if state = zoneFile(t, fresh, zone.StateFile); !strings.Contains(state, "demands: 0/1 lines") {
+		t.Fatalf("the universe is the bytes at the moment of the look, state:\n%s", state)
 	}
 }
 
 // TestReformatIsNotAChange — a reformatted corpus whose meaning
 // decodes to the same document is the completion act, not a change.
-func TestReformatIsNotAChange(t *testing.T) {
-	mountPorts()
-	root := newBornRoot(t)
-	corpus := zoneFile(t, root, zone.CorpusFile)
-	reformatted := strings.Replace(corpus, `"contains: ok"`, `'contains: ok'`, 1)
-	if reformatted == corpus {
-		t.Fatal("the test needs a real reformatting")
-	}
-	writeZone(t, root, zone.InboxSlot, reformatted)
-	runIn(t, root)
-	if !strings.Contains(zoneFile(t, root, zone.StateFile), "verdict: #1") {
-		t.Fatalf("a reformatted corpus must close the verdict, state:\n%s", zoneFile(t, root, zone.StateFile))
-	}
-}
-
 // TestARefusalJournalsOnlyItsOwnFact — a refused submission writes
 // none of its bytes: no submission record, no corpus move. The
 // machine's own decision stands as the one new record, and the
@@ -210,30 +191,9 @@ func TestVCSAndZoneExcludedFromTheTree(t *testing.T) {
 	}
 }
 
-// TestDigestIsOfRawBytes — the fingerprint is the sha256 of the
-// bytes as they lie, no transformation ever: a file holding CRLF
-// digests its own bytes, and the CRLF and LF spellings of one text
-// are two different trees (a digest of processed
-// bytes is a digest of bytes that never existed).
-func TestDigestIsOfRawBytes(t *testing.T) {
-	mountPorts()
-	lf := t.TempDir()
-	crlf := t.TempDir()
-	os.WriteFile(filepath.Join(lf, "f.bin"), []byte("a\nb\nc\n"), 0o644)
-	os.WriteFile(filepath.Join(crlf, "f.bin"), []byte("a\r\nb\r\nc\r\n"), 0o644)
-	if got, want := OpenHashCache(filepath.Join(lf, ".z")).Digest(lf, "f.bin"), domain.Digest([]byte("a\nb\nc\n")); got != want {
-		t.Fatalf("the LF file digests its own bytes: %s != %s", got, want)
-	}
-	if got, want := OpenHashCache(filepath.Join(crlf, ".z")).Digest(crlf, "f.bin"), domain.Digest([]byte("a\r\nb\r\nc\r\n")); got != want {
-		t.Fatalf("the CRLF file digests its own bytes: %s != %s", got, want)
-	}
-	if OpenHashCache(filepath.Join(lf, ".z")).Digest(lf, "f.bin") == OpenHashCache(filepath.Join(crlf, ".z")).Digest(crlf, "f.bin") {
-		t.Fatal("different bytes are a different tree — the spellings must not collide")
-	}
-}
-
 // TestMtimeOnlyChangeKeepsTheProof — a touched file with unchanged
-// bytes is a cache miss, not a staleness: nothing re-executes.
+// bytes is not a staleness: the claims digest the bytes, and
+// unchanged bytes re-execute nothing.
 func TestMtimeOnlyChangeKeepsTheProof(t *testing.T) {
 	mountPorts()
 	root := newBornRoot(t)
@@ -251,70 +211,6 @@ func TestMtimeOnlyChangeKeepsTheProof(t *testing.T) {
 	}
 }
 
-// TestInjectionLineOncePerReason — the knowledge pointer for a
-// reasoned red stands once, however many rows carry the reason.
-func TestInjectionLineOncePerReason(t *testing.T) {
-	mountPorts()
-	root := newRoot(t)
-	writeZone(t, root, zone.InboxSlot, `behaviors:
-    - id: tool/one
-      name: One
-      prose: Stays failing.
-      rows:
-        - run: "true"
-          expect:
-            rc: 1
-    - id: tool/two
-      name: Two
-      prose: Stays failing the same way.
-      rows:
-        - run: "true"
-          expect:
-            rc: 1
-`)
-	runIn(t, root)
-	// One of the two heals: its lesson exists for the shared reason.
-	writeZone(t, root, zone.InboxSlot, `behaviors:
-    - id: tool/one
-      name: One
-      prose: Heals.
-      rows:
-        - run: "true"
-          expect:
-            rc: 0
-`)
-	runIn(t, root)
-	state := zoneFile(t, root, zone.StateFile)
-	if n := strings.Count(state, "knowledge for the reason"); n != 1 {
-		t.Fatalf("the injection must stand once per reason, found %d, state:\n%s", n, state)
-	}
-}
-
-// TestRowGarbageIsAVisibleGap — a row's leftover file outside every
-// scope is a visible fact of the state, not a silent hole.
-func TestRowGarbageIsAVisibleGap(t *testing.T) {
-	mountPorts()
-	root := newRoot(t)
-	writeZone(t, root, zone.InboxSlot, `behaviors:
-    - id: tool/litter
-      name: The litterer
-      prose: Leaves a file behind.
-      scope:
-        - out.txt
-      rows:
-        - run: sh -c "echo junk > stray.txt; echo ok > out.txt"
-          expect:
-            files:
-                out.txt: "contains: ok"
-`)
-	runIn(t, root)
-	runIn(t, root) // the walk of the next run sees the leftover
-	state := zoneFile(t, root, zone.StateFile)
-	if !strings.Contains(state, "- stray.txt") {
-		t.Fatalf("the stray file must be a visible gap, state:\n%s", state)
-	}
-}
-
 // TestBuildRunsOnEveryLaunch — a declared build runs on every launch,
 // even when no row is stale; the rows still stand from memory.
 func TestBuildRunsOnEveryLaunch(t *testing.T) {
@@ -326,7 +222,10 @@ func TestBuildRunsOnEveryLaunch(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "src", "in.txt"), []byte("ok"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	writeZone(t, root, zone.InboxSlot, "build: \"true\"\n"+greenDoc)
+	// The first submission of a fresh root carries no mandate —
+	// nothing stands to replace yet.
+	firstDoc := strings.Replace(greenDocFor(t, root), "mandate: [{line: D1, target: tool/copy}]\n", "", 1)
+	writeZone(t, root, zone.InboxSlot, "build: \"true\"\n"+firstDoc)
 	runIn(t, root)
 	if !strings.Contains(zoneFile(t, root, zone.ReportFile), "green: 1") {
 		t.Fatalf("the first run must execute the row, report:\n%s", zoneFile(t, root, zone.ReportFile))
@@ -339,13 +238,13 @@ func TestBuildRunsOnEveryLaunch(t *testing.T) {
 }
 
 // TestViewsCarryTheFingerprints — the state names each behavior's
-// scope fingerprint; the spec page names each row's proof.
+// claims shape and proof; the spec page names each row's proof.
 func TestViewsCarryTheFingerprints(t *testing.T) {
 	mountPorts()
 	root := newBornRoot(t)
 	state := zoneFile(t, root, zone.StateFile)
-	if !strings.Contains(state, "(scope ") {
-		t.Fatalf("the state must carry the scope fingerprints, state:\n%s", state)
+	if !strings.Contains(state, "(claims 1 files / 1 lines; proof ") {
+		t.Fatalf("the state must carry the claims shape and proof, state:\n%s", state)
 	}
 	page := zoneFile(t, root, filepath.Join(zone.SpecDir, "tool", "copy.md"))
 	if !strings.Contains(page, "proof: green (") {

@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/neurophant/punchtape/internal/domain"
+	"github.com/neurophant/punchtape/internal/domain/doc"
 	"github.com/neurophant/punchtape/internal/domain/journal"
 	"github.com/neurophant/punchtape/internal/domain/zone"
 )
@@ -32,23 +33,41 @@ func epochPaths(t *testing.T, root string) []string {
 	return out
 }
 
-// birthAddr — the goal object's address from the journal's first
-// record.
-func birthAddr(t *testing.T, root string) string {
+// objectAddr — an object address of the standing's first submission:
+// its document object (not a behavior) or its first behavior object
+// (not a document) — the forger's honest material.
+func objectAddr(t *testing.T, root string, pick func(*journal.Submission) string) string {
 	t.Helper()
-	data, err := os.ReadFile(epochPaths(t, root)[0])
+	records, err := journalRecords(t, root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	chunk := bytes.TrimPrefix(data, []byte("---\n"))
-	if i := bytes.Index(chunk, []byte("\n---\n")); i >= 0 {
-		chunk = chunk[:i+1]
+	for _, rec := range records {
+		if rec.Kind == journal.KindSubmission && rec.Submission != nil {
+			if addr := pick(rec.Submission); addr != "" {
+				return addr
+			}
+		}
 	}
-	var rec journal.Record
-	if err := journal.DecodeRecord(chunk, &rec); err != nil {
-		t.Fatal(err)
-	}
-	return rec.Birth.Addr
+	t.Fatal("the journal carries no submission object")
+	return ""
+}
+
+// docAddr — the standing's first document object's address.
+func docAddr(t *testing.T, root string) string {
+	t.Helper()
+	return objectAddr(t, root, func(s *journal.Submission) string { return s.DocAddr })
+}
+
+// behaviorAddr — the standing's first behavior object's address.
+func behaviorAddr(t *testing.T, root string) string {
+	t.Helper()
+	return objectAddr(t, root, func(s *journal.Submission) string {
+		if len(s.Added) > 0 {
+			return s.Added[0].Addr
+		}
+		return ""
+	})
 }
 
 // appendRecord — a hand-written record into the live epoch.
@@ -69,11 +88,11 @@ func appendRecord(t *testing.T, root string, rec journal.Record) {
 func TestForgedAddedAddressRefusesTheOpen(t *testing.T) {
 	mountPorts()
 	root := newBornRoot(t)
-	// A hand-written record names the goal object as a behavior: the
-	// fold refuses the lie by name.
+	// A hand-written record names the document object as a behavior:
+	// the fold refuses the lie by name.
 	appendRecord(t, root, journal.Record{Kind: journal.KindSubmission, Submission: &journal.Submission{
-		CorpusVersion: 2, DocAddr: birthAddr(t, root),
-		Added: []journal.BehaviorOp{{ID: "tool/fake", Addr: birthAddr(t, root)}},
+		CorpusVersion: 2, DocAddr: docAddr(t, root),
+		Added: []journal.BehaviorOp{{ID: "tool/fake", Addr: docAddr(t, root)}},
 	}})
 	var term strings.Builder
 	if code := Run(root, &term); code != 1 || !strings.Contains(term.String(), "journal fold") {
@@ -84,10 +103,10 @@ func TestForgedAddedAddressRefusesTheOpen(t *testing.T) {
 func TestLyingDocAddressSkipsTheNote(t *testing.T) {
 	mountPorts()
 	root := newBornRoot(t)
-	// The doc address points at the goal object: not a document — the
-	// note extraction skips it, the run stands.
+	// The doc address points at a behavior object: not a document —
+	// the note extraction skips it, the run stands.
 	appendRecord(t, root, journal.Record{Kind: journal.KindSubmission, Submission: &journal.Submission{
-		CorpusVersion: 2, DocAddr: birthAddr(t, root),
+		CorpusVersion: 2, DocAddr: behaviorAddr(t, root),
 	}})
 	runIn(t, root)
 	if knowledge := zoneFile(t, root, zone.KnowledgeFile); !strings.Contains(knowledge, "no notes yet") {
@@ -142,17 +161,6 @@ func TestGarbageInboxIsARefusal(t *testing.T) {
 	}
 }
 
-func TestGarbageCacheRecomputesHonestly(t *testing.T) {
-	mountPorts()
-	root := newBornRoot(t)
-	writeZone(t, root, "cache/hashes.yaml", ":: not yaml [")
-	runIn(t, root)
-	data, err := os.ReadFile(filepath.Join(root, zone.Dirname, "cache", "hashes.yaml"))
-	if err != nil || !strings.Contains(string(data), "files:") {
-		t.Fatalf("the cache must heal: %v %s", err, data)
-	}
-}
-
 func TestBirthRecordsTheVersion(t *testing.T) {
 	mountPorts()
 	root := newRoot(t)
@@ -160,78 +168,54 @@ func TestBirthRecordsTheVersion(t *testing.T) {
 	if !strings.Contains(state, "machine at birth: "+Version) {
 		t.Fatalf("the state must name the creating machine, state:\n%s", state)
 	}
-	// The journal's first record carries the same fact.
-	chunk := bytes.TrimPrefix(mustRead(t, epochPaths(t, root)[0]), []byte("---\n"))
-	var rec journal.Record
-	if err := journal.DecodeRecord(chunk, &rec); err != nil {
+	// The journal's first records carry the same fact, and the
+	// stream's genesis link rides beside the birth — the chain value
+	// over all the initial lines, from the empty previous.
+	records, err := journalRecords(t, root)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if rec.Birth.Version != Version {
-		t.Fatalf("the birth record must carry the machine version: %+v", rec.Birth)
+	if len(records) < 2 || records[0].Kind != journal.KindBirth || records[0].Birth.Version != Version {
+		t.Fatalf("the birth record must carry the machine version: %+v", records)
 	}
-	// An instance born before the field existed says so honestly.
-	first := epochPaths(t, root)[0]
-	old := journal.MarshalRecord(journal.Record{
-		Kind:  journal.KindBirth,
-		Birth: &journal.Birth{Addr: rec.Birth.Addr, Digest: rec.Birth.Digest},
-	})
-	if err := os.WriteFile(first, append([]byte("---\n"), old...), 0o644); err != nil {
+	link := records[1]
+	if link.Kind != journal.KindDemandAppend || link.DemandAppend.Lines != 1 ||
+		link.DemandAppend.Chain != chainOver("", []string{"a checked tool"}) {
+		t.Fatalf("the genesis link must cover the initial lines: %+v", link.DemandAppend)
+	}
+}
+
+// TestSpecSkipsADanglingCover — a hand-forged record may add a
+// behavior whose cover names a requirement no journal carries: the
+// fold trusts the object's shape; the spec page's demands section
+// skips the dangling cover and keeps its one order.
+func TestSpecSkipsADanglingCover(t *testing.T) {
+	root := newBornRoot(t)
+	rc := 0
+	b := doc.Behavior{
+		ID: "tool/fake", Name: "Fake", Prose: "A forged head.",
+		Claims: []string{"src/in.txt:1-1"}, Covers: []string{"R9"},
+		Rows: []doc.Row{{Run: doc.Cmd{Line: "true"}, Expect: doc.Expect{RC: &rc}}},
+	}
+	data := doc.MarshalBehavior(b)
+	addr := domain.Digest(data)
+	objPath := filepath.Join(root, zone.Dirname, zone.ObjectsDir, addr[:2], addr[2:])
+	if err := os.MkdirAll(filepath.Dir(objPath), 0o755); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.WriteFile(objPath, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	appendRecord(t, root, journal.Record{Kind: journal.KindSubmission, Submission: &journal.Submission{
+		CorpusVersion: 2, DocAddr: docAddr(t, root),
+		Added: []journal.BehaviorOp{{ID: "tool/fake", Addr: addr}},
+	}})
 	runIn(t, root)
-	if !strings.Contains(zoneFile(t, root, zone.StateFile), "machine at birth: (not recorded)") {
-		t.Fatalf("an old birth must say it is not recorded, state:\n%s", zoneFile(t, root, zone.StateFile))
+	page := zoneFile(t, root, filepath.Join(zone.SpecDir, "tool", "fake.md"))
+	if strings.Contains(page, "- R9:") {
+		t.Fatalf("a dangling cover must not print, page:\n%s", page)
 	}
-}
-
-// mustRead — a file's bytes or the test dies.
-func mustRead(t *testing.T, path string) []byte {
-	t.Helper()
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return data
-}
-
-// TestForeignLawCacheEntriesDropOut — a cache written under another
-// digest law (no algo tag) is not the machine's truth: every entry
-// drops out and recomputes under the standing law, the honest bytes'
-// sha256.
-func TestForeignLawCacheEntriesDropOut(t *testing.T) {
-	mountPorts()
-	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "f.txt"), []byte("plain"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	zoneDir := filepath.Join(root, ".z")
-	if err := os.MkdirAll(zoneDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	// A valid YAML of the old law: right shape, no algo tag, a lying
-	// digest.
-	old := "files:\n  f.txt:\n    size: 5\n    mtime: 1\n    digest: deadbeef\n"
-	if err := os.MkdirAll(filepath.Join(zoneDir, zone.CacheDir), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(zoneDir, zone.CacheDir, "hashes.yaml"), []byte(old), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	fresh := OpenHashCache(zoneDir)
-	if got := fresh.Digest(root, "f.txt"); got != domain.Digest([]byte("plain")) {
-		t.Fatalf("the foreign entry must not answer: %s", got)
-	}
-	fresh.Flush()
-	data, err := os.ReadFile(filepath.Join(zoneDir, zone.CacheDir, "hashes.yaml"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(data), "algo: 2") || strings.Contains(string(data), "deadbeef") {
-		t.Fatalf("the flushed cache speaks only the standing law:\n%s", data)
-	}
-	// The standing law's own entry is a hit: the same size and mtime
-	// answer from the cache, the digest unchanged.
-	if again := fresh.Digest(root, "f.txt"); again != domain.Digest([]byte("plain")) {
-		t.Fatalf("the cache hit must answer the same digest: %s", again)
+	if !strings.Contains(page, "## Demands\n\n\n## Claims") {
+		t.Fatalf("the demands section must stand empty in its order, page:\n%s", page)
 	}
 }

@@ -11,16 +11,18 @@ import (
 	"github.com/neurophant/punchtape/internal/domain/fprint"
 )
 
-var example = `notes:
-    - text: a note
+var example = `work: the first document
+notes:
+    - kind: work
+      text: a note
 build: make all
 remove: []
 behaviors:
     - id: tool/build
       name: Builds
       prose: The build.
-      scope:
-        - src/**
+      claims:
+        - src/build.go:1-9
       rows:
         - run: ./check all
           expect:
@@ -28,6 +30,9 @@ behaviors:
             out: "contains: ok"
             files:
                 out/built.txt: "contains: done"
+        - run: ./check exact
+          expect:
+            out: ok
 `
 
 func TestDecodeMarshalRoundTrip(t *testing.T) {
@@ -61,35 +66,48 @@ func TestDecodeMarshalRoundTrip(t *testing.T) {
 
 func TestDecodeRefusals(t *testing.T) {
 	cases := map[string]string{
-		"two documents": "build: x\n---\nbuild: x\n",
-		"anchor":        "build: &a make\n",
-		"alias":         "x: &a 1\nbuild: *a\n",
-		"unknown field": "build: x\nbogus: 1\n",
-		"duplicate key": "build: x\nbuild: y\n",
-		"tab indent":    "build:\n\t\tx\n",
-		"bad run shape": "behaviors:\n    - id: a/b\n      name: n\n      rows:\n        - run: 42\n",
+		"two documents":         "build: x\n---\nbuild: x\n",
+		"anchor":                "build: &a make\n",
+		"alias":                 "x: &a 1\nbuild: *a\n",
+		"unknown field":         "build: x\nbogus: 1\n",
+		"duplicate key":         "build: x\nbuild: y\n",
+		"tab indent":            "build:\n\t\tx\n",
+		"bad run shape":         "behaviors:\n    - id: a/b\n      name: n\n      rows:\n        - run: 42\n",
+		"the dead words field":  "demands: [a word]\n",
+		"the dead answer list":  "answers:\n    - {lines: [D1], text: t}\n",
+		"the dead capture sign": "no-new-demands: true\n",
 	}
 	for name, in := range cases {
 		if _, err := Decode([]byte(in)); err == nil {
 			t.Fatalf("%s: decode must refuse", name)
 		}
 	}
+	// The dead quote field names itself: the strict decode's refusal
+	// carries the unknown field.
+	_, err := Decode([]byte("requirements:\n    - id: R1\n      lines: [D1]\n      quote: x\n      prose: p\n"))
+	if err == nil || !strings.Contains(err.Error(), `unknown field "quote"`) {
+		t.Fatalf("the quote field must be refused by name: %v", err)
+	}
 }
 
 func TestValidate(t *testing.T) {
 	standing := map[string]bool{"old/thing": true}
-	ok := Document{Behaviors: []Behavior{
-		{ID: "a/b", Name: "n", Scope: []string{"src/**"}, Rows: []Row{{Run: Cmd{Line: "x"}, Expect: Expect{Out: "1"}}}},
-	}}
+	ok := Document{
+		Work: "w",
+		Behaviors: []Behavior{
+			{ID: "a/b", Name: "n", Prose: "p", Rows: []Row{{Run: Cmd{Line: "x"}, Expect: Expect{Out: "1"}}}},
+		},
+	}
 	if r := Validate(ok, &Resolvers{Stands: func(id string) bool { return standing[id] }}); len(r) != 0 {
 		t.Fatalf("valid document refused: %v", r)
 	}
 	bad := Document{
+		Work: "w",
 		Behaviors: []Behavior{
-			{ID: "A/B", Name: "n"},
-			{ID: "a/b", Name: "n"},
-			{ID: "a/b", Name: "n"},
-			{ID: "c", Name: "n", Rows: []Row{{Run: Cmd{Line: "x"}, Expect: Expect{Files: map[string]string{"/abs": "contains: x"}}}}},
+			{ID: "A/B", Name: "n", Prose: "p"},
+			{ID: "a/b", Name: "n", Prose: "p"},
+			{ID: "a/b", Name: "n", Prose: "p"},
+			{ID: "c", Name: "n", Prose: "p", Rows: []Row{{Run: Cmd{Line: "x"}, Expect: Expect{Files: map[string]string{"/abs": "contains: x"}}}}},
 		},
 		Remove: []string{"no/such"},
 	}
@@ -112,15 +130,152 @@ func TestValidate(t *testing.T) {
 	}
 }
 
-func TestGlobLaw(t *testing.T) {
-	for _, g := range []string{"src/**", "a/*/b", "**", "out/*.txt"} {
-		if !ValidGlob(g) {
-			t.Fatalf("%q must be legal", g)
+// TestIntentCarriesAnswer — the answer outcome's own carrier: text
+// rides an answer intent and an answer intent alone.
+func TestIntentCarriesAnswer(t *testing.T) {
+	good := Document{Work: "w", Intents: []Intent{
+		{Lines: []string{"D1"}, Outcome: OutcomeAnswer, Prose: "the retold ask", Text: "the answer itself"},
+	}}
+	if r := Validate(good, nil); len(r) != 0 {
+		t.Fatalf("an answer intent with its text must pass: %v", r)
+	}
+	noText := Document{Work: "w", Intents: []Intent{
+		{Lines: []string{"D1"}, Outcome: OutcomeAnswer, Prose: "the retold ask"},
+	}}
+	if r := Validate(noText, nil); len(r) != 1 || r[0].Where != "intents[0].text" || r[0].Law != LawDemand {
+		t.Fatalf("an answer intent without its text must be refused at its field: %v", r)
+	}
+	strayText := Document{Work: "w", Markers: []Marker{{Lines: []string{"D1"}, Reason: "a heading"}},
+		Intents: []Intent{
+			{Lines: []string{"D1"}, Outcome: OutcomeMark, Prose: "the retold ask", Text: "not an answer"},
+		}}
+	if r := Validate(strayText, nil); len(r) != 1 || r[0].Where != "intents[0].text" || r[0].Law != LawDemand {
+		t.Fatalf("text on a non-answer intent must be refused at its field: %v", r)
+	}
+}
+
+// TestIntentCarriesRun — the execute outcome's own carrier: the run
+// rides an execute intent and an execute intent alone.
+func TestIntentCarriesRun(t *testing.T) {
+	good := Document{Work: "w", Intents: []Intent{
+		{Lines: []string{"D1"}, Outcome: OutcomeExecute, Prose: "the retold ask", Run: Cmd{Line: "./tool"}},
+	}}
+	if r := Validate(good, nil); len(r) != 0 {
+		t.Fatalf("an execute intent with its run must pass: %v", r)
+	}
+	noRun := Document{Work: "w", Intents: []Intent{
+		{Lines: []string{"D1"}, Outcome: OutcomeExecute, Prose: "the retold ask"},
+	}}
+	if r := Validate(noRun, nil); len(r) != 1 || r[0].Where != "intents[0].run" || r[0].Law != LawDemand {
+		t.Fatalf("an execute intent without its run must be refused at its field: %v", r)
+	}
+	strayRun := Document{Work: "w", Markers: []Marker{{Lines: []string{"D1"}, Reason: "a heading"}},
+		Intents: []Intent{
+			{Lines: []string{"D1"}, Outcome: OutcomeMark, Prose: "the retold ask", Run: Cmd{Line: "./tool"}},
+		}}
+	if r := Validate(strayRun, nil); len(r) != 1 || r[0].Where != "intents[0].run" || r[0].Law != LawDemand {
+		t.Fatalf("a run on a non-execute intent must be refused at its field: %v", r)
+	}
+}
+
+// TestRemoveKeyGrammar — the five spellings told apart mechanically,
+// and the refusal of a key that stands nowhere.
+func TestRemoveKeyGrammar(t *testing.T) {
+	for key, kind := range map[string]RemoveKeyKind{
+		"R1":           RemoveRequirement,
+		"R2.10":        RemoveRequirement,
+		"tool/old":     RemoveBehavior,
+		"tool":         RemoveBehavior,
+		"D4":           RemoveMarkerOrOrder,
+		"src/a.go:1-9": RemoveExclusion,
+	} {
+		if got := ParseRemoveKey(key); got != kind {
+			t.Fatalf("the key %q must parse as kind %d, got %d", key, kind, got)
 		}
 	}
-	for _, g := range []string{"/abs/**", "../x", "a//b", "a/../b", "", `a\b`, "a/"} {
-		if ValidGlob(g) {
-			t.Fatalf("%q must be refused", g)
+	for _, key := range []string{"", "X1", "no..good", "src/a.go:1", "D0", "tool/OLD"} {
+		if got := ParseRemoveKey(key); got != RemoveUnknown {
+			t.Fatalf("the key %q must not parse, got kind %d", key, got)
+		}
+	}
+	// A key that stands nowhere is refused by its named place.
+	d := Document{Work: "w", Remove: []string{"D4"}}
+	r := Validate(d, &Resolvers{
+		MarkerStands: func(int) bool { return false },
+		OrderStands:  func(int) bool { return false },
+	})
+	if len(r) != 1 || !strings.Contains(r[0].Fact, "the corpus carries no marker or order on D4") {
+		t.Fatalf("an unresolved remove key must be refused: %v", r)
+	}
+}
+
+// TestMergeByKey — the registry lists merge onto the standing ones
+// by each part's own key: a repeated key replaces, a stranger is
+// appended, unlisted parts stand.
+func TestMergeByKey(t *testing.T) {
+	standing := Registry{
+		Requirements: map[string]Requirement{"R1": {ID: "R1", Lines: []string{"D1"}, Prose: "one"}},
+		Order:        []string{"R1"},
+		Markers:      []Marker{{Lines: []string{"D2"}, Reason: "first"}},
+		Exclusions:   []Exclusion{{Range: "src/a.go:1-4", Reason: "generated"}},
+		Open:         []OpenOrder{{Demand: "D5", Question: "stage?", State: StateAwaiting, OpenedAtLines: 4}},
+	}
+	d := Document{
+		Markers:    []Marker{{Lines: []string{"D2"}, Reason: "retold"}},
+		Exclusions: []Exclusion{{Range: "src/a.go:1-4", Reason: "regenerated"}, {Range: "src/b.go:1-2", Reason: "new"}},
+		Open:       []OpenOrder{{Demand: "D6", Question: "later?", State: StateDeferred, Reason: "the human said later"}},
+	}
+	out := MergeRegistry(standing, d)
+	if len(out.Markers) != 1 || out.Markers[0].Reason != "retold" {
+		t.Fatalf("a repeated marker key replaces: %+v", out.Markers)
+	}
+	if len(out.Exclusions) != 2 || out.Exclusions[0].Reason != "regenerated" || out.Exclusions[1].Range != "src/b.go:1-2" {
+		t.Fatalf("a repeated exclusion key replaces, a stranger appends: %+v", out.Exclusions)
+	}
+	if len(out.Open) != 2 || out.Open[0].Question != "stage?" || out.Open[1].Demand != "D6" {
+		t.Fatalf("unlisted orders stand, strangers append: %+v", out.Open)
+	}
+	// The same line set spelled two ways is one marker key.
+	if MarkerKey(Marker{Lines: []string{"D4", "D2..D3"}}) != MarkerKey(Marker{Lines: []string{"D2..D4"}}) {
+		t.Fatal("two spellings of one line set must fold to one key")
+	}
+	// A remove line retires the marker standing on it, whole.
+	out = MergeRegistry(standing, Document{Remove: []string{"D2"}})
+	if len(out.Markers) != 0 {
+		t.Fatalf("the marker on a removed line retires: %+v", out.Markers)
+	}
+}
+
+// TestNilEmptyIndistinguishable — an absent list and an empty one
+// merge to the same standing: nil and empty are one spelling.
+func TestNilEmptyIndistinguishable(t *testing.T) {
+	standing := Registry{
+		Requirements: map[string]Requirement{"R1": {ID: "R1", Lines: []string{"D1"}, Prose: "one"}},
+		Order:        []string{"R1"},
+		Markers:      []Marker{{Lines: []string{"D2"}, Reason: "stays"}},
+	}
+	absent := MergeRegistry(standing, Document{})
+	empty := MergeRegistry(standing, Document{Markers: []Marker{}})
+	if string(Marshal(Document{Markers: absent.Markers})) != string(Marshal(Document{Markers: empty.Markers})) {
+		t.Fatalf("nil and empty must merge to the same standing:\n%v\n%v", absent.Markers, empty.Markers)
+	}
+}
+
+// TestDoneFieldShape — the completion act's own shape: done: true
+// alone; any other field beside the flag is refused.
+func TestDoneFieldShape(t *testing.T) {
+	if r := Validate(Document{Done: true}, nil); len(r) != 0 {
+		t.Fatalf("a bare done document must pass: %v", r)
+	}
+	for name, d := range map[string]Document{
+		"work":     {Done: true, Work: "w"},
+		"behavior": {Done: true, Behaviors: []Behavior{{ID: "a/b", Name: "n", Prose: "p", Rows: []Row{{Run: Cmd{Line: "x"}, Expect: Expect{Out: "1"}}}}}},
+		"remove":   {Done: true, Remove: []string{"a/b"}},
+	} {
+		r := Validate(d, nil)
+		if len(r) != 1 || r[0].Where != "done" || r[0].Law != LawDocument ||
+			!strings.Contains(r[0].Fact, "a done document carries only done: true") {
+			t.Fatalf("%s beside done must be refused by the shape law: %v", name, r)
 		}
 	}
 }
@@ -128,7 +283,7 @@ func TestGlobLaw(t *testing.T) {
 func TestCmdSpellingsAndRefusals(t *testing.T) {
 	line := Cmd{Line: "sh work"}
 	argv := Cmd{Argv: []string{"./tool", "in", "out"}}
-	d, err := Decode([]byte("behaviors:\n    - id: a/b\n      name: n\n      rows:\n        - run: sh work\n        - run: [./tool, in, out]\n"))
+	d, err := Decode([]byte("behaviors:\n    - id: a/b\n      name: n\n      prose: p\n      rows:\n        - run: sh work\n        - run: [./tool, in, out]\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,9 +294,9 @@ func TestCmdSpellingsAndRefusals(t *testing.T) {
 	_ = line
 	_ = argv
 	for name, in := range map[string]string{
-		"empty argv":          "behaviors:\n    - id: a/b\n      name: n\n      rows:\n        - run: []\n",
-		"argv of non-strings": "behaviors:\n    - id: a/b\n      name: n\n      rows:\n        - run: [1, 2]\n",
-		"map run":             "behaviors:\n    - id: a/b\n      name: n\n      rows:\n        - run: {a: b}\n",
+		"empty argv":          "behaviors:\n    - id: a/b\n      name: n\n      prose: p\n      rows:\n        - run: []\n",
+		"argv of non-strings": "behaviors:\n    - id: a/b\n      name: n\n      prose: p\n      rows:\n        - run: [1, 2]\n",
+		"map run":             "behaviors:\n    - id: a/b\n      name: n\n      prose: p\n      rows:\n        - run: {a: b}\n",
 	} {
 		if _, err := Decode([]byte(in)); err == nil {
 			t.Fatalf("%s must be refused", name)
@@ -152,11 +307,14 @@ func TestCmdSpellingsAndRefusals(t *testing.T) {
 func TestRegistryFieldsRoundTrip(t *testing.T) {
 	rc := 0
 	d := Document{
-		Requirements:    []Requirement{{ID: "R3.2", Brief: []string{"W1..W4, W9"}}},
-		NotRequirements: []Marker{{Lines: []string{"W5"}, Quote: "a header", Reason: "not a demand"}},
-		Artifacts:       []string{"out/**", "dist/app.tgz"},
-		Behaviors: []Behavior{{ID: "tool/x", Name: "n", Covers: []string{"R3.2"},
-			Rows: []Row{{Run: Cmd{Line: "x"}, Expect: Expect{RC: &rc}}}}},
+		Work:         "w",
+		Requirements: []Requirement{{ID: "R3.2", Lines: []string{"D1..D4, D9"}, Prose: "the unwinding", Refines: "R1"}},
+		Markers:      []Marker{{Lines: []string{"D5"}, Reason: "not a demand"}},
+		Exclusions:   []Exclusion{{Range: "gen/out.go:1-40", Reason: "generated"}},
+		Open:         []OpenOrder{{Demand: "D14", Question: "stage two?", State: "awaiting"}},
+		Notes:        []Note{{Kind: "decision", Text: "a note", Refs: []string{"D14", "R3.2"}}},
+		Behaviors: []Behavior{{ID: "tool/x", Name: "n", Prose: "p", Claims: []string{"src/x.go:1-8"}, Covers: []string{"R3.2"},
+			Rows: []Row{{Run: Cmd{Line: "x"}, Expect: Expect{RC: &rc, Out: "1"}}}}},
 	}
 	back, err := Decode(Marshal(d))
 	if err != nil {
@@ -165,9 +323,37 @@ func TestRegistryFieldsRoundTrip(t *testing.T) {
 	if string(Marshal(back)) != string(Marshal(d)) {
 		t.Fatalf("canonical bytes must carry the registry without loss:\n%s\n%s", Marshal(d), Marshal(back))
 	}
-	if back.Requirements[0].ID != "R3.2" || back.NotRequirements[0].Quote != "a header" ||
-		len(back.Artifacts) != 2 || back.Behaviors[0].Covers[0] != "R3.2" {
+	if back.Requirements[0].ID != "R3.2" || back.Requirements[0].Refines != "R1" ||
+		back.Exclusions[0].Range != "gen/out.go:1-40" || back.Open[0].Demand != "D14" ||
+		back.Notes[0].Kind != "decision" || back.Behaviors[0].Claims[0] != "src/x.go:1-8" {
 		t.Fatalf("the round trip lost fields: %#v", back)
+	}
+}
+
+// TestIntentCarriersRoundTrip — the intent's own carrier fields ride
+// the canonical bytes: an answer's text and an execute's command
+// come back whole, and an intent without a carrier omits it.
+func TestIntentCarriersRoundTrip(t *testing.T) {
+	d := Document{
+		Work: "w",
+		Intents: []Intent{
+			{Lines: []string{"D1"}, Outcome: OutcomeAnswer, Prose: "the ask retold", Text: "the answer itself"},
+			{Lines: []string{"D2"}, Outcome: OutcomeExecute, Prose: "the ask retold", Run: Cmd{Line: "./tool --version"}},
+			{Lines: []string{"D3"}, Outcome: OutcomeWork, Prose: "the ask retold"},
+		},
+	}
+	back, err := Decode(Marshal(d))
+	if err != nil {
+		t.Fatalf("the intent carriers must decode: %v", err)
+	}
+	if back.Intents[0].Text != "the answer itself" || back.Intents[1].Run.Line != "./tool --version" {
+		t.Fatalf("the carriers round-tripped: %+v", back.Intents)
+	}
+	if back.Intents[2].Text != "" || !back.Intents[2].Run.IsZero() {
+		t.Fatalf("a carrier-less intent stays carrier-less: %+v", back.Intents[2])
+	}
+	if bytes := Marshal(d); !strings.Contains(string(bytes), "text: the answer itself") || strings.Count(string(bytes), "run:") != 1 {
+		t.Fatalf("the canonical bytes carry only the standing carriers:\n%s", bytes)
 	}
 }
 
@@ -190,12 +376,12 @@ func TestNormalizeErrorAndEmpty(t *testing.T) {
 }
 
 func TestBehaviorBytesRoundTrip(t *testing.T) {
-	b := Behavior{ID: "x/y", Name: "Y", Scope: []string{"s/**"}, Rows: []Row{{Run: Cmd{Line: "r"}}}}
+	b := Behavior{ID: "x/y", Name: "Y", Prose: "p", Claims: []string{"s/a.go:1-2"}, Rows: []Row{{Run: Cmd{Line: "r"}, Expect: Expect{Out: "1"}}}}
 	back, err := DecodeBehavior(MarshalBehavior(b))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if back.ID != b.ID || len(back.Rows) != 1 {
+	if back.ID != b.ID || len(back.Rows) != 1 || back.Claims[0] != "s/a.go:1-2" {
 		t.Fatalf("behavior round trip: %+v", back)
 	}
 	if _, err := DecodeBehavior([]byte("id: [\n")); err == nil {
@@ -249,6 +435,8 @@ behaviors:
       prose: |
         long
         prose
+      claims:
+        - src/a.go:1-3
       rows:
         - run: [./tool, in, out]
           expect:
@@ -280,11 +468,11 @@ func TestValidIDEdges(t *testing.T) {
 			t.Fatalf("%q must be refused", id)
 		}
 	}
-	if !ValidGlob("a/**") || !ValidGlob("a/**/b") {
-		t.Fatal("the double star is legal in every position")
+	if _, _, _, err := fprint.ParseLineRange("../x:1-2"); err == nil {
+		t.Fatal("a parent hop is not a line range")
 	}
-	if fprint.MatchGlob("a[/b", "a/x/b") {
-		t.Fatal("a broken class matches nothing")
+	if _, _, _, err := fprint.ParseLineRange("x.go:1"); err == nil {
+		t.Fatal("a range without both ends parses to nothing")
 	}
 }
 
@@ -306,10 +494,11 @@ func TestMismatchSpellingsAndKeys(t *testing.T) {
 func TestValidateEveryBranch(t *testing.T) {
 	empty := ""
 	d := Document{
+		Work:  "w",
 		Build: &empty,
 		Behaviors: []Behavior{
-			{ID: "a/b", Name: "n", Scope: []string{"/abs/**"}, Rows: []Row{
-				{Run: Cmd{Line: "x"}},
+			{ID: "a/b", Name: "n", Prose: "p", Rows: []Row{
+				{Run: Cmd{Line: "x"}, Expect: Expect{Out: "1"}},
 				{Expect: Expect{Files: map[string]string{"ok.txt": "x"}}},
 			}},
 		},
@@ -321,7 +510,6 @@ func TestValidateEveryBranch(t *testing.T) {
 	}
 	for _, want := range []string{
 		"build", "the build command is empty",
-		"scope[0]", "law:paths",
 		"rows[1].run", "the command is empty",
 	} {
 		if !strings.Contains(joined, want) {

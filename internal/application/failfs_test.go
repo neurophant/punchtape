@@ -7,6 +7,7 @@ package application
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -166,24 +167,17 @@ func TestZoneDamageRefusesTheRun(t *testing.T) {
 	if code != 1 || !strings.Contains(term, "punchtape:") {
 		t.Fatalf("code %d term %q", code, term)
 	}
-	// The wish cannot be read at the birth.
+	// The stream cannot be read at the birth.
 	fresh := t.TempDir()
-	writeZone(t, fresh, zone.WishSlot, "goal")
-	code, term = runCode(t, fresh, map[string]bool{"read:wish.md": true})
+	writeZone(t, fresh, zone.DemandsSlot, "goal")
+	code, term = runCode(t, fresh, map[string]bool{"read:demands.md": true})
 	if code != 1 || !strings.Contains(term, "birth failed") {
 		t.Fatalf("code %d term %q", code, term)
 	}
 	// The birth's standing files cannot be written.
 	fresh = t.TempDir()
-	writeZone(t, fresh, zone.WishSlot, "goal")
+	writeZone(t, fresh, zone.DemandsSlot, "goal")
 	code, term = runCode(t, fresh, map[string]bool{"write:contract.md": true})
-	if code != 1 || !strings.Contains(term, "birth failed") {
-		t.Fatalf("code %d term %q", code, term)
-	}
-	// The wish slot cannot die at the birth.
-	fresh = t.TempDir()
-	writeZone(t, fresh, zone.WishSlot, "goal")
-	code, term = runCode(t, fresh, map[string]bool{"remove:wish.md": true})
 	if code != 1 || !strings.Contains(term, "birth failed") {
 		t.Fatalf("code %d term %q", code, term)
 	}
@@ -191,17 +185,21 @@ func TestZoneDamageRefusesTheRun(t *testing.T) {
 
 func TestSubmissionAndRunFailuresAreNamed(t *testing.T) {
 	root := newBornRoot(t)
-	green := `behaviors:
+	green := `
+work: the copy, harder
+mandate: [{line: D1, target: tool/copy}]
+behaviors:
     - id: tool/copy
       name: The copy
       prose: Copies harder.
-      scope:
-        - src/**
+      claims:
+        - src/in.txt:1-1
+      covers: [R1]
       rows:
         - run: cat src/in.txt > out.txt
           expect:
             files:
-                out.txt: "contains: ok"
+                out.txt: ok
 `
 	// The inbox cannot be read.
 	writeZone(t, root, zone.InboxSlot, green)
@@ -278,37 +276,53 @@ func TestViewWriteFailuresAreLoud(t *testing.T) {
 	// One changed submission: a new note moves knowledge, a new
 	// expectation moves the row (it re-runs, the report moves), the
 	// prose moves the corpus, and every screen moves with them.
-	moving := `notes:
-    - text: a note that moves the knowledge page
+	moving := `
+work: a document that moves every screen
+mandate: [{line: D1, target: tool/copy}]
+notes:
+    - kind: work
+      text: a note that moves the knowledge page
 behaviors:
     - id: tool/copy
       name: The Copy
       prose: Copies anew.
-      scope:
-        - src/**
+      claims:
+        - src/in.txt:1-1
+      covers: [R1]
       rows:
         - run: cat src/in.txt > out.txt
           expect:
             files:
-                out.txt: "contains: o"
+                out.txt: o
 `
 	for _, tc := range []struct {
 		name string
 		fail map[string]bool
 		want string
+		// stale names a zone file stood stale ahead of the run, so a
+		// face's refresh write actually fires under its failure point.
+		stale string
 	}{
-		{"the report view", map[string]bool{"write:.punchtape/report.md": true}, "report view:"},
-		{"the state view", map[string]bool{"write:.punchtape/state.md": true}, "state view:"},
-		{"the knowledge view", map[string]bool{"write:.punchtape/knowledge.md": true}, "knowledge view:"},
-		{"the spec page", map[string]bool{"write:.punchtape/spec": true}, "spec view:"},
-		{"the spec index", map[string]bool{"write:.punchtape/spec/index.md": true}, "spec view:"},
-		{"the spec directory", map[string]bool{"mkdirall:.punchtape/spec": true}, "spec view:"},
-		{"the spec walk", map[string]bool{"walk:.punchtape/spec": true}, "spec view:"},
-		{"the corpus image", map[string]bool{"write:.punchtape/corpus.yaml": true}, "corpus view:"},
-		{"the scratch clear", map[string]bool{"removeall:.punchtape/tmp": true}, "tmp clear:"},
+		{"the report view", map[string]bool{"write:.punchtape/report.md": true}, "report view:", ""},
+		{"the state view", map[string]bool{"write:.punchtape/state.md": true}, "state view:", ""},
+		{"the knowledge view", map[string]bool{"write:.punchtape/knowledge.md": true}, "knowledge view:", ""},
+		{"the spec page", map[string]bool{"write:.punchtape/spec": true}, "spec view:", ""},
+		{"the spec index", map[string]bool{"write:.punchtape/spec/index.md": true}, "spec view:", ""},
+		{"the spec directory", map[string]bool{"mkdirall:.punchtape/spec": true}, "spec view:", ""},
+		{"the spec walk", map[string]bool{"walk:.punchtape/spec": true}, "spec view:", ""},
+		{"the corpus image", map[string]bool{"write:.punchtape/corpus.yaml": true}, "corpus view:", ""},
+		{"the contract face", map[string]bool{"write:.punchtape/contract.md": true}, "contract view:", "contract.md"},
+		{"the template face", map[string]bool{"write:.punchtape/template.yaml": true}, "template view:", "template.yaml"},
+		{"the reference face", map[string]bool{"write:.punchtape/reference.md": true}, "reference view:", "reference.md"},
+		{"the scratch clear", map[string]bool{"removeall:.punchtape/tmp": true}, "tmp clear:", ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := newBornRoot(t)
+			if tc.stale != "" {
+				if err := os.WriteFile(filepath.Join(root, zone.Dirname, tc.stale), []byte("stale\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
 			writeZone(t, root, zone.InboxSlot, moving)
 			code, term := runCode(t, root, tc.fail)
 			if code != 1 || !strings.Contains(term, tc.want) {
@@ -340,55 +354,29 @@ behaviors:
 	// A retired behavior's page that cannot leave: the spec tree is
 	// an image of the standing corpus, a page that stays is a lie.
 	root = newBornRoot(t)
-	writeZone(t, root, zone.InboxSlot, "remove: [tool/copy]")
+	writeZone(t, root, zone.InboxSlot, "work: retiring the copy\nmandate: [{line: D1, target: tool/copy}]\nremove: [tool/copy]\n")
 	code, term = runCode(t, root, map[string]bool{"remove:.punchtape/spec/": true})
 	if code != 1 || !strings.Contains(term, "spec view:") {
 		t.Fatalf("the retired page: code %d term %q", code, term)
 	}
 }
 
-// TestRenderAndSpecWalkFaultsAreLoud — the render's second walk of
-// the tree (measured after the execution) and the spec tree's own
-// walk over an unreadable page directory fail loudly: a state page
-// built on half a tree is a lie.
-func TestRenderAndSpecWalkFaultsAreLoud(t *testing.T) {
-	// The row itself locks a directory between the two walks: the
-	// launch walk saw the whole tree, the render walk cannot.
-	root := newBornRoot(t)
-	writeZone(t, root, zone.InboxSlot, `behaviors:
-    - id: tool/lock
-      name: The lock
-      prose: Locks a directory against the render walk.
-      scope:
-        - lock.txt
-      rows:
-        - run: chmod 000 src && echo locked > lock.txt
-          expect:
-            rc: 0
-            files:
-                lock.txt: "contains: locked"
-`)
-	t.Cleanup(func() { _ = os.Chmod(filepath.Join(root, "src"), 0o755) })
-	mountPorts()
-	var term strings.Builder
-	if code := Run(root, &term); code != 1 || !strings.Contains(term.String(), "punchtape:") {
-		t.Fatalf("the render walk must fail loudly: code %d term %q", code, term.String())
-	}
-	if err := os.Chmod(filepath.Join(root, "src"), 0o755); err != nil {
-		t.Fatal(err)
-	}
+// TestSpecWalkFaultsAreLoud — the spec tree's own walk over an
+// unreadable page directory fails loudly: a spec tree built on half
+// a directory is a lie.
+func TestSpecWalkFaultsAreLoud(t *testing.T) {
 	// The spec tree's own walk over an unreadable directory of a
 	// retired behavior (no page writes stand in the way): the retire
 	// sweep says so instead of passing in silence.
 	root2 := newBornRoot(t)
-	writeZone(t, root2, zone.InboxSlot, "remove: [tool/copy]")
+	writeZone(t, root2, zone.InboxSlot, "work: retiring the copy\nmandate: [{line: D1, target: tool/copy}]\nremove: [tool/copy]\n")
 	runIn(t, root2)
 	specTool := filepath.Join(root2, zone.Dirname, zone.SpecDir, "tool")
 	if err := os.Chmod(specTool, 0o000); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.Chmod(specTool, 0o755) })
-	term.Reset()
+	var term strings.Builder
 	if code := Run(root2, &term); code != 1 || !strings.Contains(term.String(), "spec view:") {
 		t.Fatalf("the spec walk must fail loudly: code %d term %q", code, term.String())
 	}
@@ -397,52 +385,82 @@ func TestRenderAndSpecWalkFaultsAreLoud(t *testing.T) {
 func TestVerdictAppendFailureAndSecondVerdict(t *testing.T) {
 	root := newBornRoot(t)
 	// A red row: the verdict says not yet.
-	writeZone(t, root, zone.InboxSlot, `behaviors:
+	writeZone(t, root, zone.InboxSlot, fmt.Sprintf(`
+work: the red row first
+mandate: [{line: D1, target: tool/copy}]
+behaviors:
     - id: tool/copy
       name: The copy
       prose: Copies.
-      scope:
-        - src/**
+      claims:
+        - src/in.txt:1-1
+      covers: [R1]
       rows:
-        - run: cat src/in.txt > out.txt
+        - run: sh -c 'printf "%%s %%s\n" %s %s; cat src/in.txt > out.txt'
           expect:
             files:
-                out.txt: "contains: NOPE"
-`)
+                out.txt: NOPE
+`, claimsTokenOf(t, root, "src/in.txt:1-1"), demandTokenOf("a checked tool")))
 	runIn(t, root)
-	writeZone(t, root, zone.InboxSlot, zoneFile(t, root, zone.CorpusFile))
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
 	runIn(t, root)
 	if !strings.Contains(zoneFile(t, root, zone.ReportFile), "verdict: not yet") {
 		t.Fatalf("a red corpus must say not yet")
 	}
 	// The row heals; the verdict's journal append fails: the verdict
 	// simply does not land, the run still answers.
-	writeZone(t, root, zone.InboxSlot, `behaviors:
+	writeZone(t, root, zone.InboxSlot, fmt.Sprintf(`
+work: the heal of the copy
+mandate: [{line: D1, target: tool/copy}]
+behaviors:
     - id: tool/copy
       name: The copy
       prose: Copies.
-      scope:
-        - src/**
+      claims:
+        - src/in.txt:1-1
       covers: [R1]
       rows:
-        - run: cat src/in.txt > out.txt
+        - run: sh -c 'printf "%%s %%s\n" %s %s; cat src/in.txt > out.txt'
           expect:
             files:
-                out.txt: "contains: ok"
-`)
+                out.txt: ok
+`, claimsTokenOf(t, root, "src/in.txt:1-1"), demandTokenOf("a checked tool")))
 	runIn(t, root)
-	writeZone(t, root, zone.InboxSlot, zoneFile(t, root, zone.CorpusFile))
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
 	runCode(t, root, map[string]bool{"append:epoch-": true})
 	if strings.Contains(zoneFile(t, root, zone.StateFile), "verdict: #") {
 		t.Fatalf("a failed append must not fake a verdict")
 	}
-	// Without the failure the verdict lands; a second full cycle
-	// records the second verdict.
-	writeZone(t, root, zone.InboxSlot, zoneFile(t, root, zone.CorpusFile))
+	// Without the failure the verdict lands; a second full cycle —
+	// new work, green, the completion act — records the second
+	// verdict.
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
 	runIn(t, root)
-	os.WriteFile(filepath.Join(root, "src", "in.txt"), []byte("ok ok"), 0o644)
+	if !strings.Contains(zoneFile(t, root, zone.StateFile), "verdict: #1") {
+		t.Fatalf("the first point of truth must land")
+	}
+	writeZone(t, root, zone.InboxSlot, fmt.Sprintf(`
+work: the second cycle's new row
+mandate: [{line: D1, target: tool/copy}]
+uncovered-lines:
+    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
+    - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
+    - {range: "out2.txt:1-1", reason: the row's own output, refs: [D1]}
+behaviors:
+    - id: tool/copy
+      name: The copy
+      prose: Copies.
+      claims:
+        - src/in.txt:1-1
+      covers: [R1]
+      rows:
+        - run: sh -c 'printf "%%s %%s\n" %s %s; cat src/in.txt > out2.txt'
+          expect:
+            files:
+                out2.txt: ok
+`, claimsTokenOf(t, root, "src/in.txt:1-1"), demandTokenOf("a checked tool")))
 	runIn(t, root)
-	writeZone(t, root, zone.InboxSlot, zoneFile(t, root, zone.CorpusFile))
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
 	runIn(t, root)
 	state := zoneFile(t, root, zone.StateFile)
 	if !strings.Contains(state, "verdict: #2") {
@@ -453,7 +471,7 @@ func TestVerdictAppendFailureAndSecondVerdict(t *testing.T) {
 func TestBirthFaultsAreNamed(t *testing.T) {
 	fresh := func() string {
 		dir := t.TempDir()
-		writeZone(t, dir, zone.WishSlot, "goal")
+		writeZone(t, dir, zone.DemandsSlot, "goal")
 		return dir
 	}
 	// The journal's mkdir cannot happen at all.
@@ -461,12 +479,7 @@ func TestBirthFaultsAreNamed(t *testing.T) {
 	if code != 1 || !strings.Contains(term, "birth failed") {
 		t.Fatalf("mkdir: code %d term %q", code, term)
 	}
-	// The wish's object cannot be stored.
-	code, term = runCode(t, fresh(), map[string]bool{"write:objects": true})
-	if code != 1 || !strings.Contains(term, "birth failed") {
-		t.Fatalf("put: code %d term %q", code, term)
-	}
-	// The stream cannot open.
+	// The journal cannot open.
 	code, term = runCode(t, fresh(), map[string]bool{"readdir:journal": true})
 	if code != 1 || !strings.Contains(term, "birth failed") {
 		t.Fatalf("open stream: code %d term %q", code, term)
@@ -475,6 +488,18 @@ func TestBirthFaultsAreNamed(t *testing.T) {
 	code, term = runCode(t, fresh(), map[string]bool{"append:epoch-": true})
 	if code != 1 || !strings.Contains(term, "birth failed") {
 		t.Fatalf("append: code %d term %q", code, term)
+	}
+	// The genesis link cannot land: a birth without its chain is a
+	// birth the machine refuses to own.
+	code, term = runCode(t, fresh(), map[string]bool{"append-content:kind: demand-append": true})
+	if code != 1 || !strings.Contains(term, "birth failed") {
+		t.Fatalf("genesis link: code %d term %q", code, term)
+	}
+	// The reference page's own birth write cannot land: the birth
+	// names the file it could not write.
+	code, term = runCode(t, fresh(), map[string]bool{"write:reference.md": true})
+	if code != 1 || !strings.Contains(term, "birth failed") || !strings.Contains(term, "reference.md") {
+		t.Fatalf("reference write: code %d term %q", code, term)
 	}
 	// A parallel winner of the mkdir: this run continues as an
 	// ordinary pass over a living instance.
@@ -498,17 +523,21 @@ func TestJournalStreamFaultsAreNamed(t *testing.T) {
 		t.Fatalf("append mkdirall: code %d term %q", code, term)
 	}
 	// A submission's rotation cannot open its directory step.
-	writeZone(t, root, zone.InboxSlot, `behaviors:
+	writeZone(t, root, zone.InboxSlot, `
+work: the moved copy
+mandate: [{line: D1, target: tool/copy}]
+behaviors:
     - id: tool/copy
       name: The copy
       prose: Copies.
-      scope:
-        - src/**
+      claims:
+        - src/in.txt:1-1
+      covers: [R1]
       rows:
         - run: cat src/in.txt > out.txt
           expect:
             files:
-                out.txt: "contains: moved"
+                out.txt: moved
 `)
 	os.WriteFile(filepath.Join(root, "src", "in.txt"), []byte("moved"), 0o644)
 	code, term = runCode(t, root, map[string]bool{"mkdirall:journal": true})
@@ -519,27 +548,13 @@ func TestJournalStreamFaultsAreNamed(t *testing.T) {
 
 func TestTreeFaultsDoNotBlindTheFingerprints(t *testing.T) {
 	root := newBornRoot(t)
-	// A directory of the tree cannot be entered during the walk: the
-	// walk's own error reaches the caller, the run refuses.
-	mountPorts()
-	if err := os.Chmod(filepath.Join(root, "src"), 0o000); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.Chmod(filepath.Join(root, "src"), 0o755) })
-	var term strings.Builder
-	if code := Run(root, &term); code != 1 {
-		t.Fatalf("the unreadable tree must refuse the run: code %d term %q", code, term.String())
-	}
-	if err := os.Chmod(filepath.Join(root, "src"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	// The scope file cannot be statted: it spells absent, honestly.
+	// A claimed file that cannot be read spells absent, honestly: the
+	// claims digest moves, the row re-executes, the run answers — a
+	// read fault is data, never blindness.
 	code, fault := runCode(t, root, map[string]bool{"stat:src/in.txt": true})
 	if code != 0 {
 		t.Fatalf("stat: code %d term %q", code, fault)
 	}
-	// The scope file cannot be read after a good stat: absent too.
-	// A fresh mtime first — a cache hit would never read.
 	if err := os.WriteFile(filepath.Join(root, "src", "in.txt"), []byte("ok anew"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -553,17 +568,21 @@ func TestAcceptFaultsAreNamed(t *testing.T) {
 	root := newBornRoot(t)
 	// The document object lands, the behavior object cannot: the
 	// acceptance refuses, the standing keeps its truth.
-	writeZone(t, root, zone.InboxSlot, `behaviors:
+	writeZone(t, root, zone.InboxSlot, `
+work: the copy, more
+mandate: [{line: D1, target: tool/copy}]
+behaviors:
     - id: tool/copy
       name: The copy
       prose: Copies more.
-      scope:
-        - src/**
+      claims:
+        - src/in.txt:1-1
+      covers: [R1]
       rows:
         - run: cat src/in.txt > out.txt
           expect:
             files:
-                out.txt: "contains: ok"
+                out.txt: ok
 `)
 	code, term := runCode(t, root, map[string]bool{"write:objects!after-write": true})
 	if code != 1 {
@@ -579,5 +598,148 @@ func TestRefusalJournalAppendFailureIsNamed(t *testing.T) {
 	code, term := runCode(t, root, map[string]bool{"append:epoch-": true})
 	if code != 1 || !strings.Contains(term, "punchtape:") {
 		t.Fatalf("the failed refusal journaling must refuse the run, code %d term %q", code, term)
+	}
+}
+
+// TestAcceptanceStreamFactFailuresAreNamed — the words' own fact
+// rides beside the accepted submission or the run refuses: a stream
+// fact the machine cannot journal is not a fact it had, and the
+// inbox stands for the next run.
+func TestAcceptanceStreamFactFailuresAreNamed(t *testing.T) {
+	// The demand-append beside an accepted submission.
+	root := newBornRoot(t)
+	writeZone(t, root, zone.DemandsSlot, "a checked tool\na late wish\n")
+	writeZone(t, root, zone.InboxSlot, `work: the late wish
+intents:
+    - {lines: [D2], outcome: mark, prose: the late wish orders nothing yet}
+not-a-requirement:
+    - lines: [D2]
+      reason: not new work
+`)
+	code, _ := runCode(t, root, map[string]bool{"append-content:kind: demand-append": true})
+	if code != 1 {
+		t.Fatalf("the unjournaled link must fail the run: %d", code)
+	}
+	if _, err := os.Stat(filepath.Join(root, zone.Dirname, zone.InboxSlot)); err != nil {
+		t.Fatalf("the unjournaled link keeps the submission in place: %v", err)
+	}
+	// The signature beside an accepted submission.
+	root = newBornRoot(t)
+	writeZone(t, root, zone.InboxSlot, `
+work: a noted pass
+notes:
+    - kind: work
+      text: a note
+`)
+	code, _ = runCode(t, root, map[string]bool{"append-content:kind: no-new-demands": true})
+	if code != 1 {
+		t.Fatalf("the unjournaled signature must fail the run: %d", code)
+	}
+	if _, err := os.Stat(filepath.Join(root, zone.Dirname, zone.InboxSlot)); err != nil {
+		t.Fatalf("the unjournaled signature keeps the submission in place: %v", err)
+	}
+}
+
+// TestCompletionWalkFaultIsLoud — the totality gate's own walk over
+// the tree fails loudly: a verdict claimed over a tree the machine
+// could not read is a lie.
+func TestCompletionWalkFaultIsLoud(t *testing.T) {
+	root := newBornRoot(t)
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
+	code, _ := runCode(t, root, map[string]bool{"walk:" + root: true})
+	if code != 1 {
+		t.Fatalf("the unreadable tree must refuse the completion: %d", code)
+	}
+}
+
+// TestRefusalStateViewFaultIsLoud — the refusal path's own state
+// write fails loudly: a queue the state cannot name is a stale face.
+func TestRefusalStateViewFaultIsLoud(t *testing.T) {
+	root := newBornRoot(t)
+	writeZone(t, root, zone.InboxSlot, "\tbroken: [")
+	code, term := runCode(t, root, map[string]bool{"write:.punchtape/state.md": true})
+	if code != 1 || !strings.Contains(term, "state view:") {
+		t.Fatalf("the refusal's state screen must fail loudly: code %d term %q", code, term)
+	}
+}
+
+// TestExecutionFaultsAreNamed — the machine's own executions under
+// failure: a launch that cannot be reaped journals its fact, a long
+// output that cannot reach the object store fails the run, a fact
+// that cannot journal fails the run.
+func TestExecutionFaultsAreNamed(t *testing.T) {
+	root := newBornRoot(t)
+	ports.FSBind = fsys.OS{}
+	ports.ExecBind = fakeWaitExec{}
+	defer mountPorts()
+	writeZone(t, root, zone.DemandsSlot, "a checked tool\nrun the failing probe\n")
+	writeZone(t, root, zone.InboxSlot, `work: the execution that cannot be reaped
+intents:
+    - {lines: [D2], outcome: execute, prose: the probe's own output answers, run: "printf hi"}
+`)
+	runIn(t, root)
+	records, err := journalRecords(t, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var reaped bool
+	for _, rec := range records {
+		if rec.Kind == journal.KindExecution && rec.Execution != nil && rec.Execution.Exit == -1 {
+			reaped = true
+		}
+	}
+	if !reaped {
+		t.Fatalf("the unreapable execution must journal its minus-one exit")
+	}
+	// The long output's object cannot land: the run says so. A new
+	// line of the stream carries the new command — an outcome is
+	// declared once, by the intent of its own line.
+	mountPorts()
+	writeZone(t, root, zone.DemandsSlot, "a checked tool\nrun the failing probe\nrun the long probe\n")
+	writeZone(t, root, zone.InboxSlot, `
+work: the long execution
+intents:
+    - {lines: [D3], outcome: execute, prose: the long output answers, run: "awk 'BEGIN{for(i=0;i<5000;i++)printf \"x\"}'"}
+`)
+	code, term := runCode(t, root, map[string]bool{"write:objects!after-write": true})
+	if code != 1 || !strings.Contains(term, "cas put") {
+		t.Fatalf("the unlandable long output must fail the run: %d %q", code, term)
+	}
+	// The fact itself cannot journal: the run says so.
+	writeZone(t, root, zone.DemandsSlot, "a checked tool\nrun the failing probe\nrun the long probe\nrun the quiet probe\n")
+	writeZone(t, root, zone.InboxSlot, `
+work: the execution whose fact cannot journal
+intents:
+    - {lines: [D4], outcome: execute, prose: the command answers, run: "printf hi"}
+`)
+	code, term = runCode(t, root, map[string]bool{"append-content:kind: execution-fact": true})
+	if code != 1 || !strings.Contains(term, "journal write:") {
+		t.Fatalf("the unjournaled execution fact must fail the run: %d %q", code, term)
+	}
+}
+
+// TestTraceViewWriteFaultIsLoud — a trace page that cannot land
+// fails the run: a stale trace is a stale face.
+func TestTraceViewWriteFaultIsLoud(t *testing.T) {
+	root := newBornRoot(t)
+	// A new stream line moves the trace's own content: the page must
+	// land again — and cannot.
+	writeZone(t, root, zone.DemandsSlot, "a checked tool\na later word\n")
+	code, term := runCode(t, root, map[string]bool{"write:trace.md": true})
+	if code != 1 || !strings.Contains(term, "trace view:") {
+		t.Fatalf("the unlandable trace must fail the run: %d %q", code, term)
+	}
+}
+
+// TestHolesViewWriteFaultIsLoud — the ledger that cannot land over
+// changed holes fails the run inside the state's own write.
+func TestHolesViewWriteFaultIsLoud(t *testing.T) {
+	root := newBornRoot(t)
+	if err := os.WriteFile(filepath.Join(root, "junk.txt"), []byte("loose\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	code, term := runCode(t, root, map[string]bool{"write:holes.md": true})
+	if code != 1 || !strings.Contains(term, "state view:") {
+		t.Fatalf("the unlandable ledger must fail the state's write: %d %q", code, term)
 	}
 }

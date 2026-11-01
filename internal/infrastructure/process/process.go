@@ -48,7 +48,10 @@ type osProcess struct {
 }
 
 // Wait — the process's own outcome: the exit code, the captured
-// streams, the deadline's honest mark.
+// streams, the deadline's honest mark. On the deadline path the
+// killed command's wait is joined — bounded, as the group's death
+// is — before the buffers are read: os/exec's copier goroutines own
+// them until cmd.Wait returns.
 func (p *osProcess) Wait(timeout time.Duration) ports.Outcome {
 	var outcome ports.Outcome
 	done := make(chan error, 1)
@@ -65,6 +68,10 @@ func (p *osProcess) Wait(timeout time.Duration) ports.Outcome {
 		}
 	case <-time.After(timeout):
 		p.KillGroup()
+		select {
+		case <-done:
+		case <-time.After(1 * time.Second):
+		}
 		outcome.TimedOut = true
 	}
 	outcome.Stdout = p.stdout.String()

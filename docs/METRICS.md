@@ -70,6 +70,12 @@ from an AI to a live human.
   passes silently. The one extrapolation used below — the live-human
   anchor ×1.2–2.0 of the AI operator's wall — is the Appendix E
   correction of the research paper, carried here with its label.
+- **The generations measured here are past releases.** The machine
+  has since been rebuilt beyond 0.4.0: the shipped 0.5.0 release
+  is a further rebuild of the same inversion (the demand stream,
+  the six outcomes, line-range claims, the bare `done: true`
+  act), and no economics of that rebuild are claimed here — every
+  number below belongs to the generation it names.
 
 ## 1. The 0.2.0 metrics (September 2026)
 

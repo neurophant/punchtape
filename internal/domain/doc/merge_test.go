@@ -71,10 +71,10 @@ func TestMergeRowsEmptySides(t *testing.T) {
 }
 
 func TestMergeBehaviorHeadReplaces(t *testing.T) {
-	standing := Behavior{ID: "a", Name: "Old", Prose: "was", Scope: []string{"x/**"}, Rows: []Row{lineRow("a", "1")}}
-	submitted := Behavior{ID: "a", Name: "New", Prose: "now", Scope: []string{"y/**"}, Rows: []Row{lineRow("b", "2")}}
+	standing := Behavior{ID: "a", Name: "Old", Prose: "was", Claims: []string{"x.go:1-2"}, Rows: []Row{lineRow("a", "1")}}
+	submitted := Behavior{ID: "a", Name: "New", Prose: "now", Claims: []string{"y.go:1-2"}, Rows: []Row{lineRow("b", "2")}}
 	merged := MergeBehavior(standing, submitted)
-	if merged.Name != "New" || merged.Prose != "now" || strings.Join(merged.Scope, ",") != "y/**" {
+	if merged.Name != "New" || merged.Prose != "now" || strings.Join(merged.Claims, ",") != "y.go:1-2" {
 		t.Fatalf("the submitted head replaces whole: %#v", merged)
 	}
 	if got := runsOf(merged.Rows); strings.Join(got, "|") != "a|b" {
@@ -94,41 +94,48 @@ func TestRespelledRunIsANewRun(t *testing.T) {
 func TestMergeRegistryLaws(t *testing.T) {
 	standing := Registry{
 		Requirements: map[string]Requirement{
-			"R1": {ID: "R1", Brief: []string{"W1"}},
-			"R2": {ID: "R2", Brief: []string{"W2"}},
+			"R1": {ID: "R1", Lines: []string{"D1"}, Prose: "p1"},
+			"R2": {ID: "R2", Lines: []string{"D2"}, Prose: "p2"},
 		},
 		Order:   []string{"R1", "R2"},
-		Markers: []Marker{{Lines: []string{"W9"}, Quote: "the old tail", Reason: "old"}},
+		Markers: []Marker{{Lines: []string{"D9"}, Reason: "old"}},
 	}
 	// A repeated id replaces its head whole and keeps its place; a
 	// remove retires first and a re-add starts fresh at the end.
 	merged := MergeRegistry(standing, Document{
-		Remove:          []string{"R2"},
-		Requirements:    []Requirement{{ID: "R1", Brief: []string{"W1..W2"}}, {ID: "R2", Brief: []string{"W3"}}},
-		NotRequirements: []Marker{{Lines: []string{"W8"}, Quote: "the new tail", Reason: "new"}},
+		Remove:       []string{"R2"},
+		Requirements: []Requirement{{ID: "R1", Lines: []string{"D1..D2"}, Prose: "p"}, {ID: "R2", Lines: []string{"D3"}, Prose: "p"}},
+		Markers:      []Marker{{Lines: []string{"D8"}, Reason: "new"}},
+		Exclusions:   []Exclusion{{Range: "gen/out.go:1-9", Reason: "generated"}},
+		Open:         []OpenOrder{{Demand: "D8", Question: "stage two?", State: "awaiting"}},
 	})
-	if len(merged.Requirements) != 2 || strings.Join(merged.Requirements["R1"].Brief, ",") != "W1..W2" {
+	if len(merged.Requirements) != 2 || strings.Join(merged.Requirements["R1"].Lines, ",") != "D1..D2" {
 		t.Fatalf("the repeated id replaces its head: %#v", merged)
 	}
 	if strings.Join(merged.Order, ",") != "R1,R2" {
 		t.Fatalf("the re-added id lands after the survivors: %v", merged.Order)
 	}
-	if len(merged.Markers) != 1 || merged.Markers[0].Reason != "new" || merged.Markers[0].Quote != "the new tail" {
-		t.Fatalf("the submitted markers replace the standing list entire: %#v", merged.Markers)
+	if len(merged.Markers) != 2 || merged.Markers[0].Reason != "old" || merged.Markers[1].Reason != "new" {
+		t.Fatalf("the markers merge by their key — both stand: %#v", merged.Markers)
 	}
-	// An absent marker list and an absent artifact list change
-	// nothing; a carried artifact list replaces.
+	if len(merged.Exclusions) != 1 || merged.Exclusions[0].Range != "gen/out.go:1-9" {
+		t.Fatalf("a carried exclusion appends by its key: %#v", merged.Exclusions)
+	}
+	if len(merged.Open) != 1 || merged.Open[0].Question != "stage two?" {
+		t.Fatalf("a carried open order appends by its key: %#v", merged.Open)
+	}
+	// An absent list changes nothing; a carried one merges by key.
 	keep := MergeRegistry(merged, Document{Requirements: []Requirement{}})
-	if len(keep.Markers) != 1 || keep.Markers[0].Reason != "new" || keep.Markers[0].Quote != "the new tail" {
-		t.Fatalf("a submission without markers keeps the standing ones: %#v", keep.Markers)
+	if len(keep.Markers) != 2 || len(keep.Exclusions) != 1 || len(keep.Open) != 1 {
+		t.Fatalf("a submission without the lists keeps the standing ones: %#v", keep)
 	}
-	withArtifacts := MergeRegistry(keep, Document{Artifacts: []string{"out/**"}})
-	if strings.Join(withArtifacts.Artifacts, ",") != "out/**" {
-		t.Fatalf("a carried artifact list replaces: %v", withArtifacts.Artifacts)
-	}
-	again := MergeRegistry(withArtifacts, Document{})
-	if strings.Join(again.Artifacts, ",") != "out/**" {
-		t.Fatalf("a submission without artifacts keeps the standing ones: %v", again.Artifacts)
+	replaced := MergeRegistry(keep, Document{
+		Exclusions: []Exclusion{{Range: "gen/other.go:1-2", Reason: "generated"}},
+		Open:       []OpenOrder{{Demand: "D1", Question: "later?", State: "deferred", Reason: "the human said later"}},
+	})
+	if len(replaced.Exclusions) != 2 || replaced.Exclusions[1].Range != "gen/other.go:1-2" ||
+		len(replaced.Open) != 2 || replaced.Open[1].State != "deferred" {
+		t.Fatalf("a carried list merges by key, strangers append: %#v", replaced)
 	}
 	// The removed id retires; the remove-and-re-add keeps it once.
 	gone := MergeRegistry(standing, Document{Remove: []string{"R1"}})
@@ -138,8 +145,8 @@ func TestMergeRegistryLaws(t *testing.T) {
 }
 
 func TestDuplicateRunInOneBehaviorRefused(t *testing.T) {
-	d := Document{Behaviors: []Behavior{{
-		ID: "a/b", Name: "n",
+	d := Document{Work: "w", Behaviors: []Behavior{{
+		ID: "a/b", Name: "n", Prose: "p",
 		Rows: []Row{lineRow("same cmd", "1"), lineRow("other", "2"), lineRow("same cmd", "3")},
 	}}}
 	r := Validate(d, nil)
@@ -160,8 +167,8 @@ func TestDuplicateRunInOneBehaviorRefused(t *testing.T) {
 }
 
 func TestDuplicateRunArgvSpellingRefused(t *testing.T) {
-	d := Document{Behaviors: []Behavior{{
-		ID: "a", Name: "n",
+	d := Document{Work: "w", Behaviors: []Behavior{{
+		ID: "a", Name: "n", Prose: "p",
 		Rows: []Row{
 			{Run: Cmd{Argv: []string{"make", "check"}}, Expect: Expect{Out: "1"}},
 			{Run: Cmd{Argv: []string{"make", "check"}}, Expect: Expect{Out: "2"}},
@@ -170,5 +177,31 @@ func TestDuplicateRunArgvSpellingRefused(t *testing.T) {
 	r := Validate(d, nil)
 	if len(r) != 1 || !strings.Contains(r[0].Error(), "behaviors[0].rows[1].run") {
 		t.Fatalf("the argv-spelled duplicate must be refused at its place: %v", r)
+	}
+}
+
+// TestRemoveRetiresEveryKind — each of the five spellings retires
+// its standing part: the requirement by id, the exclusion by range,
+// the marker and the order by their line.
+func TestRemoveRetiresEveryKind(t *testing.T) {
+	standing := Registry{
+		Requirements: map[string]Requirement{"R1": {ID: "R1", Lines: []string{"D1"}, Prose: "p"}},
+		Order:        []string{"R1"},
+		Markers:      []Marker{{Lines: []string{"D2..D3"}, Reason: "a heading"}},
+		Exclusions:   []Exclusion{{Range: "gen/out.go:1-9", Reason: "generated"}},
+		Open:         []OpenOrder{{Demand: "D5", Question: "stage?", State: StateAwaiting}},
+	}
+	out := MergeRegistry(standing, Document{Remove: []string{"R1", "D2", "gen/out.go:1-9", "D5"}})
+	if len(out.Requirements) != 0 || len(out.Order) != 0 {
+		t.Fatalf("the requirement retires: %#v", out)
+	}
+	if len(out.Markers) != 0 {
+		t.Fatalf("the marker on the removed line retires whole: %#v", out.Markers)
+	}
+	if len(out.Exclusions) != 0 {
+		t.Fatalf("the exclusion retires by its range: %#v", out.Exclusions)
+	}
+	if len(out.Open) != 0 {
+		t.Fatalf("the order retires by its line: %#v", out.Open)
 	}
 }

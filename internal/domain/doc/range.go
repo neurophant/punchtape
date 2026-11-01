@@ -1,10 +1,13 @@
 package doc
 
-// The wish-line ranges' one grammar, both directions: a range list
-// ("W3", "W5..W9", comma-joined) parses to its line numbers, and a
-// number set spells back into the same grammar with runs collapsed.
-// The wish's lines number from W1 in file order; a range names them
-// alone — one spelling everywhere the machine reads or prints them.
+// The demand stream's own vocabulary: the line universe's one law —
+// a text's non-empty trimmed lines, in order — and the range grammar
+// over it, both directions: a range list ("D3", "D5..D9",
+// comma-joined) parses to its line numbers, and a number set spells
+// back into the same grammar with runs collapsed. The demand
+// stream's non-empty lines number from D1 in file order; a range
+// names them alone — one spelling everywhere the machine reads or
+// prints them.
 
 import (
 	"fmt"
@@ -12,6 +15,19 @@ import (
 	"strconv"
 	"strings"
 )
+
+// NonEmptyLines — a text's non-empty lines, trimmed, in order: the
+// one law of the demand stream's universe. Blank lines frame and
+// carry nothing; every other line is a demand line.
+func NonEmptyLines(text string) []string {
+	var out []string
+	for _, line := range strings.Split(text, "\n") {
+		if trimmed := strings.TrimSpace(line); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
+}
 
 // ParseRanges — the range strings as one sorted set of line numbers.
 // A broken spelling answers its own error; the caller names the
@@ -37,28 +53,28 @@ func ParseRanges(ranges []string) ([]int, error) {
 	return out, nil
 }
 
-// parseRange — one element: W<n> or W<a>..W<b>, ascending.
+// parseRange — one element: D<n> or D<a>..D<b>, ascending.
 func parseRange(elem string) (int, int, error) {
 	lo, hi, dotted := strings.Cut(elem, "..")
-	a, err := wishNumber(lo)
+	a, err := demandNumber(lo)
 	if err != nil {
 		return 0, 0, err
 	}
 	if !dotted {
 		return a, a, nil
 	}
-	b, err := wishNumber(hi)
+	b, err := demandNumber(hi)
 	if err != nil || b < a {
 		return 0, 0, fmt.Errorf("the range %q must ascend", elem)
 	}
 	return a, b, nil
 }
 
-// wishNumber — "W" and a plain decimal number from 1 up: one
+// demandNumber — "D" and a plain decimal number from 1 up: one
 // spelling, no leading zeros, no sign.
-func wishNumber(s string) (int, error) {
-	notOne := fmt.Errorf("%q is not a wish line W<n>", s)
-	if !strings.HasPrefix(s, "W") {
+func demandNumber(s string) (int, error) {
+	notOne := fmt.Errorf("%q is not a demand line D<n>", s)
+	if !strings.HasPrefix(s, "D") {
 		return 0, notOne
 	}
 	digits := s[1:]
@@ -78,7 +94,7 @@ func wishNumber(s string) (int, error) {
 }
 
 // SpellRanges — the numbers in the range grammar, consecutive runs
-// collapsed: [19, 23, 24, 25] spells "W19, W23..W25". An empty set
+// collapsed: [19, 23, 24, 25] spells "D19, D23..D25". An empty set
 // spells the empty string.
 func SpellRanges(nums []int) string {
 	if len(nums) == 0 {
@@ -91,11 +107,11 @@ func SpellRanges(nums []int) string {
 	spell := func(end int) {
 		switch {
 		case end == start:
-			fmt.Fprintf(&b, "W%d", start)
+			fmt.Fprintf(&b, "D%d", start)
 		case end == start+1:
-			fmt.Fprintf(&b, "W%d, W%d", start, end)
+			fmt.Fprintf(&b, "D%d, D%d", start, end)
 		default:
-			fmt.Fprintf(&b, "W%d..W%d", start, end)
+			fmt.Fprintf(&b, "D%d..D%d", start, end)
 		}
 	}
 	for _, n := range sorted[1:] {

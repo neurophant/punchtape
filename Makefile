@@ -5,6 +5,8 @@
 BINARY := punchtape
 COV := /tmp/punchtape-check
 COVERPKG := ./cmd/...,./internal/...
+PYFILES := $(shell git ls-files '*.py')
+MYPYCACHE := /tmp/punchtape-mypy
 # The battery's speed ceiling. Its ONLY job is to catch an accidental
 # blow-up — a hang, a sleep, a quadratic walk — before the field
 # does. It is a servant of completeness, never its judge: tests are
@@ -13,7 +15,7 @@ COVERPKG := ./cmd/...,./internal/...
 # explicit direct order moves the ceiling.
 BATTERY_LIMIT := 120s
 
-.PHONY: build install clean vet fmt dist check docs-parity
+.PHONY: build install clean vet fmt dist check docs-parity python-lint
 
 # The user docs' mirror parity: every Russian and Chinese mirror
 # structurally exact against its English base — the law the gate's
@@ -21,13 +23,24 @@ BATTERY_LIMIT := 120s
 docs-parity:
 	.venv/bin/python tools/docs_parity.py
 
+# The Python law: ruff's error families (the selection adds PLC0415 —
+# the lazy-import ban's own rule) and the formatter's shape, and
+# mypy --strict, over every Python file the repository tracks — all
+# from the repository-local venv, no global tool. mypy walks one file
+# a call: the campaign case directories carry hyphens, so one call
+# cannot tell their same-named modules apart.
+python-lint:
+	.venv/bin/ruff check --no-cache --select E4,E7,E9,F,PLC0415 $(PYFILES)
+	.venv/bin/ruff format --check --no-cache $(PYFILES)
+	for f in $(PYFILES); do .venv/bin/mypy --strict --cache-dir $(MYPYCACHE) "$$f" || exit 1; done
+
 # The whole battery's gate: the analyzers, the full test suite, and
 # the two standing laws — every non-test statement executed by the
 # battery (the instrumented binary's own launch covers the entry
 # point a unit test cannot reach), and the code's size ceiling. The
 # two coverage sources merge by the block's maximum count: the same
 # block seen by several test binaries counts once, as executed.
-check: docs-parity
+check: docs-parity python-lint
 	test -z "$$(gofmt -l .)"
 	go vet ./...
 	staticcheck ./...

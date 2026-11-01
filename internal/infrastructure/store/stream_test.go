@@ -105,6 +105,47 @@ func TestStreamTornTailAndDamage(t *testing.T) {
 	}
 }
 
+// TestStreamFirstRecordAlone — the first record loads without asking
+// any later record to parse; a journal that never wrote answers the
+// zero record.
+func TestStreamFirstRecordAlone(t *testing.T) {
+	ports.FSBind = fsys.OS{}
+	dir := filepath.Join(t.TempDir(), "journal")
+	s, _ := OpenStream(dir)
+	if err := s.Append(birthRec()); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Append(runRec(1)); err != nil {
+		t.Fatal(err)
+	}
+	// A first record that is not parseable — damage by hand — is an
+	// honest error even when it is the only thing asked.
+	if err := os.WriteFile(s.files[0], []byte("---\nkind: birth\nbroken: {\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	fresh, _ := OpenStream(dir)
+	if _, err := fresh.FirstRecord(); err == nil {
+		t.Fatal("a broken first record must refuse to load")
+	}
+	// A journal that never wrote — no files, or an empty first epoch —
+	// answers the zero record.
+	virgin, _ := OpenStream(filepath.Join(t.TempDir(), "nowhere"))
+	if rec, err := virgin.FirstRecord(); err != nil || rec.Kind != "" {
+		t.Fatalf("a virgin stream has no first record: %v %+v", err, rec)
+	}
+	blank := filepath.Join(t.TempDir(), "blank")
+	if err := os.MkdirAll(blank, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(blank, "epoch-00001.yaml"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	empty, _ := OpenStream(blank)
+	if rec, err := empty.FirstRecord(); err != nil || rec.Kind != "" {
+		t.Fatalf("an empty first epoch has no first record: %v %+v", err, rec)
+	}
+}
+
 // failingFS — the real filesystem with the append always failing.
 type failingFS struct {
 	fsys.OS

@@ -36,11 +36,46 @@ func TestShapedRecords(t *testing.T) {
 		{Kind: "bogus"},
 		{Kind: KindBirth},
 		{Kind: KindRun, Run: &Run{N: 1}, Birth: &Birth{Addr: "a", Digest: "d"}},
+		{Kind: KindDemandAppend, DemandAppend: &DemandAppend{Lines: 1, Chain: "c"}, Run: &Run{N: 1}},
+		{Kind: KindNoNewDemands, NoNewDemands: &NoNewDemands{Lines: 1, Run: 1}, Birth: &Birth{Version: "v"}},
 	}
 	for i, r := range bad {
 		if err := DecodeRecord(MarshalRecord(r), new(Record)); err == nil {
 			t.Fatalf("record %d must be refused as unshaped", i)
 		}
+	}
+}
+
+// TestStreamFactRecordsRoundTrip — the chain's own two records
+// round-trip byte-exact with their payloads whole.
+func TestStreamFactRecordsRoundTrip(t *testing.T) {
+	for _, rec := range []Record{
+		{Kind: KindDemandAppend, DemandAppend: &DemandAppend{Lines: 2, Chain: strings.Repeat("c", 64)}},
+		{Kind: KindNoNewDemands, NoNewDemands: &NoNewDemands{Lines: 3, Run: 7}},
+	} {
+		data := MarshalRecord(rec)
+		var back Record
+		if err := DecodeRecord(data, &back); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if !bytes.Equal(MarshalRecord(back), data) {
+			t.Fatalf("round trip must be byte-exact:\n%s", data)
+		}
+	}
+}
+
+// TestBirthRecordCarriesOnlyTheVersion — the birth record the
+// machine writes carries the version and nothing else; a birth that
+// names an object by address and digest round-trips the same.
+func TestBirthRecordCarriesOnlyTheVersion(t *testing.T) {
+	data := MarshalRecord(Record{Kind: KindBirth, Birth: &Birth{Version: "0.5.0"}})
+	if string(data) != "kind: birth\nbirth:\n  version: 0.5.0\n" {
+		t.Fatalf("the birth record carries only the version:\n%q", data)
+	}
+	old := MarshalRecord(Record{Kind: KindBirth, Birth: &Birth{Addr: "a", Digest: "d", Version: "0.4.0"}})
+	var back Record
+	if err := DecodeRecord(old, &back); err != nil || back.Birth.Addr != "a" || back.Birth.Digest != "d" {
+		t.Fatalf("a pre-0.5.0 birth must still round-trip: %v %+v", err, back.Birth)
 	}
 }
 
@@ -69,6 +104,7 @@ func TestFold(t *testing.T) {
 	two := put(doc.Behavior{ID: "b/two", Name: "Two"})
 	records := []Record{
 		{Kind: KindBirth, Birth: &Birth{Addr: "w", Digest: "wd"}},
+		{Kind: KindDemandAppend, DemandAppend: &DemandAppend{Lines: 2, Chain: "c1"}},
 		{Kind: KindSubmission, Submission: &Submission{CorpusVersion: 1, Build: strp("make"), DocAddr: "d1", Added: []BehaviorOp{one, two}}},
 		{Kind: KindRun, Run: &Run{N: 1, Rows: []RowFact{{Key: "a/one/0", Status: StatusGreen, Proof: "p1"}}}},
 		{Kind: KindSubmission, Submission: &Submission{CorpusVersion: 2, DocAddr: "d2", Removed: []string{"a/one"}}},
@@ -77,7 +113,7 @@ func TestFold(t *testing.T) {
 	if err != nil {
 		t.Fatalf("fold: %v", err)
 	}
-	if !st.Born || st.GoalDigest != "wd" || st.CorpusVersion != 2 || st.Build != "make" {
+	if !st.Born || st.CorpusVersion != 2 || st.Build != "make" || st.PastLines != 2 || st.ChainHead != "c1" {
 		t.Fatalf("standing: %+v", st)
 	}
 	if _, alive := st.Behaviors["a/one"]; alive {
@@ -151,7 +187,8 @@ func TestBirthCarriesTheVersion(t *testing.T) {
 		t.Fatalf("the fold must expose the birth's machine version: %v %+v", err, st)
 	}
 	// A birth from before the field existed folds with the honest
-	// empty origin.
+	// empty origin — the run's own gate, not the fold, refuses the
+	// zone that names no machine.
 	old := Record{Kind: KindBirth, Birth: &Birth{Addr: "x", Digest: "y"}}
 	var backOld Record
 	if err := DecodeRecord(MarshalRecord(old), &backOld); err != nil {
@@ -160,6 +197,32 @@ func TestBirthCarriesTheVersion(t *testing.T) {
 	st, err = Fold([]Record{old}, objReader(map[string][]byte{}))
 	if err != nil || st.BirthVersion != "" {
 		t.Fatalf("an old birth carries no machine version: %v %+v", err, st)
+	}
+}
+
+// TestFoldChainsTheStream — the chain's ledger grows link by link,
+// the past lines accumulate, and the standing signature holds only
+// until the next demand-append clears it.
+func TestFoldChainsTheStream(t *testing.T) {
+	records := []Record{
+		{Kind: KindBirth, Birth: &Birth{Version: "9.9.9"}},
+		{Kind: KindDemandAppend, DemandAppend: &DemandAppend{Lines: 2, Chain: "c1"}},
+		{Kind: KindNoNewDemands, NoNewDemands: &NoNewDemands{Lines: 2, Run: 3}},
+	}
+	st, err := Fold(records, objReader(map[string][]byte{}))
+	if err != nil {
+		t.Fatalf("fold: %v", err)
+	}
+	if len(st.ChainAppends) != 1 || st.ChainHead != "c1" || st.PastLines != 2 || st.LastNoNewDemands != 3 {
+		t.Fatalf("the chain and the signature must stand: %+v", st)
+	}
+	records = append(records, Record{Kind: KindDemandAppend, DemandAppend: &DemandAppend{Lines: 1, Chain: "c2"}})
+	st, err = Fold(records, objReader(map[string][]byte{}))
+	if err != nil {
+		t.Fatalf("fold: %v", err)
+	}
+	if len(st.ChainAppends) != 2 || st.ChainHead != "c2" || st.PastLines != 3 || st.LastNoNewDemands != 0 {
+		t.Fatalf("a demand-append must grow the chain and clear the signature: %+v", st)
 	}
 }
 
@@ -180,5 +243,50 @@ func TestRefusalRecordRoundTripAndFold(t *testing.T) {
 	mixed := Record{Kind: KindRefusal, Refusals: rec.Refusals, Run: &Run{N: 1}}
 	if err := DecodeRecord(MarshalRecord(mixed), new(Record)); err == nil {
 		t.Fatal("a refusal record with a second payload must be refused")
+	}
+}
+
+// TestApplyCarriersSkipsUnshapelyIntents — the fold's own defense: a
+// forged record carrying an outcome outside the six or lines that do
+// not parse changes no carrier — the record's bytes stand in the
+// journal, the standing stays honest.
+func TestApplyCarriersSkipsUnshapelyIntents(t *testing.T) {
+	st := &Standing{
+		LineOutcomes: map[int]LineOutcome{},
+		AskedLines:   map[int]bool{},
+		Answers:      map[int]string{},
+		Executions:   map[int]doc.Cmd{},
+	}
+	ApplyCarriers(st, &Submission{CorpusVersion: 2, Intents: []doc.Intent{
+		{Lines: []string{"D1"}, Outcome: "sideways", Prose: "p"},
+		{Lines: []string{"junk"}, Outcome: doc.OutcomeWork, Prose: "p"},
+	}})
+	if len(st.LineOutcomes) != 0 {
+		t.Fatalf("unshapely intents must carry nothing: %+v", st.LineOutcomes)
+	}
+}
+
+// TestApplyCarriersCarriesFromIntents — the answer's text and the
+// execution's command ride the intent's own fields onto the standing.
+func TestApplyCarriersCarriesFromIntents(t *testing.T) {
+	st := &Standing{
+		LineOutcomes: map[int]LineOutcome{},
+		AskedLines:   map[int]bool{},
+		Answers:      map[int]string{},
+		Executions:   map[int]doc.Cmd{},
+	}
+	ApplyCarriers(st, &Submission{CorpusVersion: 2, Intents: []doc.Intent{
+		{Lines: []string{"D3"}, Outcome: doc.OutcomeAnswer, Prose: "the ask retold", Text: "the answer itself"},
+		{Lines: []string{"D4"}, Outcome: doc.OutcomeExecute, Prose: "the ask retold", Run: doc.Cmd{Line: "./tool"}},
+		{Lines: []string{"D5"}, Outcome: doc.OutcomeWork, Prose: "the ask retold"},
+	}})
+	if st.Answers[3] != "the answer itself" || st.LineOutcomes[3].Outcome != doc.OutcomeAnswer {
+		t.Fatalf("the answer's text must ride its intent: %+v", st)
+	}
+	if st.Executions[4].Line != "./tool" || st.LineOutcomes[4].Outcome != doc.OutcomeExecute {
+		t.Fatalf("the execution's command must ride its intent: %+v", st)
+	}
+	if _, carried := st.Answers[5]; carried {
+		t.Fatalf("a work intent carries no answer: %+v", st)
 	}
 }

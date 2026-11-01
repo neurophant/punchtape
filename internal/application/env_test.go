@@ -4,10 +4,11 @@
 // the law), the environment hash moves with the pins — a changed
 // pin file is a changed environment, proofs follow, never falsely
 // green — and the working root's own ENV-named file is nothing to
-// the machine: the old silent door is dead.
+// the machine: no variable it names rides a row, no hash moves.
 package application
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,16 +28,23 @@ func writePins(t *testing.T, root, content string) {
 func TestZonePinsRideEveryRow(t *testing.T) {
 	mountPorts()
 	root := newRoot(t)
-	writeZone(t, root, zone.InboxSlot, `behaviors:
+	if err := os.WriteFile(filepath.Join(root, "src.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeZone(t, root, zone.InboxSlot, fmt.Sprintf(`
+work: the pinned row
+behaviors:
     - id: tool/env
       name: The zone environment
       prose: Rows see the zone pins.
+      claims:
+        - src.txt:1-1
       rows:
-        - run: ["sh", "-c", "printf %s \"$PTA\" > out.txt"]
+        - run: ["sh", "-c", "printf '%%s\\n' %s; printf %%s \"$PTA\" > out.txt"]
           expect:
             files:
                 out.txt: from-the-zone
-`)
+`, claimsTokenOf(t, root, "src.txt:1-1")))
 	writePins(t, root, "# a comment is not a pin\nPTA=from-the-zone\n\n")
 	runIn(t, root)
 	if report := zoneFile(t, root, zone.ReportFile); !strings.Contains(report, "green: 1") {
@@ -80,6 +88,7 @@ func TestZonePinRefusalsAreLoud(t *testing.T) {
 		"leading digit": "2PA=1\n",
 		"absolute path": "PTA=/absolutely/one/disk\n",
 		"no equals":     "no-equals-line\n",
+		"duplicate pin": "PTA=one\nPTA=two\n",
 	} {
 		t.Run(name, func(t *testing.T) {
 			root := newBornRoot(t)
@@ -88,12 +97,15 @@ func TestZonePinRefusalsAreLoud(t *testing.T) {
 			if code != 1 {
 				t.Fatalf("a bad pin file must refuse the run, exit %d: %s", code, term)
 			}
-			for _, want := range []string{"env pin refused", "line 1", ".punchtape/env"} {
+			// The refused line is the file's own: the last of its
+			// pin lines (a duplicate names its second spelling).
+			lineNo := strings.Count(content, "\n")
+			for _, want := range []string{"env pin refused", fmt.Sprintf("line %d", lineNo), ".punchtape/env"} {
 				if !strings.Contains(term, want) {
 					t.Fatalf("the refusal must quote %q:\n%s", want, term)
 				}
 			}
-			if !strings.Contains(term, "KEY=VALUE") && !strings.Contains(term, "absolute") && !strings.Contains(term, "quotes") {
+			if !strings.Contains(term, "KEY=VALUE") && !strings.Contains(term, "absolute") && !strings.Contains(term, "quotes") && !strings.Contains(term, "pins once") {
 				t.Fatalf("the refusal must state the law it enforces:\n%s", term)
 			}
 		})
@@ -103,24 +115,26 @@ func TestZonePinRefusalsAreLoud(t *testing.T) {
 func TestRootEnvFileIsDeadToTheMachine(t *testing.T) {
 	mountPorts()
 	root := newBornRoot(t)
-	// The old door: a KEY=VALUE file named ENV in the working root.
-	// It is nothing to the machine now — no variable it names rides
+	// The probe: a KEY=VALUE file named ENV in the working root.
+	// It is nothing to the machine — no variable it names rides
 	// a row, no hash moves.
 	if err := os.WriteFile(filepath.Join(root, "ENV"), []byte("PTA=leaked\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	writeZone(t, root, zone.InboxSlot, `behaviors:
+	writeZone(t, root, zone.InboxSlot, fmt.Sprintf(`
+work: the dead door check
+behaviors:
     - id: tool/silent
       name: The dead door
       prose: The root ENV leaks nothing.
-      scope:
-        - ENV
+      claims:
+        - ENV:1-1
       rows:
-        - run: ["sh", "-c", "printf %s \"${PTA-unset}\" > seen.txt"]
+        - run: ["sh", "-c", "printf '%%s\\n' %s; printf %%s \"${PTA-unset}\" > seen.txt"]
           expect:
             files:
                 seen.txt: unset
-`)
+`, claimsTokenOf(t, root, "ENV:1-1")))
 	runIn(t, root)
 	if report := zoneFile(t, root, zone.ReportFile); !strings.Contains(report, "green: 1") {
 		t.Fatalf("the root ENV file must leak nothing into rows:\n%s", report)
@@ -133,15 +147,21 @@ func TestRootEnvFileIsDeadToTheMachine(t *testing.T) {
 func TestRowNotFoundCarriesTheLaw(t *testing.T) {
 	mountPorts()
 	root := newRoot(t)
-	writeZone(t, root, zone.InboxSlot, `behaviors:
+	writeZone(t, root, zone.InboxSlot, fmt.Sprintf(`
+work: the absent command
+behaviors:
     - id: tool/absent
       name: The absent command
       prose: A row calling nothing that exists.
       rows:
+        - run: sh -c 'printf "ok %%s\n" %s'
+          expect:
+            out: "ok %s\n"
         - run: this-command-does-not-exist-anywhere
           expect:
             rc: 127
-`)
+            out: ""
+`, claimsTokenOf(t, root), claimsTokenOf(t, root)))
 	runIn(t, root)
 	report := zoneFile(t, root, zone.ReportFile)
 	if !strings.Contains(report, "hint: the command was not found") {

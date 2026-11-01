@@ -15,13 +15,6 @@ import (
 	"github.com/neurophant/punchtape/internal/domain/doc"
 )
 
-// RowTimeout — the standing deadline of one command: a hang-killer,
-// never a judge of slow work. The deadline moves only on measured
-// field evidence that real work outgrew it — never by taste. A
-// variable: the battery shortens it, the law it stands for does not
-// move.
-var RowTimeout = 300 * time.Second
-
 // CommandResult — what one executed command left behind.
 type CommandResult struct {
 	Exit     int
@@ -41,13 +34,15 @@ func Argv(c doc.Cmd) []string {
 }
 
 // RunCommand — one command under the whole law, in the given
-// environment (the clean base plus the zone's pins).
-func RunCommand(argv []string, root string, env []string) CommandResult {
+// environment (the clean base plus the zone's pins), under the
+// given deadline — the run's own ceiling, the zone's pin or the
+// standing default.
+func RunCommand(argv []string, root string, env []string, deadline time.Duration) CommandResult {
 	proc, err := ports.ExecBind.StartOpts(argv, root, ports.LaunchOpts{Env: env})
 	if err != nil {
 		return CommandResult{Err: err}
 	}
-	outcome := proc.Wait(RowTimeout)
+	outcome := proc.Wait(deadline)
 	// Whatever the command left alive dies with its group: a dying
 	// member still holds what it held.
 	proc.KillGroup()

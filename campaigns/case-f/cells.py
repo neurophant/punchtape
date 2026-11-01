@@ -59,7 +59,9 @@ HARNESS_SOURCE = CAMPAIGN / "harness.md"
 # outside the repository and outside every wave — platform
 # maintenance warms them once per series; a wave only checks and
 # copies (a wave never builds the substrate it stands on).
-ENV_PREP = Path(os.environ.get("C0_ENV_PREP", Path.home() / ".experiments/cache/env-prep"))
+ENV_PREP = Path(
+    os.environ.get("C0_ENV_PREP", Path.home() / ".experiments/cache/env-prep")
+)
 
 # The series' stack set: one meaning runs in all of them, always.
 STACKS = ["go", "js", "python", "rust", "cpp"]
@@ -178,13 +180,19 @@ def check_system_machine(pin: Path) -> dict[str, str]:
     """
     system = shutil.which("punchtape")
     if system is None:
-        print("punchtape is not installed on the system (command -v punchtape)", file=sys.stderr)
+        print(
+            "punchtape is not installed on the system (command -v punchtape)",
+            file=sys.stderr,
+        )
         raise SystemExit(1)
     system_path = Path(system).resolve()
     pin_sha = hashlib.sha256(pin.read_bytes()).hexdigest()
     sys_sha = hashlib.sha256(system_path.read_bytes()).hexdigest()
     if pin_sha != sys_sha:
-        print(f"system punchtape ({sys_sha}) != pinned ({pin_sha}): install the pinned binary", file=sys.stderr)
+        print(
+            f"system punchtape ({sys_sha}) != pinned ({pin_sha}): install the pinned binary",
+            file=sys.stderr,
+        )
         raise SystemExit(1)
     version = subprocess.run(
         [str(system_path), "--version"], capture_output=True, text=True, check=True
@@ -256,7 +264,8 @@ def load_seed(config: dict[str, Any]) -> dict[str, Any] | None:
     name = config.get("seed")
     if name is None:
         return None
-    return yaml.safe_load((CAMPAIGN / str(name)).read_text())
+    seed: dict[str, Any] = yaml.safe_load((CAMPAIGN / str(name)).read_text())
+    return seed
 
 
 def stage_seed(work: Path, stack_seed: dict[str, Any], kind: str) -> None:
@@ -286,7 +295,10 @@ def stage_seed(work: Path, stack_seed: dict[str, Any], kind: str) -> None:
             data = src.read_bytes()
             digest = hashlib.sha256(data).hexdigest()
             if digest != str(entry["sha256"]):
-                print(f"seed drift: {src} is {digest}, pinned {entry['sha256']}", file=sys.stderr)
+                print(
+                    f"seed drift: {src} is {digest}, pinned {entry['sha256']}",
+                    file=sys.stderr,
+                )
                 raise SystemExit(1)
             dst = work / str(entry["path"])
             dst.parent.mkdir(parents=True, exist_ok=True)
@@ -297,12 +309,17 @@ def stage_seed(work: Path, stack_seed: dict[str, Any], kind: str) -> None:
     for item in stack_seed.get("stage", []):
         master = ENV_PREP / str(item["master"])
         if not master.is_dir():
-            print(f"no warmed master {master} — platform maintenance warms the cache area", file=sys.stderr)
+            print(
+                f"no warmed master {master} — platform maintenance warms the cache area",
+                file=sys.stderr,
+            )
             raise SystemExit(1)
         copy_tree(master, work / str(item["into"]))
 
 
-def stage_stack(cell: Path, config: dict[str, Any], sense: str, stack: str, staged_path: str) -> None:
+def stage_stack(
+    cell: Path, config: dict[str, Any], sense: str, stack: str, staged_path: str
+) -> None:
     """The stack's substrate into the cell and its ENV file, the
     warmed master of the wave's master sense."""
     work = cell / "work"
@@ -327,7 +344,10 @@ def stage_stack(cell: Path, config: dict[str, Any], sense: str, stack: str, stag
             copy_tree(ENV_PREP / master, cell / "env" / "venv")
         (work / "ENV").write_text(PY_ENV.format(cell=cell, path=staged_path))
     elif stack == "rust":
-        copy_tree(ENV_PREP / MASTERS[(master_sense, "rust")], cell / "env" / "deps" / "cargo-vendor")
+        copy_tree(
+            ENV_PREP / MASTERS[(master_sense, "rust")],
+            cell / "env" / "deps" / "cargo-vendor",
+        )
         (cell / "env" / "deps" / "cargo-home").mkdir(parents=True)
         (work / ".cargo").mkdir()
         (work / ".cargo" / "config.toml").write_text(RUST_CONFIG.format(cell=cell))
@@ -391,7 +411,10 @@ def main(argv: list[str]) -> int:
         if seed is not None:
             stack_seed = seed.get(stack)
             if stack_seed is None:
-                print(f"the seed manifest names no {stack!r} part for {brief}", file=sys.stderr)
+                print(
+                    f"the seed manifest names no {stack!r} part for {brief}",
+                    file=sys.stderr,
+                )
                 return 1
         for kind in kinds:
             for n in range(1, hands_per_kind + 1):
@@ -437,7 +460,9 @@ def main(argv: list[str]) -> int:
 
     (wave_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(f"wave: {wave_dir}")
-    print(f"machine: {machine['version']} {machine['sha256'][:12]} at {machine['path']}")
+    print(
+        f"machine: {machine['version']} {machine['sha256'][:12]} at {machine['path']}"
+    )
     for hand in manifest["hands"]:
         print(f"  {hand['hand']}: {hand['cell']}")
     return 0

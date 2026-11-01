@@ -13,10 +13,10 @@ hey@neurophant.tech
 - [1. Introduction](#1-introduction)
 - [2. Methodology](#2-methodology)
 - [3. Experimental record](#3-experimental-record)
-- [4. Replication on the evolved machine of the 0.2 line (2026-09-03)](#4-replication-on-the-evolved-machine-of-the-02-line-2026-09-03)
+- [4. Replication on the evolved machine of the 0.2.0 line (2026-09-03)](#4-replication-on-the-evolved-machine-of-the-020-line-2026-09-03)
 - [5. Discussion](#5-discussion)
 - [6. Conclusions](#6-conclusions)
-- [7. The 0.3 model: the boundary after the study](#7-the-03-model-the-boundary-after-the-study)
+- [7. The 0.3.0 model: the boundary after the study](#7-the-030-model-the-boundary-after-the-study)
 - [8. Prospects](#8-prospects)
 - [Data sources](#data-sources)
 - [Conflicts of interest](#conflicts-of-interest)
@@ -26,8 +26,9 @@ hey@neurophant.tech
 - [Appendix C. The submissions and questions of the repeat full run](#appendix-c-the-submissions-and-questions-of-the-repeat-full-run)
 - [Appendix D. The three-hand run, per task (2026-08-31)](#appendix-d-the-three-hand-run-per-task-2026-08-31)
 - [Appendix E. The full path per task, the September replication: hand + its operator](#appendix-e-the-full-path-per-task-the-september-replication-hand--its-operator)
-- [Appendix F. The 0.3 field battery: the camp sums by waves and the verdicts per task (2026-10-10)](#appendix-f-the-03-field-battery-the-camp-sums-by-waves-and-the-verdicts-per-task-2026-10-10)
-- [9. The 0.4 model: the loop without ceremonies — and the operator question (October 2026)](#9-the-04-model-the-loop-without-ceremonies--and-the-operator-question-october-2026)
+- [Appendix F. The 0.3.0 field battery: the camp sums by waves and the verdicts per task (2026-10-10)](#appendix-f-the-030-field-battery-the-camp-sums-by-waves-and-the-verdicts-per-task-2026-10-10)
+- [9. The 0.4.0 model: the loop without ceremonies — and the operator question (October 2026)](#9-the-040-model-the-loop-without-ceremonies--and-the-operator-question-october-2026)
+- [10. The 0.5.0 rebuild: the current machine (November 2026)](#10-the-050-rebuild-the-current-machine-november-2026)
 
 ## Abstract
 
@@ -36,7 +37,7 @@ produced by a language model, and its readiness is judged by an opinion
 — the executor's or the author's. This work studies the hypothesis that
 closing the loop with a transactional state machine external to the
 agent turns readiness from an opinion into a reproducible fact at a
-measurable price. The design the study measured was the machine's 0.2
+measurable price. The design the study measured was the machine's 0.2.0
 loop: the machine owned the canon of requirements and scenarios
 compiled from an executable checks table, was the project's only
 writer of code (the executor submitted code/fix deltas, the machine
@@ -62,7 +63,7 @@ reproduced the verdict and quality invariance, the judges'
 protocol-red pattern, and the attention economics. The conclusion: the
 benefit of the closed loop is measured not in tokens but in
 reconcilability; an anti-entropy frame is proposed for interpreting
-the result. After the study the machine was reworked onto the 0.3
+the result. After the study the machine was reworked onto the 0.3.0
 model — the boundary moved: the executor writes code directly in the
 repository, the machine keeps the spec corpus and verifies on digest
 snapshots; §7 states that model, its acceptance evidence, and the
@@ -71,7 +72,12 @@ battery re-run two-handed: 50/50 cells closed, 25/25 machine verdicts
 on the first acceptance, the full-path economics reproduced (the
 machine camp the cheaper full path in 23 of 25 tasks; the solo camp's
 verifying operator 10.57×–46.01× dearer per wave), one wave of the
-five with the solo hands cheaper in tokens.
+five with the solo hands cheaper in tokens. Two reworks followed the
+study — the ceremony-free 0.4.0 model (§9) and the radical rebuild
+that produced the current 0.5.0 machine (§10: the demand stream, the
+six outcomes, line-range claims, the bare `done: true` act) — each
+a further move of the same boundary, with the study's inversion of
+ownership unchanged.
 
 **Keywords:** generative development, verification, state machine,
 specification, acceptance checks, compute economics, executor
@@ -82,8 +88,9 @@ convergence, field experiment.
 The system's full dictionary is `docs/GLOSSARY.md`; below are the
 paper's working terms. The interface terms — the verdict shapes, the
 gate stack, the probe, the double run, the canon's composition —
-describe the machine loop this study measured (the 0.2 line); the
-machine's current model differs, and §7 states it.
+describe the machine loop this study measured (the 0.2.0 line); the
+machine has been rebuilt since — §7 states the 0.3.0 model, §9 the
+0.4.0 model, and §10 the current 0.5.0 machine.
 
 - **Battery** — the task set of a field campaign: 25 tasks = 5 senses ×
   5 stacks.
@@ -474,7 +481,7 @@ irreversible.
   systematization the battery's most expensive task fell from 10.45 to
   1.10 M tokens.
 
-## 4. Replication on the evolved machine of the 0.2 line (2026-09-03)
+## 4. Replication on the evolved machine of the 0.2.0 line (2026-09-03)
 
 The study above ran on v0.1.0. Before publication the machine went
 through a series of systemic fixes to the 0.2.0 release (v0.1.x →
@@ -576,7 +583,7 @@ caught by the double run.
 ## 5. Discussion
 
 This section reads the measured results; every interface named here is
-the loop the study measured (the 0.2 line). The boundary move that
+the loop the study measured (the 0.2.0 line). The boundary move that
 followed the study is §7.
 
 ### 5.1. Reconcilability, not economy
@@ -656,7 +663,7 @@ The harness (the agent's execution environment) and the machine do not
 compete: the agent lives in the harness, the machine stands outside and
 owns the task's state. The separation of responsibility, as shown by
 the experiments' data (the machine column is the loop as measured, the
-0.2 line):
+0.2.0 line):
 
 | The harness alone | The machine (as measured) | The evidence |
 |---|---|---|
@@ -705,7 +712,7 @@ and incomparable.
 - **External** (the limits): one difficulty band (S: compact console
   utilities with file state); one execution environment and one epoch
   of models; the measured machine is one design point of the loop
-  (the 0.2 line — §7 moves the boundary inside the same inversion);
+  (the 0.2.0 line — §7 moves the boundary inside the same inversion);
   the measurable part of the brief — the unmeasurable remainder
   ("make it beautiful") is honestly shelved by the machine into a
   taste queue for the human; the API prices are volatile. The transfer
@@ -757,7 +764,7 @@ its October transfer to the moved boundary (§7.1).
    priced in, the machine path is the cheaper one (solo \$6.07 against
    top \$1.18 per task). Conclusions 1–7 hold beyond the original
    binary and price epoch.
-9. The results transfer across the moved boundary (the 0.3 model,
+9. The results transfer across the moved boundary (the 0.3.0 model,
    the October field battery of §7.1–§7.2): on the interface where
    the executor writes code directly and the machine keeps the
    corpus, 50/50 cells closed at 25/25 machine verdicts on the first
@@ -767,14 +774,14 @@ its October transfer to the moved boundary (§7.1).
    verifying operator 10.57×–46.01× dearer per wave; the solo hands
    won the tokens in one wave of the five (§7.2's exception).
 
-## 7. The 0.3 model: the boundary after the study
+## 7. The 0.3.0 model: the boundary after the study
 
 After the field study the machine was reworked. The inversion of
 ownership stands; the boundary moved. In the
-measured 0.2 loop the machine was the project's only writer — the
+measured 0.2.0 loop the machine was the project's only writer — the
 executor's code reached the tree as code/fix deltas applied by the
 machine, and the spec was compiled from the checks table into
-scenarios. In the 0.3 model not one byte of code passes through the
+scenarios. In the 0.3.0 model not one byte of code passes through the
 machine:
 
 - **Code is the executor's free territory.** The executor writes code
@@ -799,7 +806,7 @@ machine:
   after — the passport's build once before the rows, the rows'
   seeds written into the tree and self-removed with each row, and
   the two digests must name the same surface outside the ignores
-  (0.3's wave ran on that release's isolation substrate — a
+  (0.3.0's wave ran on that release's isolation substrate — a
   byte-identical tree replica per run; the economics reported here
   are that substrate's). The verdict is
   READY / NOT-READY, signed with the digest of the exact tree it was
@@ -816,7 +823,7 @@ machine:
   tree's digest — green means the spec matches the code; a mismatch
   is a backfill finding, a red row with the measured bytes.
 
-The 0.3 acceptance evidence is the battery of the rework's validator
+The 0.3.0 acceptance evidence is the battery of the rework's validator
 synthetic cases, both sides of the design, each closed at a live
 `VERDICT: READY`:
 
@@ -831,7 +838,7 @@ synthetic cases, both sides of the design, each closed at a live
   spec, a catalog, four check rows with assignees, a passport → the
   implement slot's instructions → the code written directly in the
   repository by the executor's hand → trace manifests → gates in
-  0.3's run world (the first run honestly red —
+  0.3.0's run world (the first run honestly red —
   the code did not exist yet) → a NOT-READY on missing prose → the
   prose ratified → drift caught → re-verification → `VERDICT: READY`,
   acceptance PASS 4/4 — with a grep of the journal proving the
@@ -843,7 +850,7 @@ sides of the design driven to READY by live runs, with the round-trip
 and the code-free journal proven. It is not field economics. The field
 economics came later, and §7.1–§7.2 record it: the study's protocol —
 batteries, hands, blind measurer, judges — transferred to the new
-interface as designed, the reference tables of the 0.3 waves being the
+interface as designed, the reference tables of the 0.3.0 waves being the
 corpus's check rows, verified on digest snapshots of the tree rather
 than by a double run.
 
@@ -851,7 +858,7 @@ than by a double run.
 
 The study's battery returned on the moved boundary: the same five
 senses × five stacks, the September campaign's brief and material
-bytes, executed by the 0.3 machine in its current host world — the
+bytes, executed by the 0.3.0 machine in its current host world — the
 September protocol's bytes with the campaign's named adaptations (the
 containers became host cells; the accounting moved to the platform
 database; two hands instead of three: solo — a top model without the
@@ -870,7 +877,7 @@ All numbers below are the campaign registry's
 reports' Σ-rows read, glued and summed — not one new measurement —
 each wave revalidated green against its run evidence (verify-metrics).
 The registry prints two token bases in every table — in+out (the
-0.2-era working base) and total (= in+out+cache read) — with \$
+0.2.0-era working base) and total (= in+out+cache read) — with \$
 cache-aware; the ratios below name their base, no verdict of the
 battery changes between the bases, and the battery's numbers are
 compared within this subsection only.
@@ -979,7 +986,7 @@ wave and battery camp sums are Appendix F.
 
 ## 8. Prospects
 
-- **The 0.3 field waves**: run — §7.1 records the five-wave battery
+- **The 0.3.0 field waves**: run — §7.1 records the five-wave battery
   on the new interface (the corpus and the check rows as the spec
   unit, verification on digest snapshots, the executor writing code
   directly); the open remainder: the budget-model axis of the closed
@@ -1321,7 +1328,7 @@ extrapolation from the documented estimate of the earlier series — a
 labeled estimate, not a measurement of these waves; the 530 s mean is
 the ledger recomputation; nothing else is extrapolated.
 
-## Appendix F. The 0.3 field battery: the camp sums by waves and the verdicts per task (2026-10-10)
+## Appendix F. The 0.3.0 field battery: the camp sums by waves and the verdicts per task (2026-10-10)
 
 What this appendix carries is the battery's summary layer: the camp
 sums by wave and over the battery — the registry's §6 Σ-rows — and
@@ -1397,11 +1404,11 @@ camp ahead on time (1.68). The mixed G2 rows are where the hands
 alone would have read the other way — the operator, not the hand, is
 where the loop's full-path economy lives.
 
-## 9. The 0.4 model: the loop without ceremonies — and the operator question (October 2026)
+## 9. The 0.4.0 model: the loop without ceremonies — and the operator question (October 2026)
 
 ### 9.1. Why the machine was rebuilt: the measured ceremony tax
 
-The 0.3 interface carried its rituals into the 0.4 development branch —
+The 0.3.0 interface carried its rituals into the 0.4.0 development branch —
 and the branch measured them before removing them. A line-by-line audit
 of the five machine hands of wave quire-b4 (31,761 transcript lines,
 every anchor L####) found: a **ceremony tax of 22–65% of every hand's
@@ -1440,8 +1447,8 @@ itself is preserved in the repository's history; the cross-era summary
 is `docs/METRICS.md` §3. What the battery adds to this paper:
 
 - **The camp verdict holds and changes currency: ×1.06 tokens (both
-  bases), ×1.24 time** for the machine camp over the series. The 0.2
-  loop bought dollars, the 0.3 loop bought tokens; the 0.4 loop buys
+  bases), ×1.24 time** for the machine camp over the series. The 0.2.0
+  loop bought dollars, the 0.3.0 loop bought tokens; the 0.4.0 loop buys
   ticks first.
 - **The hands alone reach parity — the rework's direct signature.** In
   §3.3's September data the loop's hand spent 2.8M against solo's 5.9M;
@@ -1506,4 +1513,54 @@ only work sums. Judges stand outside the camps and their own economics
 are near-parity (69.39M vs 72.30M). The superseded first quire run
 (quire-v0) is excluded from the sums and kept as an appendix. The
 protocol-not-function decoding of the judges' red rows — open on the
-0.3 interface in §7.1 — remains open here.
+0.3.0 interface in §7.1 — remains open here.
+
+## 10. The 0.5.0 rebuild: the current machine (November 2026)
+
+The third rework was total — the ritual layer and the shape it lived
+in were removed together, and the machine was rebuilt around one
+idea already visible in this paper's data: the agent submits
+intention, the machine holds every fact. What died: the wish file
+and its fixed numbering (the human's words now live in an open
+demand stream, taken by the machine itself at the submission that
+meets them — never retyped by the agent); the compiled spec
+vocabularies of the 0.3.0 line and the scope globs of the 0.4.0 line
+(coverage is now claimed in exact line ranges of the tree, one
+range one behavior); the corpus-copy sign-off (the completion act
+is now the bare `done: true`, re-measured by the machine); and
+every channel through which a submitting agent carried a machine
+constant — tokens, freshness, quotes — measured to zero in
+acceptance. What was born: a contract of eight laws; six outcomes
+for every line of the words (answer, execute, describe, work,
+mark, ask), each with its carrier in the same submission; the tree
+lock — quiet intents (answer, execute, describe) may not move the
+project, and a move is a journaled hold; drift named by a
+submission landing after the witness run; an append-only journal
+as the single truth, with every zone file a generated image of it;
+machine-measured lessons (each red a run later saw green, with the
+row bytes before and after); and a reference page carried in every
+zone, so the machine's every door is under hand at the point of
+work.
+
+The acceptance evidence is mechanical and live, not economic: the
+build's own battery (the canon's embedded example must run through
+the real machine to a recorded verdict or the build fails; every
+function of the machine executed by its tests — the instrumented
+binary covers the entry points a unit test cannot reach), and a
+full live replay of the first rehearsal's field material on the
+rebuilt machine: five real repositories, fifteen to sixteen
+scenarios each — 77 cases in all — closed with 109 standing
+verdicts and zero machine defects; the human words byte-exact in
+every zone; zone damage (a touched past line, planted per
+scenario) caught and healed byte-exact in all five; and 632
+journaled submission objects carrying not one machine constant.
+The remaining teaching surface is honest and small: of the 56
+submission refusals of that replay, 24 were YAML traps of human
+prose (a scalar with ": " or a comma, a multi-line pin, tabs) —
+each refusal names its place, none loses data.
+
+No field economics of the 0.5.0 machine are claimed in this paper:
+every number of §1–§4 and §7–§9 belongs to the generation it
+names. The study's subject — the inversion of ownership, the
+verifier moved out of the conversation — stands unchanged across
+all three reworks; the boundary keeps moving the same way.

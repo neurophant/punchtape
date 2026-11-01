@@ -56,7 +56,9 @@ def hand_meanings(manifest: dict[str, Any]) -> dict[str, str]:
     return out
 
 
-def validate(rows: list[dict[str, str]], manifest: dict[str, Any], wave_dir: Path) -> None:
+def validate(
+    rows: list[dict[str, str]], manifest: dict[str, Any], wave_dir: Path
+) -> None:
     """The collection's own correctness, checked before any write:
     completeness, sessions, arithmetic, judge pages, operators. A
     named failure stops the metrics — nothing invalid is written."""
@@ -71,7 +73,10 @@ def validate(rows: list[dict[str, str]], manifest: dict[str, Any], wave_dir: Pat
         raise SystemExit(1)
     for row in rows:
         if row["tail"] == "no-sessions":
-            print(f"hand {row['hand']} has no sessions — run the hands first", file=sys.stderr)
+            print(
+                f"hand {row['hand']} has no sessions — run the hands first",
+                file=sys.stderr,
+            )
             raise SystemExit(1)
         if int(row["in_out"]) != int(row["input"]) + int(row["output"]):
             print(f"row {row['hand']}: in+out != input+output", file=sys.stderr)
@@ -83,13 +88,21 @@ def validate(rows: list[dict[str, str]], manifest: dict[str, Any], wave_dir: Pat
         if not (wave_dir / "judged" / f"{hand}.md").is_file():
             print(f"judge page missing: judged/{hand}.md", file=sys.stderr)
             raise SystemExit(1)
-    if (wave_dir / "operators").is_dir() and list((wave_dir / "operators").glob("*.prompt")):
+    if (wave_dir / "operators").is_dir() and list(
+        (wave_dir / "operators").glob("*.prompt")
+    ):
         expected = {f"operator/{hand}" for hand in hands}
         actual = {r["hand"] for r in rows if r["kind"] == "operator"}
         for missing in sorted(expected - actual):
-            print(f"operator of {missing.split('/', 1)[1]} is missing from the collection", file=sys.stderr)
+            print(
+                f"operator of {missing.split('/', 1)[1]} is missing from the collection",
+                file=sys.stderr,
+            )
         for extra in sorted(actual - expected):
-            print(f"usage row {extra} is no hand's operator of the manifest", file=sys.stderr)
+            print(
+                f"usage row {extra} is no hand's operator of the manifest",
+                file=sys.stderr,
+            )
         if expected != actual:
             raise SystemExit(1)
 
@@ -264,9 +277,7 @@ def document(
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
     wave_dir = Path(args.wave)
-    manifest: dict[str, Any] = json.loads(
-        (wave_dir / "manifest.json").read_text()
-    )
+    manifest: dict[str, Any] = json.loads((wave_dir / "manifest.json").read_text())
     with (wave_dir / "usage.tsv").open() as stream:
         rows = list(csv.DictReader(stream, delimiter="\t"))
     if not rows:
@@ -275,7 +286,9 @@ def main(argv: list[str]) -> int:
     validate(rows, manifest, wave_dir)
 
     (wave_dir / "METRICS.md").write_text(
-        "\n".join(document(rows, manifest, wave_dir, wave_dir.name, etalon_pages(manifest)))
+        "\n".join(
+            document(rows, manifest, wave_dir, wave_dir.name, etalon_pages(manifest))
+        )
     )
     print(f"metrics: {wave_dir / 'METRICS.md'}")
     return 0

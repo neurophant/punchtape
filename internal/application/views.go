@@ -14,11 +14,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/neurophant/punchtape/internal/domain/doc"
+	"github.com/neurophant/punchtape/internal/domain/fprint"
 	"github.com/neurophant/punchtape/internal/domain/journal"
 	"github.com/neurophant/punchtape/internal/domain/zone"
 	"github.com/neurophant/punchtape/internal/ports"
@@ -55,11 +57,7 @@ type historyEvent struct {
 // never invents: what the journal does not carry, the history does
 // not say — and a byte-exact heal cannot erase what the journal
 // already holds.
-func (m *machine) historyEvents() ([]historyEvent, error) {
-	records, err := m.stream.Records()
-	if err != nil {
-		return nil, err
-	}
+func historyEvents(records []journal.Record) []historyEvent {
 	var out []historyEvent
 	verdictSeen := false
 	openDrift := 0
@@ -91,109 +89,437 @@ func (m *machine) historyEvents() ([]historyEvent, error) {
 			}
 		}
 	}
-	return out, nil
+	return out
 }
 
-// writeState — state.md: the standing, the scopes-moved mark, the
-// drift history and the one next instruction, one page. The mark and
-// the history are two different truths and never share a word: the
-// mark says the tree grew from what the verdict certified, the
-// history says a red row ever stood under it.
-func (m *machine) writeState(corpus doc.Document, scopes map[string]string, tree []string) error {
+// driftSince — the first run past the verdict that saw a certified
+// behavior's claims move, zero when no drift stands. The journal's
+// row facts are the witnesses: a fact whose proof no longer
+// recomposes over the verdict's own pointer was measured against a
+// moved tree. With no witness — the move is younger than any
+// execution, or the journal will not read — the current run is the
+// one that sees it.
+func driftSince(v *journal.Verdict, claims map[string]claimsFacts, envHash string, current int, records []journal.Record, rowBytes func(string) []byte) int {
+	drifted := map[string]bool{}
+	pointer := map[string]string{}
+	for _, sc := range v.Scopes {
+		pointer[sc.ID] = sc.Pointer
+		if facts, living := claims[sc.ID]; living && facts.digest != sc.Pointer {
+			drifted[sc.ID] = true
+		}
+	}
+	if len(drifted) == 0 {
+		return 0
+	}
+	first := 0
+	for _, rec := range records {
+		if rec.Kind != journal.KindRun || rec.Run == nil || rec.Run.N <= v.Run {
+			continue
+		}
+		for _, rf := range rec.Run.Rows {
+			id := rf.Key[:strings.LastIndexByte(rf.Key, '/')]
+			if !drifted[id] {
+				continue
+			}
+			if rf.Proof == fprint.Proof(rowBytes(rf.Row), pointer[id], envHash) {
+				continue
+			}
+			if first == 0 || rec.Run.N < first {
+				first = rec.Run.N
+			}
+		}
+	}
+	if first == 0 {
+		return current
+	}
+	return first
+}
+
+// writeState — state.md: the standing, the queue, the verdict's own
+// standing or drift, the drift history, the deferred orders, the
+// behaviors' proofs, the tree's open and excluded lines, the
+// knowledge counters and the one next instruction, one page. The
+// verdict line and the history are two different truths and never
+// share a word: the line says the tree grew from what the verdict
+// certified, the history says a red row ever stood under it.
+func (m *machine) writeState(corpus doc.Document, claims map[string]claimsFacts, instruction string) error {
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "# punchtape state — run %d\n\n", m.standing.RunNumber)
-	fmt.Fprintf(&b, "goal: %s", shortDigest(m.standing.GoalDigest))
-	if brief, ok := m.briefAccounting(corpus); ok {
-		fmt.Fprintf(&b, " — wish at %s", zone.Path(zone.ObjectsDir, m.standing.GoalAddr[:2], m.standing.GoalAddr[2:]))
-		fmt.Fprintf(&b, "\nbrief: %d/%d lines; requirements %d standing, %d covered; not-a-requirement: %d\n",
-			brief.Claimed, brief.Lines, brief.Requirements, brief.Covered, brief.Markers)
-		// Every mark on the open page: the dismissed lines' own
-		// words beside the reason — a mark a reader can weigh.
-		for _, marker := range m.standing.Registry.Markers {
-			nums, _ := doc.ParseRanges(marker.Lines)
-			fmt.Fprintf(&b, "not-a-requirement %s: %q — %s\n", doc.SpellRanges(nums), marker.Quote, marker.Reason)
-		}
-		if len(brief.Holes) > 0 {
-			fmt.Fprintf(&b, "uncovered brief lines: %s\n", doc.SpellRanges(brief.Holes))
-		}
+	brief := m.briefAccounting(corpus)
+	fmt.Fprintf(&b, "demands: %d/%d lines; requirements %d standing, %d covered; markers: %d\n",
+		brief.Claimed, brief.Lines, brief.Requirements, brief.Covered, brief.Markers)
+	if holes := m.unresolvedLines(); len(holes) > 0 {
+		fmt.Fprintf(&b, "unresolved lines: %s\n", strings.Join(holes, ", "))
+	}
+	// The queue is a fact of the files: the inbox stands or not.
+	if _, err := ports.FSBind.Stat(filepath.Join(m.zoneDir, zone.InboxSlot)); err == nil {
+		fmt.Fprintf(&b, "queue: submission waiting\n")
 	} else {
-		fmt.Fprintf(&b, "\n")
+		fmt.Fprintf(&b, "queue: empty\n")
+	}
+	// The standing signature, only while it stands: the next
+	// demand-append clears it.
+	if m.standing.LastNoNewDemands > 0 {
+		fmt.Fprintf(&b, "last no-new-demands: run %d\n", m.standing.LastNoNewDemands)
 	}
 	fmt.Fprintf(&b, "corpus: v%d, %d behaviors\n",
 		m.standing.CorpusVersion, len(corpus.Behaviors))
-	fmt.Fprintf(&b, "submissions: %d accepted, %d refused, %d completed\n",
-		len(m.standing.Submissions), m.standing.Refused, m.standing.Completions)
-	// The instance's own origin fact: the machine version that
-	// created it. An instance born before the fact says so honestly.
-	atBirth := m.standing.BirthVersion
-	if atBirth == "" {
-		atBirth = "(not recorded)"
+	if e := m.standing.LastExecution; e != nil {
+		fmt.Fprintf(&b, "executions: last run %d — %s exit %d\n", e.At, strings.Join(e.Lines, ", "), e.Exit)
 	}
-	fmt.Fprintf(&b, "machine at birth: %s\n", atBirth)
+	fmt.Fprintf(&b, "submissions: %d accepted, %d refused, %d completed\n",
+		m.standing.Accepted, m.standing.Refused, m.standing.Completions)
+	// The instance's own origin fact: the machine version that
+	// created it — the run's gate has already refused any other.
+	fmt.Fprintf(&b, "machine at birth: %s\n", m.standing.BirthVersion)
 	if v := m.standing.Verdict; v != nil {
 		fmt.Fprintf(&b, "verdict: #%d on v%d, run %d, signature %s", v.N, v.CorpusVersion, v.Run, shortDigest(v.Signature))
-		moved := false
-		for _, sc := range v.Scopes {
-			if _, ok := m.standing.Behaviors[sc.ID]; ok && scopes[sc.ID] != sc.Pointer {
-				if !moved {
-					fmt.Fprintf(&b, " — scopes moved:")
-					moved = true
-				}
-				fmt.Fprintf(&b, " %s", sc.ID)
-			}
+		since := driftSince(v, claims, EnvHash(m.pins), m.standing.RunNumber, m.records, m.rowBytesOf)
+		switch {
+		case since > 0:
+			fmt.Fprintf(&b, " — open (drift since run %d)\n", since)
+		case m.treeHoles(corpus) > 0:
+			fmt.Fprintf(&b, " — standing over %d uncovered lines\n", m.treeHoles(corpus))
+		default:
+			fmt.Fprintf(&b, " — standing\n")
 		}
-		if !moved {
-			fmt.Fprintf(&b, " — standing")
-		}
-		fmt.Fprintf(&b, "\n")
 	}
-	if events, err := m.historyEvents(); err != nil {
-		fmt.Fprintf(&b, "verdict history: (journal unreadable: %v)\n", err)
-	} else if len(events) > 0 {
+	if events := historyEvents(m.records); len(events) > 0 {
 		fmt.Fprintf(&b, "verdict history:\n")
-		for _, ev := range events {
+		// The page shows the recent ten; the whole story lives in the
+		// journal, and the elision says so.
+		if hidden := len(events) - 10; hidden > 0 {
+			fmt.Fprintf(&b, "- … and %d more — see %s\n", hidden, zone.Path(zone.JournalDir))
+		}
+		shown := events
+		if len(shown) > 10 {
+			shown = shown[len(shown)-10:]
+		}
+		for _, ev := range shown {
 			fmt.Fprintf(&b, "- %s\n", ev.text)
+		}
+	}
+	var deferred []doc.OpenOrder
+	for _, order := range m.standing.Registry.Open {
+		if order.State == doc.StateDeferred {
+			deferred = append(deferred, order)
+		}
+	}
+	if len(deferred) > 0 {
+		fmt.Fprintf(&b, "deferred orders:\n")
+		for _, order := range deferred {
+			fmt.Fprintf(&b, "- %s — %s — %s\n", order.Demand, order.Question, order.Reason)
 		}
 	}
 	for _, beh := range corpus.Behaviors {
 		green, stale, red := m.behaviorRows(beh)
-		mark := ""
+		files, lines := claimsShape(beh)
+		shape := fmt.Sprintf("(claims %d files / %d lines; proof %s)", files, lines, shortDigest(claims[beh.ID].digest))
 		switch {
 		case red > 0:
-			mark = fmt.Sprintf(" — %d green, %d stale, %d RED", green, stale, red)
+			fmt.Fprintf(&b, "- %s: %d rows %s — %d green, %d stale, %d RED\n",
+				beh.ID, len(beh.Rows), shape, green, stale, red)
 		case stale > 0:
-			mark = fmt.Sprintf(" — %d green, %d stale", green, stale)
-		case len(beh.Rows) > 0:
-			mark = fmt.Sprintf(" — %d green", green)
-		}
-		fmt.Fprintf(&b, "- %s: %d rows%s (scope %s)\n", beh.ID, len(beh.Rows), mark, shortDigest(scopes[beh.ID]))
-	}
-	declared, sources := SplitUncovered(tree, m.allScopes(corpus), corpus.Artifacts)
-	if len(declared) > 0 {
-		fmt.Fprintf(&b, "\nartifacts (declared):\n")
-		for _, p := range declared {
-			fmt.Fprintf(&b, "- %s\n", p)
+			fmt.Fprintf(&b, "- %s: %d rows %s — %d green, %d stale\n",
+				beh.ID, len(beh.Rows), shape, green, stale)
+		default:
+			fmt.Fprintf(&b, "- %s: %d rows — %d green %s\n",
+				beh.ID, len(beh.Rows), green, shape)
 		}
 	}
-	if len(sources) > 0 {
-		fmt.Fprintf(&b, "\nuncovered sources:\n")
-		for _, p := range sources {
-			fmt.Fprintf(&b, "- %s\n", p)
+	// The tree's own arithmetic: an unreadable walk is named aloud and
+	// the page still lands — the ledger and the share wait for a walk
+	// that reads.
+	cov, covErr := m.coverage(corpus)
+	if covErr != nil {
+		fmt.Fprintf(&b, "uncovered lines: (tree unreadable: %v)\n", covErr)
+	} else {
+		paths := make([]string, 0, len(cov.Holes))
+		for path := range cov.Holes {
+			paths = append(paths, path)
+		}
+		sort.Strings(paths)
+		if len(paths) > 0 {
+			fmt.Fprintf(&b, "uncovered lines:\n")
+			shown := paths
+			if len(paths) > 10 {
+				shown = paths[:10]
+			}
+			for _, path := range shown {
+				fmt.Fprintf(&b, "- %s\n", spellHoles(path, cov.Holes[path], true))
+			}
+			if len(paths) > 10 {
+				fmt.Fprintf(&b, "… and %d more files — see %s\n", len(paths)-10, zone.Path(zone.HolesFile))
+			}
+		}
+		if len(cov.Excluded) > 0 {
+			fmt.Fprintf(&b, "excluded files:\n")
+			for _, ex := range cov.Excluded {
+				fmt.Fprintf(&b, "- %s — %s\n", ex.Path, ex.Reason)
+			}
+		}
+		fmt.Fprintf(&b, "excluded lines: %d ranges (%d %% of tree)\n",
+			len(m.standing.Registry.Exclusions), m.excludedShare(cov))
+		if m.tree.declared() {
+			fmt.Fprintf(&b, "outside the universe: %d files\n", m.tree.lastFacts.outside)
+			fmt.Fprintf(&b, "universe: %d of %d files\n",
+				m.tree.lastFacts.inside, m.tree.lastFacts.inside+m.tree.lastFacts.outside)
 		}
 	}
-	fmt.Fprintf(&b, "\nknowledge: %d notes, %d lessons\n", m.noteCount(), len(m.standing.Lessons))
-	for _, reason := range m.redReasons(corpus) {
-		if m.hasLessonFor(reason) {
-			fmt.Fprintf(&b, "knowledge for the reason %q — knowledge.md\n", reason)
+	fmt.Fprintf(&b, "\nknowledge: %d notes, %d lessons\n", len(m.standing.Notes), len(m.standing.Lessons))
+	fmt.Fprintf(&b, "\nnext: %s\n", instruction)
+	if covErr == nil {
+		if err := m.writeHoles(cov); err != nil {
+			return err
 		}
 	}
-	fmt.Fprintf(&b, "\nnext: %s\n", m.nextInstruction(corpus, false))
 	return m.writeIfChanged(filepath.Join(m.zoneDir, zone.StateFile), b.Bytes())
 }
 
+// treeHoles — the tree's open line count of the run's coverage fact.
+func (m *machine) treeHoles(corpus doc.Document) int {
+	cov, err := m.coverage(corpus)
+	if err != nil {
+		return 0
+	}
+	n := 0
+	for _, ranges := range cov.Holes {
+		for _, r := range ranges {
+			n += r.Last - r.First + 1
+		}
+	}
+	return n
+}
+
+// excludedShare — the loud exclusions' share of the tree, whole
+// percents: arithmetic over the already-counted coverage fact.
+func (m *machine) excludedShare(cov fprint.Coverage) int {
+	held := map[string]map[int]bool{}
+	for _, ex := range m.standing.Registry.Exclusions {
+		rel, first, last, err := fprint.ParseLineRange(ex.Range)
+		if err != nil {
+			continue
+		}
+		if held[rel] == nil {
+			held[rel] = map[int]bool{}
+		}
+		for n := first; n <= last; n++ {
+			held[rel][n] = true
+		}
+	}
+	excluded := 0
+	for _, f := range held {
+		excluded += len(f)
+	}
+	if cov.Total == 0 {
+		return 0
+	}
+	return 100 * excluded / cov.Total
+}
+
+// writeHoles — the tree's whole hole ledger, uncapped: the state's
+// list points here when it runs out of room. The caller hands the
+// walk's own successful fact.
+func (m *machine) writeHoles(cov fprint.Coverage) error {
+	var b bytes.Buffer
+	fmt.Fprintf(&b, "# punchtape holes — run %d\n\n", m.standing.RunNumber)
+	paths := make([]string, 0, len(cov.Holes))
+	for path := range cov.Holes {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+	if len(paths) == 0 {
+		fmt.Fprintf(&b, "no holes\n")
+	}
+	for _, path := range paths {
+		fmt.Fprintf(&b, "- %s\n", spellHoles(path, cov.Holes[path], true))
+	}
+	return m.writeIfChanged(filepath.Join(m.zoneDir, zone.HolesFile), b.Bytes())
+}
+
+// writeExclusionsProposal — the holes as a ready draft: every open
+// range in the submission's own form, the reasons and references
+// the author's own to fill. With no hole standing, a stale draft
+// leaves — the proposal never outlives its own arithmetic.
+func (m *machine) writeExclusionsProposal(corpus doc.Document) error {
+	cov, err := m.coverage(corpus)
+	if err != nil {
+		return err
+	}
+	paths := make([]string, 0, len(cov.Holes))
+	for path := range cov.Holes {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+	file := filepath.Join(m.zoneDir, zone.ExclusionsProposalFile)
+	if len(paths) == 0 {
+		if _, err := ports.FSBind.Stat(file); err == nil {
+			return ports.FSBind.Remove(file)
+		}
+		return nil
+	}
+	var b bytes.Buffer
+	fmt.Fprintf(&b, "# generated from the run's own hole arithmetic — add reasons and refs, drop what you claim\n")
+	fmt.Fprintf(&b, "uncovered-lines:\n")
+	for _, path := range paths {
+		for _, r := range cov.Holes[path] {
+			fmt.Fprintf(&b, "  - {range: %s, reason: '', refs: []}\n", strconv.Quote(fmt.Sprintf("%s:%d-%d", path, r.First, r.Last)))
+		}
+	}
+	return m.writeIfChanged(file, b.Bytes())
+}
+
+// writeTrace — the meaning's own showcase: the stream's every line
+// with its text, its declared outcome and the retelling beside each
+// other, then the carrier, the requirements, the behaviors with
+// their claims and the proof rows with their standings. Nothing is
+// judged here; everything is placed for the eye.
+func (m *machine) writeTrace(corpus doc.Document, claims map[string]claimsFacts) error {
+	var b bytes.Buffer
+	fmt.Fprintf(&b, "# punchtape trace — run %d\n\n", m.standing.RunNumber)
+	reqSpan := map[int][]string{}
+	for _, id := range m.standing.Registry.Order {
+		if nums, err := doc.ParseRanges(m.standing.Registry.Requirements[id].Lines); err == nil {
+			for _, n := range nums {
+				reqSpan[n] = append(reqSpan[n], id)
+			}
+		}
+	}
+	behaviorsOf := func(reqID string) []doc.Behavior {
+		var out []doc.Behavior
+		for _, beh := range corpus.Behaviors {
+			for _, cover := range beh.Covers {
+				if cover == reqID {
+					out = append(out, beh)
+					break
+				}
+			}
+		}
+		return out
+	}
+	for n := 1; n <= len(m.universe); n++ {
+		fmt.Fprintf(&b, "D%d «%s»\n", n, m.universe[n-1])
+		lo, ok := m.standing.LineOutcomes[n]
+		if !ok {
+			fmt.Fprintf(&b, "├─ no intent — unresolved (no outcome)\n")
+			continue
+		}
+		fmt.Fprintf(&b, "├─ intent: %s — «%s»\n", lo.Outcome, lo.Prose)
+		switch lo.Outcome {
+		case doc.OutcomeWork, doc.OutcomeDescribe:
+			if len(reqSpan[n]) == 0 {
+				fmt.Fprintf(&b, "│  └─ (%s pending)\n", lo.Outcome)
+				continue
+			}
+			for _, id := range reqSpan[n] {
+				fmt.Fprintf(&b, "│  └─ %s (span %s)\n", id, strings.Join(m.standing.Registry.Requirements[id].Lines, ", "))
+				for _, beh := range behaviorsOf(id) {
+					fmt.Fprintf(&b, "│     └─ %s (covers %s)\n", beh.ID, id)
+					fmt.Fprintf(&b, "│        claims: %s — token %s\n",
+						strings.Join(beh.Claims, ", "), fprint.Token12(claims[beh.ID].digest))
+					for i, row := range beh.Rows {
+						if !doc.Pinned(row.Expect) {
+							continue
+						}
+						fmt.Fprintf(&b, "│        row %d PROOF: %s → %s\n", i, commandOf(row.Run), m.rowStatus(beh.ID, i, beh))
+					}
+				}
+			}
+		case doc.OutcomeMark:
+			fmt.Fprintf(&b, "│  └─ marker (reason: %s)\n", m.markerReasonOf(n))
+		case doc.OutcomeAnswer:
+			// The answer's text stood at the declaration and rides the
+			// line forever — it cannot be absent.
+			fmt.Fprintf(&b, "│  └─ answer: %s\n", m.standing.Answers[n])
+		case doc.OutcomeExecute:
+			if e := m.standing.LastExecution; e != nil && slices.Contains(e.Lines, doc.DemandID(n)) {
+				fmt.Fprintf(&b, "│  └─ execution (last): exit %d — %s\n", e.Exit, fprint.Token12(e.StdoutDigest))
+				continue
+			}
+			fmt.Fprintf(&b, "│  └─ (execute pending)\n")
+		case doc.OutcomeAsk:
+			if order, state := m.orderOn(n); state != "" {
+				fmt.Fprintf(&b, "│  └─ order (%s): %s\n", state, order.Question)
+				continue
+			}
+			fmt.Fprintf(&b, "│  └─ (ask pending)\n")
+		}
+	}
+	return m.writeIfChanged(filepath.Join(m.zoneDir, zone.TraceFile), b.Bytes())
+}
+
+// markerReasonOf — the standing marker that claims the line, its
+// reason; empty when none stands.
+func (m *machine) markerReasonOf(n int) string {
+	for _, marker := range m.standing.Registry.Markers {
+		if nums, err := doc.ParseRanges(marker.Lines); err == nil {
+			for _, k := range nums {
+				if k == n {
+					return marker.Reason
+				}
+			}
+		}
+	}
+	return ""
+}
+
+// orderOn — the standing open order of the line and its state.
+func (m *machine) orderOn(n int) (doc.OpenOrder, string) {
+	for _, order := range m.standing.Registry.Open {
+		if orderLine(order) == n {
+			return order, order.State
+		}
+	}
+	return doc.OpenOrder{}, ""
+}
+
+// spellHoles — one file's open lines as one line: "path: count
+// (ranges)" for the state's list, "path count (ranges)" for the
+// verdict's report line.
+func spellHoles(path string, ranges []fprint.Range, colon bool) string {
+	count := 0
+	spelled := make([]string, 0, len(ranges))
+	for _, r := range ranges {
+		count += r.Last - r.First + 1
+		if r.First == r.Last {
+			spelled = append(spelled, strconv.Itoa(r.First))
+			continue
+		}
+		spelled = append(spelled, fmt.Sprintf("%d-%d", r.First, r.Last))
+	}
+	sep := " "
+	if colon {
+		sep = ": "
+	}
+	return fmt.Sprintf("%s%s%d (%s)", path, sep, count, strings.Join(spelled, ", "))
+}
+
+// claimsShape — the behavior's claims as the state's two numbers:
+// the distinct files named and the union of their claimed lines.
+func claimsShape(b doc.Behavior) (files, lines int) {
+	perFile := map[string]map[int]bool{}
+	for _, claim := range b.Claims {
+		rel, first, last, err := fprint.ParseLineRange(claim)
+		if err != nil {
+			continue
+		}
+		if perFile[rel] == nil {
+			perFile[rel] = map[int]bool{}
+		}
+		for n := first; n <= last; n++ {
+			perFile[rel][n] = true
+		}
+	}
+	files = len(perFile)
+	for _, held := range perFile {
+		lines += len(held)
+	}
+	return files, lines
+}
+
 // behaviorRows — one behavior's standing counts: green, stale (never
-// run, or a row of a scope-less behavior), red. A red fact surfaces
-// whatever the scope: staleness is secondary to a measured failure.
+// run, or a row of a claims-less behavior), red. A red fact surfaces
+// whatever the claims: staleness is secondary to a measured failure.
 func (m *machine) behaviorRows(b doc.Behavior) (green, stale, red int) {
 	for i := range b.Rows {
 		key := b.ID + "/" + strconv.Itoa(i)
@@ -203,7 +529,7 @@ func (m *machine) behaviorRows(b doc.Behavior) (green, stale, red int) {
 			stale++
 		case fact.Status == journal.StatusRed:
 			red++
-		case len(b.Scope) == 0:
+		case len(b.Claims) == 0:
 			stale++
 		default:
 			green++
@@ -223,33 +549,6 @@ func (m *machine) countRows(corpus doc.Document) (red, stale int) {
 	return red, stale
 }
 
-// redReasons — the distinct broken facts of the standing's red rows.
-func (m *machine) redReasons(corpus doc.Document) []string {
-	var out []string
-	for _, b := range corpus.Behaviors {
-		for i := range b.Rows {
-			key := b.ID + "/" + strconv.Itoa(i)
-			if fact, ok := m.standing.Rows[key]; ok && fact.Status == journal.StatusRed {
-				for _, f := range fact.Facts {
-					if !contains(out, f) {
-						out = append(out, f)
-					}
-				}
-			}
-		}
-	}
-	return out
-}
-
-// allScopes — every behavior's scope globs in corpus order.
-func (m *machine) allScopes(corpus doc.Document) []string {
-	var globs []string
-	for _, b := range corpus.Behaviors {
-		globs = append(globs, b.Scope...)
-	}
-	return globs
-}
-
 // writeReport — report.md: the run's whole picture, rewritten whole
 // every time it moves — the build and row facts, red grouped by
 // reason, and the completion act's outcome among them, so no old
@@ -262,13 +561,24 @@ func (m *machine) writeReport(n int, build *journal.Build, rows []rowReport, not
 		case build.Reason != "":
 			fmt.Fprintf(&b, "build: RED — %s\n", build.Reason)
 		case build.TimedOut:
-			fmt.Fprintf(&b, "build: RED — timed out after %s\n", RowTimeout)
+			fmt.Fprintf(&b, "build: RED — timed out after %s\n", m.rowTimeout)
 		case build.Exit != 0:
 			fmt.Fprintf(&b, "build: RED — exit %d\n", build.Exit)
 		default:
 			fmt.Fprintf(&b, "build: exit %d\n", build.Exit)
 		}
 		fmt.Fprintf(&b, "\n")
+	}
+	if len(m.execFacts) > 0 {
+		fmt.Fprintf(&b, "\nexecutions:\n")
+		for _, e := range m.execFacts {
+			fmt.Fprintf(&b, "- %s — %s — exit %d\n", strings.Join(e.Lines, ", "), commandOf(e.Run), e.Exit)
+			if e.StdoutAddr != "" {
+				fmt.Fprintf(&b, "  stdout: %s\n", e.StdoutAddr)
+				continue
+			}
+			fmt.Fprintf(&b, "  stdout: %s\n", e.Stdout)
+		}
 	}
 	if len(rows) == 0 && len(notes) == 0 {
 		fmt.Fprintf(&b, "no stale rows\n")
@@ -304,10 +614,11 @@ func (m *machine) writeReport(n int, build *journal.Build, rows []rowReport, not
 }
 
 // reportRefusals — report.md as the refusal list: the field, the law,
-// the fact.
+// the fact — the header naming the run that refused, like every
+// view's header names its fact's run.
 func (m *machine) reportRefusals(refusals []doc.Refusal) error {
 	var b bytes.Buffer
-	fmt.Fprintf(&b, "# punchtape report\n\n")
+	fmt.Fprintf(&b, "# punchtape report — run %d\n\n", m.standing.RunNumber)
 	for _, r := range refusals {
 		fmt.Fprintf(&b, "%s: %s (%s)\n", r.Where, r.Fact, r.Law)
 	}
@@ -315,45 +626,28 @@ func (m *machine) reportRefusals(refusals []doc.Refusal) error {
 	return m.writeIfChanged(filepath.Join(m.zoneDir, zone.ReportFile), b.Bytes())
 }
 
-// writeKnowledge — knowledge.md: each note exactly once — its whole
-// text with its tags spelled on the same line — then the index that
-// maps every tag to its notes by number, then the lessons grouped by
-// reason. Tags are a mechanical intersection of bytes — grouping
-// only, never a check.
+// writeKnowledge — knowledge.md: each note exactly once — its kind,
+// its references and its whole text on one line — then the index
+// that maps every reference to its notes by number, then the lessons
+// grouped by reason. References are the note's own gated data — the
+// index is arithmetic over them, never a matching of words.
 func (m *machine) writeKnowledge() error {
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "# punchtape knowledge — run %d\n\n", m.standing.RunNumber)
-	vocab := m.vocabulary()
-	notes := m.notes()
+	notes := m.standing.Notes
 	if len(notes) == 0 && len(m.standing.Lessons) == 0 {
 		fmt.Fprintf(&b, "no notes yet\n")
 		return m.writeIfChanged(filepath.Join(m.zoneDir, zone.KnowledgeFile), b.Bytes())
 	}
-	// One print per note: the text stands once, the tags ride its
-	// line, the index is the only other place a tag appears.
-	byTag := map[string][]string{}
-	var tagOrder []string
 	for i, note := range notes {
 		num := fmt.Sprintf("n%d", i+1)
-		tags := noteTags(note, vocab)
-		if len(tags) == 0 {
-			fmt.Fprintf(&b, "- [%s] (untagged) %s\n", num, note)
+		if len(note.Refs) == 0 {
+			fmt.Fprintf(&b, "- [%s] (%s) %s\n", num, note.Kind, note.Text)
 			continue
 		}
-		fmt.Fprintf(&b, "- [%s] (tags: %s) %s\n", num, strings.Join(tags, ", "), note)
-		for _, tag := range tags {
-			if _, seen := byTag[tag]; !seen {
-				tagOrder = append(tagOrder, tag)
-			}
-			byTag[tag] = append(byTag[tag], num)
-		}
-	}
-	if len(tagOrder) > 0 {
-		sort.Strings(tagOrder)
-		fmt.Fprintf(&b, "\n## index\n\n")
-		for _, tag := range tagOrder {
-			fmt.Fprintf(&b, "%s: %s\n", tag, strings.Join(byTag[tag], ", "))
-		}
+		refs := append([]string(nil), note.Refs...)
+		sort.Strings(refs)
+		fmt.Fprintf(&b, "- [%s] (%s; refs: %s) %s\n", num, note.Kind, strings.Join(refs, ", "), note.Text)
 	}
 	byReason := map[string][]journal.Lesson{}
 	var reasons []string
@@ -376,9 +670,12 @@ func (m *machine) writeKnowledge() error {
 
 // writeSpec — the spec tree: the index and one small file per
 // behavior; the pages of retired behaviors are removed — the tree is
-// an image of the standing corpus, nothing else. A page that cannot
-// land or leave is a loud failure: a stale spec is a stale face.
-func (m *machine) writeSpec(corpus doc.Document) error {
+// an image of the standing corpus, nothing else. A page carries its
+// sections in one order: the head, the story, the demands it
+// answers, the claims it stands on, the rows that prove it and the
+// commands that re-run them. A page that cannot land or leave is a
+// loud failure: a stale spec is a stale face.
+func (m *machine) writeSpec(corpus doc.Document, claims map[string]claimsFacts) error {
 	specDir := filepath.Join(m.zoneDir, zone.SpecDir)
 	var index bytes.Buffer
 	fmt.Fprintf(&index, "# punchtape spec — run %d\n\n", m.standing.RunNumber)
@@ -392,16 +689,37 @@ func (m *machine) writeSpec(corpus doc.Document) error {
 		fmt.Fprintf(&index, "- %s — %s — %s\n", b.ID, b.Name, status)
 		var page bytes.Buffer
 		fmt.Fprintf(&page, "# %s — %s\n\n", b.ID, b.Name)
-		fmt.Fprintf(&page, "run: %d\n\n%s\n\n", m.standing.RunNumber, b.Prose)
-		if len(b.Scope) > 0 {
-			fmt.Fprintf(&page, "scope: %s\n\n", strings.Join(b.Scope, ", "))
+		fmt.Fprintf(&page, "run: %d\n\n", m.standing.RunNumber)
+		fmt.Fprintf(&page, "## Story\n\n%s\n\n", b.Prose)
+		fmt.Fprintf(&page, "## Demands\n\n")
+		for _, cover := range b.Covers {
+			req, ok := m.standing.Registry.Requirements[cover]
+			if !ok {
+				continue
+			}
+			fmt.Fprintf(&page, "- %s (lines %s): %s\n", cover, strings.Join(req.Lines, ", "), req.Prose)
 		}
+		fmt.Fprintf(&page, "\n## Claims\n\n")
+		for _, r := range claims[b.ID].ranges {
+			fmt.Fprintf(&page, "- %s — %s\n", r.Claim, r.Digest12)
+		}
+		fmt.Fprintf(&page, "token: %s\n", fprint.Token12(claims[b.ID].digest))
+		fmt.Fprintf(&page, "\n## Rows\n\n")
 		for i, row := range b.Rows {
-			fmt.Fprintf(&page, "## row %d\n\ncommand: %s\n", i, commandOf(row.Run))
+			if doc.Pinned(row.Expect) {
+				fmt.Fprintf(&page, "## row %d — PROOF\n\n", i)
+			} else {
+				fmt.Fprintf(&page, "## row %d\n\n", i)
+			}
+			fmt.Fprintf(&page, "command: %s\n", commandOf(row.Run))
 			if expect := expectOf(row.Expect); expect != "" {
 				fmt.Fprintf(&page, "%s\n", expect)
 			}
 			fmt.Fprintf(&page, "proof: %s (%s)\n\n", m.rowStatus(b.ID, i, b), proofShort(m, b.ID, i))
+		}
+		fmt.Fprintf(&page, "## Verify\n\n")
+		for _, row := range b.Rows {
+			fmt.Fprintf(&page, "- %s\n", commandOf(row.Run))
 		}
 		path := filepath.Join(specDir, filepath.FromSlash(b.ID)+".md")
 		if err := ports.FSBind.MkdirAll(filepath.Dir(path)); err != nil {
@@ -447,8 +765,8 @@ func (m *machine) behaviorStatus(b doc.Behavior) string {
 }
 
 // rowStatus — one row's standing: green, stale or red. The standing
-// fact says what it says; an empty scope keeps its rows honestly
-// stale.
+// fact says what it says; an empty claims list keeps its rows
+// honestly stale.
 func (m *machine) rowStatus(id string, i int, b doc.Behavior) string {
 	key := id + "/" + strconv.Itoa(i)
 	fact, ok := m.standing.Rows[key]
@@ -458,7 +776,7 @@ func (m *machine) rowStatus(id string, i int, b doc.Behavior) string {
 	if fact.Status == journal.StatusRed {
 		return "red"
 	}
-	if len(b.Scope) == 0 {
+	if len(b.Claims) == 0 {
 		return "stale"
 	}
 	return "green"
@@ -472,85 +790,6 @@ func proofShort(m *machine, id string, i int) string {
 		return "none"
 	}
 	return shortDigest(fact.Proof)
-}
-
-// vocabulary — the instance's own bytes as a word set: the recorded
-// goal and the standing corpus. No semantics anywhere — a mechanical
-// intersection is all a tag ever is.
-func (m *machine) vocabulary() map[string]bool {
-	words := map[string]bool{}
-	if goal, err := m.objects.Get(m.standing.GoalAddr); err == nil {
-		collectWords(string(goal), words)
-	}
-	collectWords(string(doc.Marshal(m.corpusDoc())), words)
-	return words
-}
-
-// notes — the authors' notes of every submission, in arrival order.
-func (m *machine) notes() []string {
-	var out []string
-	for _, sub := range m.standing.Submissions {
-		data, err := m.objects.Get(sub.DocAddr)
-		if err != nil {
-			continue
-		}
-		d, err := doc.Decode(data)
-		if err != nil {
-			continue
-		}
-		for _, n := range d.Notes {
-			out = append(out, n.Text)
-		}
-	}
-	return out
-}
-
-// noteCount — the notes' count for the state's counter.
-func (m *machine) noteCount() int { return len(m.notes()) }
-
-// hasLessonFor — whether the lessons hold a reason class.
-func (m *machine) hasLessonFor(reason string) bool {
-	for _, l := range m.standing.Lessons {
-		if l.Reason == reason {
-			return true
-		}
-	}
-	return false
-}
-
-// collectWords — the byte-level word set of a text: lowercase runs
-// of letters and digits, two characters or longer.
-func collectWords(text string, into map[string]bool) {
-	var sb strings.Builder
-	flush := func() {
-		if sb.Len() >= 2 {
-			into[strings.ToLower(sb.String())] = true
-		}
-		sb.Reset()
-	}
-	for _, r := range text {
-		switch {
-		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
-			sb.WriteRune(r)
-		default:
-			flush()
-		}
-	}
-	flush()
-}
-
-// noteTags — the note's own words met with the vocabulary.
-func noteTags(note string, vocab map[string]bool) []string {
-	words := map[string]bool{}
-	collectWords(note, words)
-	var tags []string
-	for w := range words {
-		if vocab[w] {
-			tags = append(tags, w)
-		}
-	}
-	sort.Strings(tags)
-	return tags
 }
 
 // commandOf — the row's command as a human reads it.
@@ -590,16 +829,6 @@ func oneLine(rowBytes string) string {
 	return s
 }
 
-// contains — a slice's plain membership.
-func contains(xs []string, v string) bool {
-	for _, x := range xs {
-		if x == v {
-			return true
-		}
-	}
-	return false
-}
-
 // writeIfChanged — the view's whole content, only when it differs.
 // A write that cannot land is a loud failure: the view is the
 // machine's face, a stale face is a lie.
@@ -610,10 +839,8 @@ func (m *machine) writeIfChanged(path string, data []byte) error {
 	return ports.FSBind.WriteAtomic(path, data)
 }
 
-// shortDigest — the human-facing 12 characters of a digest.
+// shortDigest — the human-facing 12 characters of a digest: the
+// protocol's own token spelling.
 func shortDigest(d string) string {
-	if len(d) > 12 {
-		return d[:12]
-	}
-	return d
+	return fprint.Token12(d)
 }

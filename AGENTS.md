@@ -2,6 +2,13 @@
 
 Mandatory rules for this repository. No exceptions.
 
+## Session entry — how this file binds every agent
+
+- Every point of this file is an obligation. Nothing here is advisory, nothing yields to convenience, habit, tool defaults, or another document; "should" reads as "must", and examples are binding shapes.
+- Every session in this repository opens with this file read IN FULL before any other act — before any search, any edit, any plan, any answer past the greeting. A part is not the file; a skim is not a read.
+- Absorption is proven by artifacts, not promises: every execution plan, every handoff, and the first substantive reply of a session opens with one line stating that this file was read in full and the constitutional check (Primacy and reach) was done for the work proposed. An artifact without that line is invalid; a session that meets one stops and raises it as a question, and nothing built on such an artifact stands.
+- No agent may replace this file with a summary, a paraphrase, or a memory of it: summaries are commentary, the file is the law. Where an agent's memory and this file disagree, the file wins and the disagreement is raised as a question at once.
+
 ## Primacy and reach of this file
 
 - This file binds EVERYTHING the repository contains and everything its agents produce: not only their conduct, but every artifact — source code, documents, campaign materials, and any machine, framework, gate, counter, key, or ritual the repository ships. A mechanism that imposes rules, ceremonies, or checks on others is itself an artifact and passes every rule below before it is built, with no exemption for being a measuring instrument, a protocol byte-set, or a frozen document.
@@ -19,6 +26,15 @@ Mandatory rules for this repository. No exceptions.
 - TOTAL BAN on imagination and assumptions: nothing is built on guesses; every claim arrives as an objectively proven fact with objective metrics, or it does not arrive at all.
 - Proven economy and quality — completeness, validity, reliability — come BEFORE any feature, law, or mechanism.
 - Every element of the machine — mechanics, canon, instance behavior — carries a clear answer to two questions: WHY it exists and HOW its effect is verified. An element without both answers is removed.
+
+## Proof and candor
+
+- THE PROOF LAW: a guarantee is a measured fact — pinned bytes, claimed units, ranges, re-measured on drift. An event is never a proof: a green exit code or a substring match proves nothing about coverage. Every gate the machine ships answers in bytes or set arithmetic; a gate that cannot name its facts is a defect and is removed. Event-style proof stands only where it is the strongest proof the fact admits — a command's own exit code, a file's own bytes.
+- THE WORDS LAW: every human utterance that steers the work is a requirement, captured verbatim as bytes in the machine-held stream the moment it enters the work; a paraphrased demand is a defect. Birth creates an instance and nothing else — no moment, birth included, finalizes scope; the wish is never a closed universe, and a wish line and a requirement are one and the same kind of thing.
+- THE CLAIMS LAW: coverage of work products is claimed in units the inventory carries (identity and range) — never in path globs; globs may trigger re-runs, never prove coverage. Coverage between specs and work products is mutual, checked as set equality in both directions: a claim naming a unit the inventory does not carry is a refusal; a unit no behavior claims blocks the verdict unless a loud marker excludes it with a reason.
+- THE CANDOR LAW: anything skipped — an exclusion, a deferment, an unanswered order, a replaced behavior — exists as a named, quoted, journaled record; a quiet hole is a bug. A field that carries an obligation is mandatory: its absence is a refusal, not a hope. Free text is welcome and must GROW — as structured, referenced, pinned prose — but never serves as the only carrier of an obligation the machine guarantees.
+- THE MANDATE LAW: a change to standing behavior carries its mandate in the same act — the demand lines it serves and the decision record (work class, quoted approval where the class demands it). Work done between machine records is drift: named loudly, never standing under a verdict; a verdict never claims to stand over a tree that moved.
+- THE SELF-FACTS LAW: statements about machine state come from the machine's own current files; the zone's standing and report pages are the only authority on the zone. An agent asserting machine state it did not read is a defect — and the machine's face says the queue, the drift and the open orders directly, so no agent ever needs to guess.
 
 ## Experiments and runs
 
@@ -62,7 +78,7 @@ Mandatory rules for this repository. No exceptions.
 
 ## Session limits
 
-- If the working session's context window reaches 500k tokens, that is a red line: stop work immediately, write a handoff for continuation in a new session (`handoffs/`), and print a ready copy-paste continuation prompt as a code block.
+- If the working session's context window reaches 500k tokens, that is a red line: stop work immediately, write a handoff for continuation in a new session (`handoffs/`), and print a ready copy-paste continuation prompt as a code block. The printed prompt's first order is: read AGENTS.md in full before anything else; the handoff itself opens with the absorption line the Session entry section demands.
 
 ## Questions and uncertainty
 
@@ -70,6 +86,7 @@ Mandatory rules for this repository. No exceptions.
 
 ## Tooling
 
+- Implementation follows the goal of the ordered work, never the tests: code is written to the goal first, and tests are then written or rewritten against the finished behavior. Bending functionality to satisfy a test — instead of judging both against the goal that ordered the work — is cheating and is forbidden; when behavior and test disagree, the arbiter is the goal, and the test is rewritten as readily as the code.
 - All code must be free of errors and warnings from static analyzers, formatters, and every other language tool, in every language used.
 - Python additionally: lazy imports are forbidden; code must be ruff-compliant and mypy-clean; every Python program in the repository (tools, campaign scripts, tests) runs under the repository-local uv venv interpreter (`.venv/bin/python`).
 - All Python tooling runs from the repository-local uv venv (`.venv/`, gitignored); no global or user-level Python tool installs.

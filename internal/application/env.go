@@ -21,7 +21,9 @@ import (
 	"regexp"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/neurophant/punchtape/internal/application/canon"
 	"github.com/neurophant/punchtape/internal/domain/fprint"
@@ -60,6 +62,7 @@ func ZoneEnv(zoneDir string) ([]string, error) {
 		return nil, err
 	}
 	var out []string
+	seen := map[string]bool{}
 	for n, line := range strings.Split(string(data), "\n") {
 		line = strings.TrimRight(line, "\r")
 		if line == "" || strings.HasPrefix(line, "#") {
@@ -74,6 +77,16 @@ func ZoneEnv(zoneDir string) ([]string, error) {
 					"runs the machine plus these pins",
 				zone.Path(zone.EnvSlot), n+1, line)
 		}
+		// A repeated name is a fork the machine refuses to guess on:
+		// which line wins depends on the child's own reader — sh takes
+		// the last, a bare getenv child the first. One name, one pin.
+		if seen[key] {
+			return nil, fmt.Errorf(
+				"env pin refused — %s, line %d: %q — the law: a name pins once; "+
+					"two lines name %s, take one out",
+				zone.Path(zone.EnvSlot), n+1, line, key)
+		}
+		seen[key] = true
 		if strings.HasPrefix(value, "/") {
 			return nil, fmt.Errorf(
 				"env pin refused — %s, line %d: %q — the law: no absolute paths; "+
@@ -92,16 +105,63 @@ func ZoneEnv(zoneDir string) ([]string, error) {
 	return out, nil
 }
 
+// RowTimeoutPin — the name of the zone's row deadline pin: whole
+// seconds the machine holds as its own deadline, never a variable a
+// command could read.
+const RowTimeoutPin = "PUNCHTAPE_ROW_TIMEOUT"
+
+// defaultRowTimeout — the standing deadline of one command: a
+// hang-killer, never a judge of slow work. The deadline of a zone
+// with no pin; a zone raises it by its own pin, and the machine
+// holds the value in its own rowTimeout — never a global that
+// could move under a standing run.
+const defaultRowTimeout = 300 * time.Second
+
 // RunEnv — what a command of the machine actually sees: the clean
-// base plus the zone's pins, a pin winning on a name.
+// base plus the zone's pins, a pin winning on a name. The row
+// deadline pin never rides: it names the machine's own ceiling, not
+// the commands' environment.
 func RunEnv(pins []string) []string {
-	return append(CleanEnv(), pins...)
+	kept := make([]string, 0, len(pins))
+	for _, pin := range pins {
+		if strings.HasPrefix(pin, RowTimeoutPin+"=") {
+			continue
+		}
+		kept = append(kept, pin)
+	}
+	return append(CleanEnv(), kept...)
+}
+
+// RowTimeoutOf — the zone's row deadline from its pins: the pinned
+// whole seconds, the standing default when the pin does not stand.
+// The pin rides the proofs' environment hash and never reaches the
+// commands themselves; a value that does not name whole positive
+// seconds is a loud refusal quoting the line and the law.
+func RowTimeoutOf(pins []string) (time.Duration, error) {
+	spelled := ""
+	for _, pin := range pins {
+		if value, ok := strings.CutPrefix(pin, RowTimeoutPin+"="); ok {
+			spelled = value
+		}
+	}
+	if spelled == "" {
+		return defaultRowTimeout, nil
+	}
+	secs, err := strconv.Atoi(spelled)
+	if err != nil || secs <= 0 {
+		return 0, fmt.Errorf(
+			"env pin refused — %s: %q — the law: the row deadline pin names whole seconds, a positive number",
+			zone.Path(zone.EnvSlot), RowTimeoutPin+"="+spelled)
+	}
+	return time.Duration(secs) * time.Second, nil
 }
 
 // EnvHash — the fingerprint of the machine's version, the host and
-// the environment actually passed, the zone's pins included.
+// the environment actually passed, the zone's pins included — the
+// row deadline pin among them: moving the ceiling moves every proof,
+// the rows re-earn themselves under the new law.
 func EnvHash(pins []string) string {
-	env := RunEnv(pins)
+	env := append(CleanEnv(), pins...)
 	sort.Strings(env)
 	return fprint.EnvHash(fprint.EnvIdentity{
 		Version: Version,

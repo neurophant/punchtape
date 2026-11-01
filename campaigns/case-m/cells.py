@@ -54,7 +54,9 @@ HARNESS_SOURCE = CAMPAIGN / "harness.md"
 # outside the repository and outside every wave — platform
 # maintenance warms them once per series; a wave only checks and
 # copies (a wave never builds the substrate it stands on).
-ENV_PREP = Path(os.environ.get("C0_ENV_PREP", Path.home() / ".experiments/cache/env-prep"))
+ENV_PREP = Path(
+    os.environ.get("C0_ENV_PREP", Path.home() / ".experiments/cache/env-prep")
+)
 
 # The series' stack set: one meaning runs in all of them, always.
 STACKS = ["go", "js", "python", "rust", "cpp"]
@@ -185,6 +187,7 @@ export PGDATA="{cell}/env/tmp/pgdata"
 export REDIS_SOCK="$CELL_REDIS/redis.sock"
 """
 
+
 # The cell's loopback ports, unique across the wave's cells and
 # below the OS's ephemeral span (nothing else grabs them either):
 # every cell's HTTP face takes SERVE_PORT; a conduit cell's route
@@ -204,6 +207,7 @@ def cell_ports(index: int, sense: str) -> dict[str, int]:
 def ports_env(ports: dict[str, int]) -> str:
     """The cell's port exports, appended to its ENV."""
     return "".join(f'export {name}="{value}"\n' for name, value in ports.items())
+
 
 # The cell's own store: one postgres cluster inside the cell's
 # scratch, a unix socket only (no TCP), bound behind the cell's
@@ -339,13 +343,19 @@ def check_system_machine(pin: Path) -> dict[str, str]:
     """
     system = shutil.which("punchtape")
     if system is None:
-        print("punchtape is not installed on the system (command -v punchtape)", file=sys.stderr)
+        print(
+            "punchtape is not installed on the system (command -v punchtape)",
+            file=sys.stderr,
+        )
         raise SystemExit(1)
     system_path = Path(system).resolve()
     pin_sha = hashlib.sha256(pin.read_bytes()).hexdigest()
     sys_sha = hashlib.sha256(system_path.read_bytes()).hexdigest()
     if pin_sha != sys_sha:
-        print(f"system punchtape ({sys_sha}) != pinned ({pin_sha}): install the pinned binary", file=sys.stderr)
+        print(
+            f"system punchtape ({sys_sha}) != pinned ({pin_sha}): install the pinned binary",
+            file=sys.stderr,
+        )
         raise SystemExit(1)
     version = subprocess.run(
         [str(system_path), "--version"], capture_output=True, text=True, check=True
@@ -422,7 +432,12 @@ def stage_services(cell: Path) -> None:
 
 
 def stage_stack(
-    cell: Path, sense: str, stack: str, staged_path: str, ports: dict[str, int], run: Path
+    cell: Path,
+    sense: str,
+    stack: str,
+    staged_path: str,
+    ports: dict[str, int],
+    run: Path,
 ) -> None:
     """The stack's substrate into the cell and its ENV file: the
     warmed M master (the stack's service pack with the sense's own
@@ -431,7 +446,9 @@ def stage_stack(
     vendored hiredis sources compiled in the cell."""
     work = cell / "work"
     if stack == "go":
-        copy_tree(ENV_PREP / MASTERS[(sense, "go")], cell / "env" / "deps" / "gomod-cache")
+        copy_tree(
+            ENV_PREP / MASTERS[(sense, "go")], cell / "env" / "deps" / "gomod-cache"
+        )
         (cell / "env" / "deps" / "gocache").mkdir()
         (cell / "env" / "deps" / "gopath").mkdir()
         env_text = GO_ENV.format(cell=cell)
@@ -442,14 +459,18 @@ def stage_stack(
         copy_tree(ENV_PREP / MASTERS[(sense, "python")], cell / "env" / "venv")
         env_text = PY_ENV.format(cell=cell, path=staged_path)
     elif stack == "rust":
-        copy_tree(ENV_PREP / MASTERS[(sense, "rust")], cell / "env" / "deps" / "cargo-vendor")
+        copy_tree(
+            ENV_PREP / MASTERS[(sense, "rust")], cell / "env" / "deps" / "cargo-vendor"
+        )
         (cell / "env" / "deps" / "cargo-home").mkdir(parents=True)
         (work / ".cargo").mkdir()
         (work / ".cargo" / "config.toml").write_text(RUST_CONFIG.format(cell=cell))
         env_text = RUST_ENV.format(cell=cell)
     elif stack == "cpp":
         copy_tree(HIREDIS_SOURCE, cell / "env" / "deps" / "hiredis")
-        env_text = CPP_ENV.format(cell=cell, prefix=Path.home() / ".local", path=staged_path)
+        env_text = CPP_ENV.format(
+            cell=cell, prefix=Path.home() / ".local", path=staged_path
+        )
     else:
         print(f"unknown stack {stack!r}", file=sys.stderr)
         raise SystemExit(1)
@@ -553,7 +574,9 @@ def main(argv: list[str]) -> int:
 
     (wave_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(f"wave: {wave_dir}")
-    print(f"machine: {machine['version']} {machine['sha256'][:12]} at {machine['path']}")
+    print(
+        f"machine: {machine['version']} {machine['sha256'][:12]} at {machine['path']}"
+    )
     for hand in manifest["hands"]:
         print(f"  {hand['hand']}: {hand['cell']}")
     return 0

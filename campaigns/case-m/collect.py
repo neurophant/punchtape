@@ -78,8 +78,12 @@ class HandUsage:
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--wave", required=True, help="the wave root (holds manifest.json)")
-    parser.add_argument("--db", default=str(DEFAULT_DB), help="the platform database file")
+    parser.add_argument(
+        "--wave", required=True, help="the wave root (holds manifest.json)"
+    )
+    parser.add_argument(
+        "--db", default=str(DEFAULT_DB), help="the platform database file"
+    )
     return parser.parse_args(argv)
 
 
@@ -121,9 +125,7 @@ def hand_sessions(con: sqlite3.Connection, hand: dict[str, Any]) -> list[str]:
         print(f"hand prompt file missing: {prompt_file}", file=sys.stderr)
         raise SystemExit(1)
     prompt_text = prompt_file.read_text().strip()
-    escaped = (
-        input_path.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    )
+    escaped = input_path.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     candidates = [
         str(r[0])
         for r in con.execute(
@@ -139,7 +141,9 @@ def hand_usage(
     con: sqlite3.Connection, hand: dict[str, Any], sessions: list[str]
 ) -> HandUsage:
     if not sessions:
-        return HandUsage(hand["hand"], hand["kind"], 0, 0, 0, 0, 0, 0, 0, 0, "no-sessions")
+        return HandUsage(
+            hand["hand"], hand["kind"], 0, 0, 0, 0, 0, 0, 0, 0, "no-sessions"
+        )
     marks = ",".join("?" for _ in sessions)
     requests = con.execute(
         f"select count(*), coalesce(sum(input_tokens),0), coalesce(sum(output_tokens),0), "
@@ -226,7 +230,10 @@ def main(argv: list[str]) -> int:
         session_sets[agent["hand"]] = set(hand_sessions(con, agent))
     owned = [sid for ids in session_sets.values() for sid in ids]
     if len(owned) != len(set(owned)):
-        print("a session carries two agents' spawn bytes — cannot attribute usage", file=sys.stderr)
+        print(
+            "a session carries two agents' spawn bytes — cannot attribute usage",
+            file=sys.stderr,
+        )
         return 1
 
     lines = ["\t".join(COLUMNS)]

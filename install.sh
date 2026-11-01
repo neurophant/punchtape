@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Install punchtape with one script: Linux and macOS.
 # Requires Go 1.26+. The single install path is ~/.local/bin
-# (one binary in one path; the build is reproducible, -buildvcs=false).
+# (one binary in one path; the build is reproducible,
+# -trimpath -buildvcs=false).
 set -euo pipefail
 
 if ! command -v go >/dev/null 2>&1; then
@@ -12,7 +13,7 @@ fi
 REPO="$(cd "$(dirname "$0")" && pwd)"
 echo "building punchtape from $REPO ..."
 cd "$REPO"
-go build -buildvcs=false -o punchtape ./cmd/punchtape
+go build -trimpath -buildvcs=false -o punchtape ./cmd/punchtape
 
 DEST="${HOME}/.local/bin"
 mkdir -p "$DEST"

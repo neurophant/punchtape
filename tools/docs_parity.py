@@ -48,7 +48,9 @@ def split_fences(text: str) -> tuple[list[str], list[str]]:
 
 
 def headings(prose: list[str]) -> list[int]:
-    return [len(m.group(1)) for line in prose for m in [re.match(r"^(#{1,6})\s", line)] if m]
+    return [
+        len(m.group(1)) for line in prose for m in [re.match(r"^(#{1,6})\s", line)] if m
+    ]
 
 
 def slug(text: str) -> str:
@@ -85,7 +87,11 @@ def tables(prose: list[str]) -> list[tuple[int, int, Counter[str]]]:
     out: list[tuple[int, int, Counter[str]]] = []
     i = 0
     while i < len(prose):
-        if prose[i].startswith("|") and i + 1 < len(prose) and re.match(r"^\|[\s:-]+\|", prose[i + 1] or ""):
+        if (
+            prose[i].startswith("|")
+            and i + 1 < len(prose)
+            and re.match(r"^\|[\s:-]+\|", prose[i + 1] or "")
+        ):
             hdr, rows = prose[i].count("|"), 0
             nums: Counter[str] = Counter()
             j = i + 2
@@ -113,7 +119,11 @@ def table_spans(prose: list[str]) -> list[tuple[int, int]]:
     spans: list[tuple[int, int]] = []
     i = 0
     while i < len(prose):
-        if prose[i].startswith("|") and i + 1 < len(prose) and re.match(r"^\|[\s:-]+\|", prose[i + 1] or ""):
+        if (
+            prose[i].startswith("|")
+            and i + 1 < len(prose)
+            and re.match(r"^\|[\s:-]+\|", prose[i + 1] or "")
+        ):
             j = i + 2
             while j < len(prose) and prose[j].startswith("|"):
                 j += 1
@@ -130,7 +140,7 @@ def numbers(text: str) -> Counter[str]:
     already compared cell-multiset by their own rule."""
     prose, _ = split_fences(text)
     in_table = set().union(*(range(a, b) for a, b in table_spans(prose)))
-    body = "\n".join(l for n, l in enumerate(prose) if n not in in_table)
+    body = "\n".join(line for n, line in enumerate(prose) if n not in in_table)
     return Counter(re.findall(r"\d+\.\d+|\d{3,}", body))
 
 
@@ -152,16 +162,18 @@ def mermaid_skeletons(fences: list[str]) -> list[str]:
 def plain_code(fences: list[str]) -> list[str]:
     """Fences whose bytes never translate: code and machine output,
     mermaid aside (its labels carry human text in quotes)."""
-    return [body for body in fences
-            if body.partition("\n")[0].strip() not in ("mermaid", "text")]
+    return [
+        body
+        for body in fences
+        if body.partition("\n")[0].strip() not in ("mermaid", "text")
+    ]
 
 
 def prompt_fences(fences: list[str]) -> int:
     """Fences of the `text` family: the user's own language — prompts
     a localized reader pastes to their assistant. Their bytes may
     translate; the meaning cycle guards them."""
-    return sum(1 for body in fences
-               if body.partition("\n")[0].strip() == "text")
+    return sum(1 for body in fences if body.partition("\n")[0].strip() == "text")
 
 
 def check(base: str, lang: str) -> list[str]:
@@ -173,7 +185,9 @@ def check(base: str, lang: str) -> list[str]:
     bprose, bfences = split_fences(btext)
     mprose, mfences = split_fences(mtext)
     if headings(bprose) != headings(mprose):
-        issues.append(f"heading ladder differs: base {headings(bprose)} vs mirror {headings(mprose)}")
+        issues.append(
+            f"heading ladder differs: base {headings(bprose)} vs mirror {headings(mprose)}"
+        )
     if plain_code(bfences) != plain_code(mfences):
         issues.append("plain code fences differ (must be byte-identical)")
     if prompt_fences(bfences) != prompt_fences(mfences):
@@ -187,8 +201,11 @@ def check(base: str, lang: str) -> list[str]:
     if tables(bprose) != tables(mprose):
         issues.append("tables differ (shape or numbers)")
     fam = link_family(base)
-    variant = {f"{t[:-3]}.{lang}.md" for t in links(btext)
-               if t.endswith(".md") and not t.startswith("http")}
+    variant = {
+        f"{t[:-3]}.{lang}.md"
+        for t in links(btext)
+        if t.endswith(".md") and not t.startswith("http")
+    }
     allowed = links(btext) | variant | fam
     extra = links(mtext) - allowed
     if extra:
@@ -198,7 +215,9 @@ def check(base: str, lang: str) -> list[str]:
         diff = {k for k in set(b) | set(m) if b[k] != m[k]}
         issues.append(f"numbers differ: {sorted(diff)[:8]}")
     if bold_entries(bprose) != bold_entries(mprose):
-        issues.append(f"bold entries differ: {bold_entries(bprose)} vs {bold_entries(mprose)}")
+        issues.append(
+            f"bold entries differ: {bold_entries(bprose)} vs {bold_entries(mprose)}"
+        )
     own = anchors(mprose)
     bad = [a for a in re.findall(r"\]\(#([^)]+)\)", mtext) if a not in own]
     if bad:
@@ -213,7 +232,9 @@ def main() -> int:
             failures += check(base, lang)
     for line in failures:
         print(line, file=sys.stderr)
-    print(f"docs parity: {len(BASES) * len(LANGS) - len(failures)}/{len(BASES) * len(LANGS)} mirrors structurally exact")
+    print(
+        f"docs parity: {len(BASES) * len(LANGS) - len(failures)}/{len(BASES) * len(LANGS)} mirrors structurally exact"
+    )
     return 1 if failures else 0
 
 

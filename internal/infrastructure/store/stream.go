@@ -47,6 +47,29 @@ func (s *Stream) Records() ([]journal.Record, error) {
 	return out, nil
 }
 
+// FirstRecord — the journal's first record alone: the birth fact
+// without asking any later record to parse. A foreign machine's zone
+// is named by its creator before the fold meets the zone's shapes. A
+// journal that never wrote answers the zero record.
+func (s *Stream) FirstRecord() (journal.Record, error) {
+	if len(s.files) == 0 {
+		return journal.Record{}, nil
+	}
+	data, err := ports.FSBind.ReadFile(s.files[0])
+	if err != nil {
+		return journal.Record{}, fmt.Errorf("journal: %w", err)
+	}
+	chunks := splitRecords(data)
+	if len(chunks) == 0 {
+		return journal.Record{}, nil
+	}
+	var rec journal.Record
+	if err := journal.DecodeRecord(chunks[0], &rec); err != nil {
+		return journal.Record{}, fmt.Errorf("journal: record 0 of %s does not parse: %w", s.files[0], err)
+	}
+	return rec, nil
+}
+
 // loadFile — one epoch file's records; a torn tail loads the intact
 // records and quarantines the torn bytes. A chunk that does not
 // parse outside the final position is damage by hand — an honest

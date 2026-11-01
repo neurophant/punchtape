@@ -8,6 +8,7 @@
 package application
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -48,7 +49,7 @@ func TestEveryStateInstructs(t *testing.T) {
 	imperative(t, term)
 
 	// The birth's answer instructs.
-	writeZone(t, root, zone.WishSlot, "goal")
+	writeZone(t, root, zone.DemandsSlot, "goal")
 	_, term = runInFail(t, root)
 	imperative(t, term)
 
@@ -62,22 +63,24 @@ func TestEveryStateInstructs(t *testing.T) {
 	if err := writeTree(t, root, "src/in.txt", "ok"); err != nil {
 		t.Fatal(err)
 	}
-	writeZone(t, root, zone.InboxSlot, redDoc)
+	writeZone(t, root, zone.InboxSlot, redDocFor(t, root))
 	runInFail(t, root)
 	imperative(t, lastNext(zoneFile(t, root, zone.StateFile)))
-	writeZone(t, root, zone.InboxSlot, greenDoc)
+	writeZone(t, root, zone.InboxSlot, greenDocFor(t, root))
+	runInFail(t, root)
+	imperative(t, lastNext(zoneFile(t, root, zone.StateFile)))
+
+	// The stream's account joins the corpus; the completion act
+	// records the verdict. With the stream resolved, the green
+	// standing instructs the act itself.
+	writeZone(t, root, zone.InboxSlot, regDocFor(t, root))
 	runInFail(t, root)
 	next = lastNext(zoneFile(t, root, zone.StateFile))
 	imperative(t, next)
-	if !strings.Contains(next, "corpus.yaml") {
+	if !strings.Contains(next, "done: true") {
 		t.Fatalf("the green standing must instruct the completion act: %q", next)
 	}
-
-	// The wish's account joins the corpus; the completion act
-	// records the verdict.
-	writeZone(t, root, zone.InboxSlot, regDoc)
-	runInFail(t, root)
-	writeZone(t, root, zone.InboxSlot, zoneFile(t, root, zone.CorpusFile))
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
 	runInFail(t, root)
 	if !strings.Contains(zoneFile(t, root, zone.StateFile), "verdict: #1") {
 		t.Fatalf("the completion act must record the verdict")
@@ -133,48 +136,75 @@ func lastNext(state string) string {
 	return ""
 }
 
-const redDoc = `behaviors:
-    - id: tool/copy
-      name: The copy
-      prose: Copies.
-      scope:
-        - src/**
-      rows:
-        - run: cat src/in.txt > out.txt
-          expect:
-            files:
-                out.txt: "contains: NOPE"
-`
-
-const greenDoc = `behaviors:
-    - id: tool/copy
-      name: The copy
-      prose: Copies.
-      scope:
-        - src/**
-      rows:
-        - run: cat src/in.txt > out.txt
-          expect:
-            files:
-                out.txt: "contains: ok"
-`
-
-// regDoc — the wish's own account: the one line as one requirement,
-// the behavior covering it, the row's output declared.
-const regDoc = `requirements:
-    - id: R1
-      brief: [W1]
-artifacts: [out.txt]
+// redDocFor — the first, honestly red copy: the pin wants bytes the
+// tree does not carry, the proof row prints its claims token.
+func redDocFor(t *testing.T, root string) string {
+	t.Helper()
+	return fmt.Sprintf(`
+work: the red copy first
 behaviors:
     - id: tool/copy
       name: The copy
       prose: Copies.
-      scope:
-        - src/**
-      covers: [R1]
+      claims:
+        - src/in.txt:1-1
       rows:
-        - run: cat src/in.txt > out.txt
+        - run: sh -c 'printf "%%s\n" %s; cat src/in.txt > out.txt'
           expect:
             files:
-                out.txt: "contains: ok"
-`
+                out.txt: NOPE
+`, claimsTokenOf(t, root, "src/in.txt:1-1"))
+}
+
+// greenDocFor — the healed pin: the same row with the tree's bytes.
+func greenDocFor(t *testing.T, root string) string {
+	t.Helper()
+	return fmt.Sprintf(`
+work: the green heal
+mandate: [{line: D1, target: tool/copy}]
+behaviors:
+    - id: tool/copy
+      name: The copy
+      prose: Copies.
+      claims:
+        - src/in.txt:1-1
+      rows:
+        - run: sh -c 'printf "%%s\n" %s; cat src/in.txt > out.txt'
+          expect:
+            files:
+                out.txt: ok
+`, claimsTokenOf(t, root, "src/in.txt:1-1"))
+}
+
+// regDocFor — the stream's own account: the one line declared work
+// over its requirement, the behavior covering it with a row that
+// answers the demand's own token, the tree's unowned files excluded
+// loudly.
+func regDocFor(t *testing.T, root string) string {
+	t.Helper()
+	return fmt.Sprintf(`
+work: the registry closes the account
+mandate: [{line: D1, target: tool/copy}]
+intents:
+    - {lines: [D1], outcome: work, prose: "the instance's one wish, told again"}
+uncovered-lines:
+    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
+    - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
+requirements:
+    - id: R1
+      lines: [D1]
+      prose: the one demand of the instance
+behaviors:
+    - id: tool/copy
+      name: The copy
+      prose: Copies.
+      claims:
+        - src/in.txt:1-1
+      covers: [R1]
+      rows:
+        - run: sh -c 'printf "%%s %%s\n" %s %s; cat src/in.txt > out.txt'
+          expect:
+            files:
+                out.txt: ok
+`, claimsTokenOf(t, root, "src/in.txt:1-1"), demandTokenOf("goal"))
+}

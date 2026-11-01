@@ -39,24 +39,34 @@ func DecodeRecord(data []byte, rec *Record) error {
 	return nil
 }
 
-// shaped — exactly one payload matches the kind.
+// shaped — exactly one payload stands and it is the kind's own.
 func shaped(rec *Record) bool {
-	switch rec.Kind {
-	case KindBirth:
-		return rec.Birth != nil && rec.Submission == nil && rec.Run == nil && rec.Verdict == nil && rec.Refusals == nil && rec.Completed == nil
-	case KindSubmission:
-		return rec.Submission != nil && rec.Birth == nil && rec.Run == nil && rec.Verdict == nil && rec.Refusals == nil && rec.Completed == nil
-	case KindRun:
-		return rec.Run != nil && rec.Birth == nil && rec.Submission == nil && rec.Verdict == nil && rec.Refusals == nil && rec.Completed == nil
-	case KindVerdict:
-		return rec.Verdict != nil && rec.Birth == nil && rec.Submission == nil && rec.Run == nil && rec.Refusals == nil && rec.Completed == nil
-	case KindRefusal:
-		return rec.Refusals != nil && rec.Birth == nil && rec.Submission == nil && rec.Run == nil && rec.Verdict == nil && rec.Completed == nil
-	case KindCompletion:
-		return rec.Completed != nil && rec.Birth == nil && rec.Submission == nil && rec.Run == nil && rec.Verdict == nil && rec.Refusals == nil
-	default:
-		return false
+	slots := []struct {
+		kind    string
+		present bool
+	}{
+		{KindBirth, rec.Birth != nil},
+		{KindSubmission, rec.Submission != nil},
+		{KindDemandAppend, rec.DemandAppend != nil},
+		{KindNoNewDemands, rec.NoNewDemands != nil},
+		{KindRun, rec.Run != nil},
+		{KindVerdict, rec.Verdict != nil},
+		{KindRefusal, rec.Refusals != nil},
+		{KindCompletion, rec.Completed != nil},
+		{KindExecution, rec.Execution != nil},
+		{KindTreeLock, rec.TreeLock != nil},
 	}
+	own, filled := false, 0
+	for _, s := range slots {
+		if !s.present {
+			continue
+		}
+		filled++
+		if s.kind == rec.Kind {
+			own = true
+		}
+	}
+	return own && filled == 1
 }
 
 // oneLine — the machine's face wants one line per refusal. The
