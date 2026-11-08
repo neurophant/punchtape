@@ -172,6 +172,10 @@ type Coverage struct {
 	Claimed  int
 	Holes    map[string][]Range
 	Excluded []FileExclusion
+	// ExcludedLines — the lines only a loud exclusion holds, inside
+	// the counted universe: the share the state prints is measured
+	// over these, never over the spellings' own span.
+	ExcludedLines int
 }
 
 // LineCoverage — the claims and the loud exclusions against the
@@ -181,11 +185,25 @@ type Coverage struct {
 // the universe holds nothing — the lines it names stay honest
 // holes.
 func LineCoverage(claims []string, excl []string, files []FileLineCount) Coverage {
-	held := map[string]map[int]bool{}
-	hold := func(spelling string) {
+	linesOf := map[string]int{}
+	for _, f := range files {
+		if f.Outside == "" && f.Lines > 0 {
+			linesOf[f.Path] = f.Lines
+		}
+	}
+	claimHeld := map[string]map[int]bool{}
+	exclHeld := map[string]map[int]bool{}
+	hold := func(spelling string, held map[string]map[int]bool) {
 		rel, first, last, err := ParseLineRange(spelling)
 		if err != nil {
 			return
+		}
+		limit, known := linesOf[rel]
+		if !known {
+			return
+		}
+		if last > limit {
+			last = limit
 		}
 		if held[rel] == nil {
 			held[rel] = map[int]bool{}
@@ -195,10 +213,10 @@ func LineCoverage(claims []string, excl []string, files []FileLineCount) Coverag
 		}
 	}
 	for _, claim := range claims {
-		hold(claim)
+		hold(claim, claimHeld)
 	}
 	for _, ex := range excl {
-		hold(ex)
+		hold(ex, exclHeld)
 	}
 	cov := Coverage{Holes: map[string][]Range{}}
 	for _, f := range files {
@@ -207,11 +225,14 @@ func LineCoverage(claims []string, excl []string, files []FileLineCount) Coverag
 			continue
 		}
 		cov.Total += f.Lines
-		lines := held[f.Path]
+		claimed, excluded := claimHeld[f.Path], exclHeld[f.Path]
 		var open []int
 		for n := 1; n <= f.Lines; n++ {
-			if lines[n] {
+			if claimed[n] || excluded[n] {
 				cov.Claimed++
+				if excluded[n] {
+					cov.ExcludedLines++
+				}
 				continue
 			}
 			open = append(open, n)

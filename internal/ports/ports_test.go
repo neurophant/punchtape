@@ -32,6 +32,7 @@ func TestUnwiredFSPanics(t *testing.T) {
 	mustPanic(t, "Remove", func() { _ = fs.Remove("x") })
 	mustPanic(t, "RemoveAll", func() { _ = fs.RemoveAll("x") })
 	mustPanic(t, "Walk", func() { _ = fs.Walk("x", func(string, os.FileInfo, error) error { return nil }) })
+	mustPanic(t, "Flock", func() { _, _ = fs.Flock("x") })
 }
 
 func TestUnwiredExecPanics(t *testing.T) {

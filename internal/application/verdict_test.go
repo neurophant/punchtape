@@ -2364,3 +2364,91 @@ not-a-requirement:
 		t.Fatalf("the returned carrier must let the verdict record, state:\n%s", state)
 	}
 }
+
+// TestRedBuildHoldsVerdict — the printed first blocker exists: a red
+// declared build holds the verdict, the report names it, the
+// instruction says fix the build.
+func TestRedBuildHoldsVerdict(t *testing.T) {
+	root := newRoot(t)
+	if err := os.WriteFile(filepath.Join(root, "f.txt"), []byte("one line of words\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeZone(t, root, zone.InboxSlot, `
+work: the green corpus
+intents:
+    - {lines: [D1], outcome: work, prose: the line is declared as work}
+requirements:
+    - {id: R1, lines: [D1], prose: the one line}
+uncovered-lines:
+    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
+behaviors:
+    - id: b/one
+      name: one line
+      prose: the line stands verified
+      covers: [R1]
+      claims: ["f.txt:1-1"]
+      rows:
+        - {run: "cat f.txt", expect: {out: "one line of words\n"}}
+`)
+	runIn(t, root)
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
+	runIn(t, root)
+	state := zoneFile(t, root, zone.StateFile)
+	if !strings.Contains(state, "verdict: #1") {
+		t.Fatalf("the green corpus must record its verdict:\n%s", state)
+	}
+	// The declared build that fails: the corpus moves, the build is red.
+	writeZone(t, root, zone.InboxSlot, "work: declaring a failing build\nbuild: \"false\"\nnotes:\n  - {kind: work, text: the build is declared and it fails, refs: [D1]}\n")
+	runIn(t, root)
+	// The completion act over the red build: no second verdict.
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
+	runIn(t, root)
+	report := zoneFile(t, root, zone.ReportFile)
+	if !strings.Contains(report, "build: RED — exit 1") {
+		t.Fatalf("the report must name the red build:\n%s", report[:400])
+	}
+	if !strings.Contains(report, "verdict: not yet — the build is red") {
+		t.Fatalf("the red build must hold the verdict by name:\n%s", report[:400])
+	}
+	state = zoneFile(t, root, zone.StateFile)
+	if strings.Contains(state, "verdict: #2") {
+		t.Fatalf("no verdict may stand over a red build:\n%s", state)
+	}
+	if !strings.Contains(state, "next: build red — read .punchtape/report.md, fix the build, run again") {
+		t.Fatalf("the instruction must say fix the build:\n%s", state)
+	}
+}
+
+// TestGreenBuildVerdictUnchanged — a green declared build records
+// the verdict as before.
+func TestGreenBuildVerdictUnchanged(t *testing.T) {
+	root := newRoot(t)
+	if err := os.WriteFile(filepath.Join(root, "f.txt"), []byte("one line of words\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeZone(t, root, zone.InboxSlot, `
+work: the green corpus with a green build
+build: "true"
+intents:
+    - {lines: [D1], outcome: work, prose: the line is declared as work}
+requirements:
+    - {id: R1, lines: [D1], prose: the one line}
+uncovered-lines:
+    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
+behaviors:
+    - id: b/one
+      name: one line
+      prose: the line stands verified
+      covers: [R1]
+      claims: ["f.txt:1-1"]
+      rows:
+        - {run: "cat f.txt", expect: {out: "one line of words\n"}}
+`)
+	runIn(t, root)
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
+	runIn(t, root)
+	state := zoneFile(t, root, zone.StateFile)
+	if !strings.Contains(state, "verdict: #1 on v1, run 2") {
+		t.Fatalf("the green build must record its verdict:\n%s", state)
+	}
+}

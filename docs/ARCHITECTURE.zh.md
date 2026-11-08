@@ -73,7 +73,7 @@ agent 或人类可能遇到的一切：
   1 退出。
 - **终端行。** 每次成功运行恰好一行：
   `punchtape: run <N> — <instruction>`。指令与状态页 `next:` 行
-  携带的是同一段文字——绝无两种真相。
+  携带的是同一段文字——绝无两种真相；指令所命的路径以调用者的工作目录拼写。
 - **区**——`.punchtape/`，机器唯一拥有的目录：
 
   | 文件 | 含义 |
@@ -97,6 +97,7 @@ agent 或人类可能遇到的一切：
   | `journal/objects/` | 按内容寻址的对象存储 |
   | `cache/` | 已验证的遍历缓存——加速器，可删，永非真相 |
   | `tmp/` | 暂存，每次运行结束时清空 |
+  | `run.lock` | 区的运行锁——同一时刻只有一遍运行，由内核释放 |
 
 - **AGENTS 块**——区外的唯一记录：工作根 `AGENTS.md` 里的一个
   标记块，每次运行幂等地确保。标记之外的字节永不被触碰。
@@ -380,7 +381,7 @@ id、度量的 fact。没有建议、没有解释。被强制的规则，各绑�
 | 构建命令存在时非空 | law:document |
 | 开放命令骑在站立的流行上、带真实状态 | law:candor |
 | awaiting 命令只凭一条更晚的人类行关闭、由决定性笔记点名 | law:candor |
-| remove 的五种写法键点名站立之物 | law:document |
+| remove 的四种写法键点名站立之物 | law:document |
 | 标记携带其 reason | law:document |
 | expect 文件路径相对根 | law:paths |
 | 树在 answer、execute、describe intents 之下不动——摘要挡住裁决 | law:demand |
@@ -512,7 +513,9 @@ flowchart TD
     A -- "是" --> E{"语料为空？"}
     E -- "是" --> N1["verdict: refused — the corpus is empty"]
     E -- "否" --> BL["阻塞者，按所有面孔消费的同一顺序"]
-    BL --> B1{"tree-lock hold 站立且树仍不同？"}
+    BL --> B0{"声明的构建本次运行红着？"}
+    B0 -- "是" --> N0["verdict: not yet — the build is red"]
+    B0 -- "否" --> B1{"tree-lock hold 站立且树仍不同？"}
     B1 -- "是" --> N2["verdict: not yet — the tree changed under answer/execute/describe intents"]
     B1 -- "否" --> B2{"漂移未解决——提交必须落在见证 run 之后？"}
     B2 -- "是" --> N3["verdict: not yet — drift unresolved: a submission must come after run N"]
@@ -530,6 +533,7 @@ flowchart TD
     B8 -- "否" --> N9["verdict: not yet — awaiting order D: 问题"]
     B8 -- "是" --> VR["追加裁决记录——编号、语料版本、签名、注册表摘要、按 id 排序的各行为 claims 指针、关闭的 run"]
     VR --> CR["追加完成记录——自己的事实、自己的计数器；站立态的裁决 = 这一个"]
+    N0 --> NOTES["注记进报告；槽关闭一次，报告点名空洞"]
     N1 --> NOTES["注记进报告；槽关闭一次，报告点名空洞"]
     N2 --> NOTES
     N3 --> NOTES

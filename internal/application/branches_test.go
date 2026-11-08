@@ -228,11 +228,9 @@ func TestDefensiveSpellsAreTotal(t *testing.T) {
 	if n := orderLine(doc.OpenOrder{Demand: "junk"}); n != 0 {
 		t.Fatalf("an unparsable order line answers zero, got %d", n)
 	}
-	m := &machine{standing: &journal.Standing{
-		Registry: doc.Registry{Exclusions: []doc.Exclusion{{Range: "junk"}}},
-	}}
-	if got := m.excludedShare(fprint.Coverage{Total: 10}); got != 0 {
-		t.Fatalf("an unparsable exclusion holds no lines, got %d%%", got)
+	cov := fprint.LineCoverage(nil, []string{"junk"}, []fprint.FileLineCount{{Path: "f", Lines: 10}})
+	if cov.ExcludedLines != 0 || cov.Total != 10 {
+		t.Fatalf("an unparsable exclusion holds no lines, got %d of %d", cov.ExcludedLines, cov.Total)
 	}
 	if _, state := (&machine{standing: &journal.Standing{}}).orderOn(1); state != "" {
 		t.Fatal("a line with no standing order names no order")

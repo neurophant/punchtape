@@ -378,7 +378,7 @@ func TestRowBytesIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := open(root, filepath.Join(root, zone.Dirname), stream)
+	m, err := open(root, root, filepath.Join(root, zone.Dirname), stream)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -482,7 +482,7 @@ func TestRowTimeoutDefaultStands(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := open(root, filepath.Join(root, zone.Dirname), stream)
+	m, err := open(root, root, filepath.Join(root, zone.Dirname), stream)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -37,6 +37,7 @@ const (
 	CacheDir               = "cache"
 	CacheTreeDir           = "cache/tree"
 	TmpDir                 = "tmp"
+	RunLockFile            = "run.lock"
 )
 
 // Path — a file of the zone as a root-relative slash path.

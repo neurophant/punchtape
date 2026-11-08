@@ -84,6 +84,10 @@ type Resolvers struct {
 	// DemandsTailLines — the line numbers of the stream's unjournaled
 	// tail: the lines the intents must declare.
 	DemandsTailLines func() []int
+	// UniverseSize — the stream's own line count: the bound every
+	// submitted D range must live within — a range past the last line
+	// is refused before its numbers are generated.
+	UniverseSize func() int
 	// LineOutcome — the outcome a journaled line declared at the
 	// submission that brought it, when one stands.
 	LineOutcome func(id string) (string, bool)
@@ -120,6 +124,7 @@ func Validate(d Document, r *Resolvers) []Refusal {
 	if d.Build != nil && strings.TrimSpace(*d.Build) == "" {
 		out = append(out, refusalAt("build")("the build command is empty — delete the line to keep the standing one"))
 	}
+	out = append(out, listCeilings(d)...)
 	out = append(out, notesGates(d.Notes, r)...)
 	seenReqs := map[string]bool{}
 	for i, req := range d.Requirements {
@@ -133,6 +138,10 @@ func Validate(d Document, r *Resolvers) []Refusal {
 			out = append(out, ref(fmt.Sprintf("the id %q appears twice in one submission", req.ID)))
 		}
 		seenReqs[req.ID] = true
+		if len(req.Lines) == 0 {
+			out = append(out, Refusal{Where: fmt.Sprintf("requirements[%d].lines", i), Law: LawDemand,
+				Fact: "the list is empty — a requirement claims at least one line"})
+		}
 		out = append(out, resolveRanges(fmt.Sprintf("requirements[%d].lines", i), req.Lines, r)...)
 		if strings.TrimSpace(req.Prose) == "" {
 			out = append(out, Refusal{Where: fmt.Sprintf("requirements[%d].prose", i), Law: LawDemand,
@@ -147,12 +156,16 @@ func Validate(d Document, r *Resolvers) []Refusal {
 		if strings.TrimSpace(marker.Reason) == "" {
 			out = append(out, refusalAt(fmt.Sprintf("not-a-requirement[%d].reason", i))("the reason is empty — a mark without a reason marks nothing"))
 		}
+		if len(marker.Lines) == 0 {
+			out = append(out, Refusal{Where: fmt.Sprintf("not-a-requirement[%d].lines", i), Law: LawDemand,
+				Fact: "the list is empty — a marker claims at least one line"})
+		}
 		markerRefusals := resolveRanges(fmt.Sprintf("not-a-requirement[%d].lines", i), marker.Lines, r)
 		out = append(out, markerRefusals...)
 		// A line is either a demand or not, never both: a marker on a
 		// line a post-merge requirement claims is a quiet contradiction.
 		if len(markerRefusals) == 0 {
-			if nums, err := ParseRanges(marker.Lines); err == nil {
+			if nums, err := ParseRangesWithin(marker.Lines, withinOf(r)); err == nil {
 				for _, n := range nums {
 					if holder, claimed := spanHolder(spans, spanOrder, n); claimed {
 						out = append(out, Refusal{Where: fmt.Sprintf("not-a-requirement[%d].lines", i), Law: LawDemand,
@@ -230,6 +243,14 @@ func Validate(d Document, r *Resolvers) []Refusal {
 			out = append(out, Refusal{Where: fmt.Sprintf("behaviors[%d].prose", i), Law: LawCandor,
 				Fact: "the prose is empty — tell the behavior's story"})
 		}
+		if len(b.Claims) > ClaimsPerBehavior {
+			out = append(out, Refusal{Where: fmt.Sprintf("behaviors[%d].claims", i), Law: LawDocument,
+				Fact: fmt.Sprintf("the behavior carries %d claims — the ceiling is %d", len(b.Claims), ClaimsPerBehavior)})
+		}
+		if len(b.Rows) > RowsPerBehavior {
+			out = append(out, Refusal{Where: fmt.Sprintf("behaviors[%d].rows", i), Law: LawDocument,
+				Fact: fmt.Sprintf("the behavior carries %d rows — the ceiling is %d", len(b.Rows), RowsPerBehavior)})
+		}
 		for j, claim := range b.Claims {
 			if !ClaimCarries(claim, fileLinesOf(r)) {
 				out = append(out, Refusal{Where: fmt.Sprintf("behaviors[%d].claims[%d]", i, j), Law: LawClaims,
@@ -268,6 +289,10 @@ func Validate(d Document, r *Resolvers) []Refusal {
 			}
 			if row.Expect.RC == nil && row.Expect.Out == "" && len(row.Expect.Files) == 0 {
 				out = append(out, refusalAt(fmt.Sprintf("behaviors[%d].rows[%d].expect", i, j))("the expect is empty — name rc, out or files"))
+			}
+			if len(row.Expect.Files) > FilesPerExpect {
+				out = append(out, Refusal{Where: fmt.Sprintf("behaviors[%d].rows[%d].expect.files", i, j), Law: LawDocument,
+					Fact: fmt.Sprintf("the row expects %d files — the ceiling is %d", len(row.Expect.Files), FilesPerExpect)})
 			}
 			if key := row.Run.Key(); runs[key] {
 				out = append(out, refusalAt(fmt.Sprintf("behaviors[%d].rows[%d].run", i, j))(
@@ -327,7 +352,7 @@ func removeGates(d Document, r *Resolvers) []Refusal {
 			}
 			// The key's own grammar check has spoken: the parse is
 			// total and names exactly one line.
-			nums, _ := ParseRanges([]string{key})
+			nums, _ := ParseRangesWithin([]string{key}, withinOf(r))
 			if !r.MarkerStands(nums[0]) && !r.OrderStands(nums[0]) {
 				out = append(out, ref(fmt.Sprintf("the corpus carries no marker or order on %s", key)))
 			}
@@ -337,6 +362,31 @@ func removeGates(d Document, r *Resolvers) []Refusal {
 			}
 		default:
 			out = append(out, ref("the key must be a requirement id, a behavior id, a demand line D<n> or a line range path:first-last"))
+		}
+	}
+	return out
+}
+
+// listCeilings — the submission's registry lists against their one
+// ceiling: a list past it is refused by its own name with its count
+// and the bound.
+func listCeilings(d Document) []Refusal {
+	var out []Refusal
+	lists := []struct {
+		where string
+		n     int
+	}{
+		{"intents", len(d.Intents)},
+		{"notes", len(d.Notes)},
+		{"requirements", len(d.Requirements)},
+		{"not-a-requirement", len(d.Markers)},
+		{"open", len(d.Open)},
+		{"uncovered-lines", len(d.Exclusions)},
+	}
+	for _, l := range lists {
+		if l.n > ListPerSubmission {
+			out = append(out, Refusal{Where: l.where, Law: LawDocument,
+				Fact: fmt.Sprintf("the submission carries %d %s entries — the ceiling is %d", l.n, l.where, ListPerSubmission)})
 		}
 	}
 	return out
@@ -450,6 +500,15 @@ func replacedByThis(d Document, r *Resolvers) map[string]bool {
 	return out
 }
 
+// withinOf — the stream bound the resolvers carry, zero when absent:
+// no stream to bound by, the plain grammar rules.
+func withinOf(r *Resolvers) int {
+	if r == nil || r.UniverseSize == nil {
+		return 0
+	}
+	return r.UniverseSize()
+}
+
 // postMergeSpans — every requirement's line span as it stands after
 // this submission's merge: the submission's own requirements plus
 // the standing ones the resolvers name, in first-seen order.
@@ -467,7 +526,7 @@ func postMergeSpans(d Document, r *Resolvers) (map[string]map[int]bool, []string
 		spans[id] = set
 	}
 	for _, req := range d.Requirements {
-		if nums, err := ParseRanges(req.Lines); err == nil {
+		if nums, err := ParseRangesWithin(req.Lines, withinOf(r)); err == nil {
 			put(req.ID, nums)
 		}
 	}
@@ -505,12 +564,17 @@ func spanHolder(spans map[string]map[int]bool, order []string, n int) (string, b
 // command.
 func intentsGate(d Document, r *Resolvers, spans map[string]map[int]bool) []Refusal {
 	var out []Refusal
+	maxLine := withinOf(r)
 	declared := map[int]bool{}
 	declaredHere := map[int]bool{}
 	for i, in := range d.Intents {
+		if len(in.Lines) == 0 {
+			out = append(out, Refusal{Where: fmt.Sprintf("intents[%d].lines", i), Law: LawDemand,
+				Fact: "the list is empty — an intent declares at least one line"})
+		}
 		lineRefusals := resolveRanges(fmt.Sprintf("intents[%d].lines", i), in.Lines, r)
 		out = append(out, lineRefusals...)
-		nums, err := ParseRanges(in.Lines)
+		nums, err := ParseRangesWithin(in.Lines, withinOf(r))
 		if err != nil {
 			continue
 		}
@@ -549,7 +613,7 @@ func intentsGate(d Document, r *Resolvers, spans map[string]map[int]bool) []Refu
 		for _, n := range nums {
 			declaredHere[n] = true
 		}
-		out = append(out, carrierRefusals(i, in, nums, d, spans)...)
+		out = append(out, carrierRefusals(i, in, nums, d, spans, maxLine)...)
 	}
 	if r != nil && r.DemandsTailLines != nil {
 		var missing []int
@@ -611,7 +675,7 @@ func carrierShapeRefusals(i int, in Intent) []Refusal {
 // same submission: work and describe over a requirement's span of
 // the post-merge map, mark over a marker of the same document, ask
 // over an awaiting order of the same document.
-func carrierRefusals(i int, in Intent, nums []int, d Document, spans map[string]map[int]bool) []Refusal {
+func carrierRefusals(i int, in Intent, nums []int, d Document, spans map[string]map[int]bool, maxLine int) []Refusal {
 	requirementOn := func(n int) bool {
 		for _, set := range spans {
 			if set[n] {
@@ -620,13 +684,13 @@ func carrierRefusals(i int, in Intent, nums []int, d Document, spans map[string]
 		}
 		return false
 	}
-	markers := inDocRanges(d.Markers)
+	markers := inDocRanges(d.Markers, maxLine)
 	awaiting := map[int]bool{}
 	for _, order := range d.Open {
 		if order.State != StateAwaiting {
 			continue
 		}
-		if ns, err := ParseRanges([]string{order.Demand}); err == nil {
+		if ns, err := ParseRangesWithin([]string{order.Demand}, maxLine); err == nil {
 			for _, n := range ns {
 				awaiting[n] = true
 			}
@@ -662,11 +726,11 @@ func carrierRefusals(i int, in Intent, nums []int, d Document, spans map[string]
 }
 
 // inDocRanges — the line sets of the markers the submission itself
-// carries, keyed by their own range lists.
-func inDocRanges(records []Marker) map[int]bool {
+// carries, keyed by their own range lists, bounded by the stream.
+func inDocRanges(records []Marker, maxLine int) map[int]bool {
 	out := map[int]bool{}
 	for _, rec := range records {
-		if ns, err := ParseRanges(rec.Lines); err == nil {
+		if ns, err := ParseRangesWithin(rec.Lines, maxLine); err == nil {
 			for _, n := range ns {
 				out[n] = true
 			}
@@ -742,12 +806,12 @@ func fileLinesOf(r *Resolvers) func(rel string) (int, bool) {
 }
 
 // resolveRanges — one range list's law: every spelling parses in the
-// D grammar, and every line it names exists in the stream's
-// universe.
+// D grammar, stays within the stream's own count, and every line it
+// names exists in the stream's universe.
 func resolveRanges(where string, ranges []string, r *Resolvers) []Refusal {
 	var out []Refusal
 	for j, list := range ranges {
-		nums, err := ParseRanges([]string{list})
+		nums, err := ParseRangesWithin([]string{list}, withinOf(r))
 		if err != nil {
 			out = append(out, refusalAt(fmt.Sprintf("%s[%d]", where, j))(err.Error()))
 			continue

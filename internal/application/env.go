@@ -117,19 +117,40 @@ const RowTimeoutPin = "PUNCHTAPE_ROW_TIMEOUT"
 // could move under a standing run.
 const defaultRowTimeout = 300 * time.Second
 
+// RunBudgetPin — the name of the zone's run budget pin: whole
+// seconds bounding the run's own commands — the rows' and the
+// execute intents'. What the budget cannot fit waits the next run.
+const RunBudgetPin = "PUNCHTAPE_RUN_BUDGET"
+
+// defaultRunBudget — the standing budget of one run: twelve times
+// the command deadline, an honest suite's whole wall.
+const defaultRunBudget = 3600 * time.Second
+
 // RunEnv — what a command of the machine actually sees: the clean
 // base plus the zone's pins, a pin winning on a name. The row
-// deadline pin never rides: it names the machine's own ceiling, not
-// the commands' environment.
+// deadline pin and the run budget pin never ride: they name the
+// machine's own ceilings, not the commands' environment.
 func RunEnv(pins []string) []string {
 	kept := make([]string, 0, len(pins))
 	for _, pin := range pins {
-		if strings.HasPrefix(pin, RowTimeoutPin+"=") {
+		if strings.HasPrefix(pin, RowTimeoutPin+"=") || strings.HasPrefix(pin, RunBudgetPin+"=") {
 			continue
 		}
 		kept = append(kept, pin)
 	}
 	return append(CleanEnv(), kept...)
+}
+
+// pinSeconds — the last spelled value of a seconds pin, and whether
+// one stands at all.
+func pinSeconds(pins []string, pin string) (string, bool) {
+	spelled := ""
+	for _, p := range pins {
+		if value, ok := strings.CutPrefix(p, pin+"="); ok {
+			spelled = value
+		}
+	}
+	return spelled, spelled != ""
 }
 
 // RowTimeoutOf — the zone's row deadline from its pins: the pinned
@@ -138,13 +159,8 @@ func RunEnv(pins []string) []string {
 // commands themselves; a value that does not name whole positive
 // seconds is a loud refusal quoting the line and the law.
 func RowTimeoutOf(pins []string) (time.Duration, error) {
-	spelled := ""
-	for _, pin := range pins {
-		if value, ok := strings.CutPrefix(pin, RowTimeoutPin+"="); ok {
-			spelled = value
-		}
-	}
-	if spelled == "" {
+	spelled, stands := pinSeconds(pins, RowTimeoutPin)
+	if !stands {
 		return defaultRowTimeout, nil
 	}
 	secs, err := strconv.Atoi(spelled)
@@ -152,6 +168,25 @@ func RowTimeoutOf(pins []string) (time.Duration, error) {
 		return 0, fmt.Errorf(
 			"env pin refused — %s: %q — the law: the row deadline pin names whole seconds, a positive number",
 			zone.Path(zone.EnvSlot), RowTimeoutPin+"="+spelled)
+	}
+	return time.Duration(secs) * time.Second, nil
+}
+
+// RunBudgetOf — the zone's run budget from its pins: the pinned
+// whole seconds, the standing default when the pin does not stand.
+// The same law as the row deadline pin — whole positive seconds, a
+// loud refusal on any other shape — and the same ride: the proofs'
+// hash, never the commands' environment.
+func RunBudgetOf(pins []string) (time.Duration, error) {
+	spelled, stands := pinSeconds(pins, RunBudgetPin)
+	if !stands {
+		return defaultRunBudget, nil
+	}
+	secs, err := strconv.Atoi(spelled)
+	if err != nil || secs <= 0 {
+		return 0, fmt.Errorf(
+			"env pin refused — %s: %q — the law: the run budget pin names whole seconds, a positive number",
+			zone.Path(zone.EnvSlot), RunBudgetPin+"="+spelled)
 	}
 	return time.Duration(secs) * time.Second, nil
 }

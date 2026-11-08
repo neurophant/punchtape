@@ -25,6 +25,9 @@ func (unwiredFS) RemoveAll(string) error           { panic("ports: filesystem po
 func (unwiredFS) Walk(string, filepath.WalkFunc) error {
 	panic("ports: filesystem port not wired")
 }
+func (unwiredFS) Flock(string) (func() error, error) {
+	panic("ports: filesystem port not wired")
+}
 
 type unwiredExec struct{}
 

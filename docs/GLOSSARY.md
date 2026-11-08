@@ -593,7 +593,7 @@ requirements, markers, exclusions and orders together — the
 words' whole account sealed in one digest and carried by the
 verdict record.
 
-**Remove** — the document's retirement list, five spellings: a
+**Remove** — the document's retirement list, four spellings: a
 requirement id, a behavior id, a `D<n>` marker-or-order key, a
 `path:first-last` exclusion key. Every key must stand; removals
 retire first in the merge; retiring a requirement re-opens its
@@ -625,8 +625,9 @@ command's canonical bytes are the row's → run key and part of its
 a submitted run that stands replaces that whole row in place; a
 new run appends; unlisted rows stand. A re-spelled command is a
 new run — the standing one stands; one command proves one
-behavior. Example: `./tool src out` and `["./tool", "src", "out"]`
-are two spellings of one run.
+behavior. Example: `./tool src out` (a shell line) and
+`["./tool", "src", "out"]` (an argv) are two different runs — one
+through the shell, one direct.
 
 **Run number** — the counter of fact-changing runs. The terminal
 line's `run <N>`, the report's, state's, trace's, knowledge's and
@@ -765,9 +766,10 @@ page, never judged. → tree walk.
 
 **Unresolved lines** — the stream's lines without a declared
 → outcome, or without the standing carrier of their declared
-outcome: "no outcome", "work pending", "mark pending". Named with
-reasons on the state page and the trace; an unresolved line holds
-the verdict. Removing a carrier re-opens its line.
+outcome: "no outcome", "work pending", "describe pending",
+"mark pending". Named with reasons on the state page and the
+trace; an unresolved line holds the verdict. Removing a carrier
+re-opens its line.
 
 V
 
@@ -788,7 +790,8 @@ id. → refusal.
 
 **Verdict** — the machine's pronouncement of done, recorded only
 on the → completion act and only when every gate stands: the
-corpus non-empty; every row green on the current fingerprints;
+declared build green; the corpus non-empty; every row green on the
+current fingerprints;
 every behavior proven by a green → pinned row; the stream resolved
 whole; every requirement covered; the tree equal to its claims
 plus loud exclusions; no order awaiting; no drift unnamed; no
@@ -848,8 +851,9 @@ the slots (`demands.md`, `inbox.yaml`, `env`, `universe`), the
 generated standing files (`corpus.yaml`, `state.md`, `report.md`,
 `trace.md`, `knowledge.md`, `holes.md`,
 `exclusions-proposal.yaml`, `spec/`), the journal with its
-objects, and the machine's own `cache/` and `tmp/`. Never edited
-by hand; one record stands outside it — the → AGENTS block in the
+objects, and the machine's own `cache/`, `tmp/` and `run.lock` —
+the zone's own lock: one pass at a time, freed by the kernel even
+on the holder's death. Never edited by hand; one record stands outside it — the → AGENTS block in the
 working root. → zone damage.
 
 **Zone damage** — the machine's loudest refusal: the past broke,

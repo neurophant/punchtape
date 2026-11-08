@@ -118,6 +118,16 @@ func (f *failFS) Remove(p string) error {
 	return f.FS.Remove(p)
 }
 
+func (f *failFS) Flock(p string) (func() error, error) {
+	if f.fails("flock", p) {
+		return nil, os.ErrPermission
+	}
+	if f.fails("flock-release", p) {
+		return func() error { return os.ErrClosed }, nil
+	}
+	return f.FS.Flock(p)
+}
+
 func (f *failFS) RemoveAll(p string) error {
 	if f.fails("removeall", p) {
 		return os.ErrPermission
@@ -468,6 +478,51 @@ behaviors:
 	}
 }
 
+// TestDoneActJournalsBeforeTheInboxLeaves — the journal carries the
+// act's outcome before the document leaves the slot: a run that
+// dies at the removal leaves the verdict and the completion
+// standing in the journal and the done document standing in the
+// slot. The next run takes the act again — every act is a point of
+// truth, the duplicate names the two takings honestly, and the
+// words never vanish.
+func TestDoneActJournalsBeforeTheInboxLeaves(t *testing.T) {
+	root := newBornRoot(t)
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
+	code, _ := runCode(t, root, map[string]bool{"remove:.punchtape/inbox.yaml": true})
+	if code != 1 {
+		t.Fatalf("the failed removal must fail the run, code %d", code)
+	}
+	records, err := journalRecords(t, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var verdicts, completions int
+	for _, rec := range records {
+		if rec.Kind == journal.KindVerdict {
+			verdicts++
+		}
+		if rec.Kind == journal.KindCompletion {
+			completions++
+		}
+	}
+	if verdicts != 1 || completions != 1 {
+		t.Fatalf("the dead run must leave its verdict and completion journaled, got %d/%d", verdicts, completions)
+	}
+	if _, err := os.Stat(filepath.Join(root, zone.Dirname, zone.InboxSlot)); err != nil {
+		t.Fatalf("the refused removal must leave the inbox in place: %v", err)
+	}
+	// The next run takes the standing document again: one more point
+	// of truth, the slot empties, no word is lost.
+	runIn(t, root)
+	state := zoneFile(t, root, zone.StateFile)
+	if !strings.Contains(state, "verdict: #2") {
+		t.Fatalf("the re-taken act must record its own point:\n%s", state)
+	}
+	if _, err := os.Stat(filepath.Join(root, zone.Dirname, zone.InboxSlot)); !os.IsNotExist(err) {
+		t.Fatal("the re-taken act must take the document out of the slot")
+	}
+}
+
 func TestBirthFaultsAreNamed(t *testing.T) {
 	fresh := func() string {
 		dir := t.TempDir()
@@ -741,5 +796,20 @@ func TestHolesViewWriteFaultIsLoud(t *testing.T) {
 	code, term := runCode(t, root, map[string]bool{"write:holes.md": true})
 	if code != 1 || !strings.Contains(term, "state view:") {
 		t.Fatalf("the unlandable ledger must fail the state's write: %d %q", code, term)
+	}
+}
+
+// TestZoneLockFaultsAreNamed — the zone lock's own faults are loud:
+// a take that cannot happen refuses the run, a release that cannot
+// land says so on the terminal of a finished run.
+func TestZoneLockFaultsAreNamed(t *testing.T) {
+	root := newRoot(t)
+	code, term := runCode(t, root, map[string]bool{"flock:run.lock": true})
+	if code != 1 || !strings.Contains(term, "punchtape: zone lock:") {
+		t.Fatalf("the untakeable lock must refuse the run, code %d:\n%s", code, term)
+	}
+	code, term = runCode(t, root, map[string]bool{"flock-release:run.lock": true})
+	if code != 0 || !strings.Contains(term, "punchtape: zone lock release:") {
+		t.Fatalf("the failed release must say so on a finished run, code %d:\n%s", code, term)
 	}
 }

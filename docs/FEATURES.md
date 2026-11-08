@@ -435,9 +435,10 @@ below is a lived fact of the shipped machine, stated plainly:
   migration.
 - **Linux and macOS only** (amd64/arm64); rows run through the
   unix shell, and a command sees only PATH, HOME and the pins.
-- **No run lock.** Two machines on one living zone at the same
-  moment are not coordinated — the birth itself elects one winner
-  among parallel runs, but later concurrent calls are each honest
-  alone.
+- **Runs serialize on a zone lock.** One pass holds the zone at a
+  time (`run.lock`, kernel-released, death-safe); a parallel caller
+  waits its turn — up to the deadline of the running pass's own
+  commands. Local filesystems only: the network ones carry no such
+  promise.
 - **Never edit the journal by hand.** Every record is verified on
   load; what does not recompose is refused by name.

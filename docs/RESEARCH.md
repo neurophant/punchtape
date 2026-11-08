@@ -1564,3 +1564,10 @@ every number of §1–§4 and §7–§9 belongs to the generation it
 names. The study's subject — the inversion of ownership, the
 verifier moved out of the conversation — stands unchanged across
 all three reworks; the boundary keeps moving the same way.
+
+The 0.5.1 release that followed is a defect-fix patch of this same
+rebuild — input ceilings and a run budget, parallel runs serialized
+on the zone's lock, the verdict held over a red build, instruction
+paths named from the caller's directory, range arithmetic bounded
+to the lines that really stand — the machine's shape unchanged; no
+economics of 0.5.1 are claimed here.

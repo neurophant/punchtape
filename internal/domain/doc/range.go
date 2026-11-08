@@ -33,6 +33,27 @@ func NonEmptyLines(text string) []string {
 // A broken spelling answers its own error; the caller names the
 // field it rode in.
 func ParseRanges(ranges []string) ([]int, error) {
+	return ParseRangesWithin(ranges, 0)
+}
+
+// RangeError — a range naming a line past the stream's own count: the
+// generation of a..b never runs past the stream, the error names the
+// line and the count.
+type RangeError struct {
+	Line int
+	Max  int
+}
+
+// Error — the overflow's own fact.
+func (e *RangeError) Error() string {
+	return fmt.Sprintf("the range names line D%d past the stream's %d lines", e.Line, e.Max)
+}
+
+// ParseRangesWithin — ParseRanges against a stream of max lines: a
+// range whose last line runs past the stream answers a *RangeError
+// before any number is generated. A max below one leaves every
+// spelling to the plain grammar — no stream to bound by.
+func ParseRangesWithin(ranges []string, max int) ([]int, error) {
 	var out []int
 	seen := map[int]bool{}
 	for _, list := range ranges {
@@ -40,6 +61,9 @@ func ParseRanges(ranges []string) ([]int, error) {
 			a, b, err := parseRange(strings.TrimSpace(elem))
 			if err != nil {
 				return nil, err
+			}
+			if max > 0 && b > max {
+				return nil, &RangeError{Line: b, Max: max}
 			}
 			for n := a; n <= b; n++ {
 				if !seen[n] {

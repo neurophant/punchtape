@@ -13,6 +13,7 @@ package canon
 import (
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/neurophant/punchtape/internal/domain/doc"
@@ -84,6 +85,7 @@ func TestLawMapCitesPrintedLawsOnly(t *testing.T) {
 func TestLawMapParity(t *testing.T) {
 	want := []LawRef{
 		{Rule: "the document decodes against the template's shape — unknown fields are refused", Law: "law:document"},
+		{Rule: "the document is bounded — 524288 bytes, 64 entries per registry list, 32 claims and 16 rows per behavior, 8 expected files per row", Law: "law:document"},
 		{Rule: "the submission merges by id — requirements and behaviors by id, markers by their lines, exclusions by range, orders by demand and question; rows merge by run", Law: "law:document"},
 		{Rule: "behavior ids are [a-z0-9-] segments joined by /, requirement ids are R then letters, digits and dots — each unique in a submission", Law: "law:document"},
 		{Rule: "D ranges parse in the D grammar and name the stream's own numbered lines", Law: "law:document"},
@@ -111,6 +113,7 @@ func TestLawMapParity(t *testing.T) {
 		{Rule: "the tree does not move under answer, execute or describe intents — the digests hold the verdict", Law: "law:demand"},
 		{Rule: "the universe names the counted roots; a line no claim and no loud exclusion names holds the verdict", Law: "law:claims"},
 		{Rule: "the verdict needs the stream whole, claims mutual, pinned proofs green, no awaiting order — and waits out unresolved lines, unnamed drift, a moved tree", Law: "law:done"},
+		{Rule: "the verdict waits out a red build", Law: "law:done"},
 	}
 	got := Load().LawMap
 	if len(got) != len(want) {
@@ -217,7 +220,7 @@ func TestTeachingLimits(t *testing.T) {
 	}{
 		{"contract", s.Contract, 95},
 		{"template", s.Template, 45},
-		{"reference", s.Reference, 80},
+		{"reference", s.Reference, 85},
 		{"example", s.Example, 30},
 	} {
 		if lines := strings.Count(strings.TrimSuffix(face.text, "\n"), "\n") + 1; lines > face.limit {
@@ -239,12 +242,29 @@ func TestEnvIsSortedAndUnique(t *testing.T) {
 
 func TestBrokenSourcePanics(t *testing.T) {
 	saved := source
-	defer func() { source = saved }()
+	defer func() {
+		// The good source parses back on the next first call.
+		source = saved
+		once = sync.Once{}
+		cached = Source{}
+	}()
+	// A fresh process over a broken source: the one parse carries the
+	// panic, the first Load answers it.
 	source = []byte("contract: [")
+	once = sync.Once{}
 	defer func() {
 		if recover() == nil {
 			t.Fatal("a broken source must panic the load")
 		}
 	}()
 	Load()
+}
+
+// TestCanonParsedOnce — one backing array answers every Load call:
+// one parse per process.
+func TestCanonParsedOnce(t *testing.T) {
+	a, b := Load(), Load()
+	if &a.Env[0] != &b.Env[0] {
+		t.Fatal("Load parsed the canon twice — two backing arrays")
+	}
 }

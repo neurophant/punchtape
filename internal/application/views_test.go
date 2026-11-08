@@ -764,3 +764,40 @@ func TestStandingVerdictUnderUnreadableTree(t *testing.T) {
 		t.Fatalf("the verdict's own standing does not hang on the walk, state:\n%s", state)
 	}
 }
+
+// TestStateShareIsMeasured — the excluded share on the state page is
+// measured over real lines: a wide spelling over a small file cannot
+// inflate it past the whole tree.
+func TestStateShareIsMeasured(t *testing.T) {
+	root := newRoot(t)
+	if err := os.WriteFile(filepath.Join(root, "f.txt"), []byte("a\nb\nc\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeZone(t, root, zone.InboxSlot, `
+work: a wide exclusion over a small file
+intents:
+    - {lines: [D1], outcome: work, prose: the tool and its check}
+requirements:
+    - id: R1
+      lines: [D1]
+      prose: the checked work
+uncovered-lines:
+    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
+    - {range: "f.txt:1-1000", reason: the whole small file, refs: [D1]}
+behaviors:
+    - id: b/one
+      name: one
+      prose: pins the file's bytes
+      claims: ["f.txt:1-1"]
+      covers: [R1]
+      rows:
+        - run: cat f.txt
+          expect:
+            out: "a\nb\nc\n"
+`)
+	runIn(t, root)
+	state := zoneFile(t, root, zone.StateFile)
+	if !strings.Contains(state, "excluded lines: 2 ranges (100 % of tree)") {
+		t.Fatalf("the share must be measured over real lines, state:\n%s", state)
+	}
+}

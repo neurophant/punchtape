@@ -13,6 +13,7 @@ package canon
 import (
 	_ "embed" // the canon source rides the binary
 	"strings"
+	"sync"
 
 	"github.com/goccy/go-yaml"
 )
@@ -40,14 +41,25 @@ type LawRef struct {
 	Law  string `yaml:"law"`
 }
 
+// The canon's one parse: the source is embedded and immutable, the
+// parsed shape is shared and read-only — every consumer (CleanEnv's
+// iteration, LawIDs' reads, the zone pages' writes of these very
+// bytes) mutates nothing.
+var (
+	once   sync.Once
+	cached Source
+)
+
 // Load — the canon, parsed once. A canon that does not parse is a
-// build failure: the machine refuses to carry a broken source.
+// build failure: the machine refuses to carry a broken source — the
+// first call carries the panic, every caller sees it.
 func Load() Source {
-	var s Source
-	if err := yaml.UnmarshalWithOptions(source, &s, yaml.Strict()); err != nil {
-		panic("canon: the source does not parse: " + err.Error())
-	}
-	return s
+	once.Do(func() {
+		if err := yaml.UnmarshalWithOptions(source, &cached, yaml.Strict()); err != nil {
+			panic("canon: the source does not parse: " + err.Error())
+		}
+	})
+	return cached
 }
 
 // LawIDs — the law ids the contract prints, the one source every

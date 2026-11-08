@@ -315,3 +315,54 @@ func TestOSDeviceFaults(t *testing.T) {
 		t.Fatal("an append into the null device must fail at the sync step: the device takes bytes but cannot fsync")
 	}
 }
+
+// Flock — the memory fake's lock: one holder remembered, the
+// release a no-op — the fake never runs two holders at once.
+func (m *memFS) Flock(path string) (func() error, error) {
+	if m.mkdirErr != nil {
+		return nil, m.mkdirErr
+	}
+	m.writes = append(m.writes, path)
+	return func() error { return nil }, nil
+}
+
+// TestFlockHoldsAndReleases — the production lock answers only one
+// holder at a time and frees on release: the second take waits
+// behind the first, stands first in line after it.
+func TestFlockHoldsAndReleases(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "run.lock")
+	var osfs OS
+	release, err := osfs.Flock(path)
+	if err != nil {
+		t.Fatalf("the first take must hold: %v", err)
+	}
+	held := make(chan error, 1)
+	go func() {
+		second, serr := osfs.Flock(path)
+		if serr != nil {
+			held <- serr
+			return
+		}
+		held <- second()
+	}()
+	select {
+	case err := <-held:
+		t.Fatalf("the second take must wait behind the first: %v", err)
+	case <-time.After(200 * time.Millisecond):
+	}
+	if err := release(); err != nil {
+		t.Fatalf("the release must land: %v", err)
+	}
+	select {
+	case err := <-held:
+		if err != nil {
+			t.Fatalf("the waiting take must hold after the release: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("the waiting take must hold after the release")
+	}
+	// A lock over an unopenable path answers its own error.
+	if _, err := osfs.Flock(filepath.Join(t.TempDir(), "gone", "x", "run.lock")); err == nil {
+		t.Fatal("an unopenable lock path must answer its error")
+	}
+}

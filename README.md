@@ -285,9 +285,8 @@ the claim and the check side by side for exactly this).
   punchtape is refused — archive it and start fresh.
 - Linux and macOS only; rows run through the unix shell, and a
   command sees only `PATH`, `HOME` and the zone's pinned values.
-- Two machines on one living zone at the same moment are not
-  coordinated (the birth itself elects one winner among parallel
-  runs).
+- Runs serialize on a zone lock (`run.lock`, kernel-released,
+  death-safe; local filesystems) — a parallel call waits its turn.
 - Never edit `.punchtape/journal/` by hand — the machine verifies
   every record and refuses what does not recompose.
 

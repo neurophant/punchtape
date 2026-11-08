@@ -87,7 +87,8 @@ Everything an agent or a human can ever meet:
 - **The terminal line.** Exactly one line per successful run:
   `punchtape: run <N> — <instruction>`. The instruction is the
   same text the state page's `next:` line carries — never two
-  truths.
+  truths; the paths it names are spelled from the caller's
+  working directory.
 - **The zone** — `.punchtape/`, the only directory the machine
   owns:
 
@@ -112,6 +113,7 @@ Everything an agent or a human can ever meet:
   | `journal/objects/` | the content-addressed object store |
   | `cache/` | the verified walk cache — an accelerator, deletable, never truth |
   | `tmp/` | scratch, cleared at the end of every run |
+  | `run.lock` | the zone's run lock — one pass at a time, kernel-released |
 
 - **The AGENTS block** — the one record outside the zone: a marked
   block in the working root's `AGENTS.md`, ensured idempotently on
@@ -441,7 +443,7 @@ interpretation. The enforced rules, each bound to its law:
 | the build command is non-empty when present | law:document |
 | open orders ride standing demand lines with a real state | law:candor |
 | an awaiting order closes only over a later human line, cited by a decision note | law:candor |
-| remove keys of the five spellings name standing things | law:document |
+| remove keys of the four spellings name standing things | law:document |
 | a marker carries its reason | law:document |
 | expect file paths are root-relative | law:paths |
 | the tree does not move under answer, execute or describe intents — the digests hold the verdict | law:demand |
@@ -605,7 +607,9 @@ flowchart TD
     A -- "yes" --> E{"the corpus is empty?"}
     E -- "yes" --> N1["verdict: refused — the corpus is empty"]
     E -- "no" --> BL["the blockers, in the one order every face consumes"]
-    BL --> B1{"a tree-lock hold stands and the tree still differs?"}
+    BL --> B0{"the declared build stood red this run?"}
+    B0 -- "yes" --> N0["verdict: not yet — the build is red"]
+    B0 -- "no" --> B1{"a tree-lock hold stands and the tree still differs?"}
     B1 -- "yes" --> N2["verdict: not yet — the tree changed under answer/execute/describe intents"]
     B1 -- "no" --> B2{"drift unresolved — a submission must come after the witness run?"}
     B2 -- "yes" --> N3["verdict: not yet — drift unresolved: a submission must come after run N"]
@@ -623,6 +627,7 @@ flowchart TD
     B8 -- "no" --> N9["verdict: not yet — awaiting order D: the question"]
     B8 -- "yes" --> VR["APPEND the verdict record — the number, the corpus version, the signature, the registry digest, every behavior's claims pointer sorted by id, the closing run"]
     VR --> CR["APPEND the completion record — its own fact, its own counter; the standing's verdict = this one"]
+    N0 --> NOTES["the notes go to the report; the slot closed once, the report names the holes"]
     N1 --> NOTES["the notes go to the report; the slot closed once, the report names the holes"]
     N2 --> NOTES
     N3 --> NOTES

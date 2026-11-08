@@ -14,7 +14,9 @@ import (
 // to the target, then a rename — a reader at any moment sees either
 // the whole old content or the new one. AppendFile appends bytes in
 // one action, creating the file when absent, with an fsync before
-// returning.
+// returning. Flock takes an exclusive lock on the file at the path
+// (created when absent), blocking until held; the release closure
+// frees it — the kernel frees it on the holder's death.
 type FS interface {
 	Stat(path string) (os.FileInfo, error)
 	MkdirAll(dir string) error
@@ -28,6 +30,7 @@ type FS interface {
 	Remove(path string) error
 	RemoveAll(path string) error
 	Walk(root string, fn filepath.WalkFunc) error
+	Flock(path string) (release func() error, err error)
 }
 
 // Exec — the process port: the build's and the rows' launches. The

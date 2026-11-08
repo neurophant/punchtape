@@ -75,7 +75,9 @@ from an AI to a live human.
   is a further rebuild of the same inversion (the demand stream,
   the six outcomes, line-range claims, the bare `done: true`
   act), and no economics of that rebuild are claimed here — every
-  number below belongs to the generation it names.
+  number below belongs to the generation it names. The 0.5.1
+  release is a defect-fix patch of that same 0.5.0 rebuild; no
+  economics of it are claimed here either.
 
 ## 1. The 0.2.0 metrics (September 2026)
 

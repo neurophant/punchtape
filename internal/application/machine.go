@@ -42,6 +42,20 @@ func Run(cwd string, terminal io.Writer) int {
 		return 0
 	}
 	zoneDir := filepath.Join(root, zone.Dirname)
+	// One zone, one run at a time: the lock serializes every pass —
+	// the birth included — and the kernel frees it when a holder
+	// dies mid-run. A parallel caller waits its turn; local
+	// filesystems only.
+	release, err := ports.FSBind.Flock(filepath.Join(zoneDir, zone.RunLockFile))
+	if err != nil {
+		fmt.Fprintf(terminal, "punchtape: zone lock: %v\n", err)
+		return 1
+	}
+	defer func() {
+		if rerr := release(); rerr != nil {
+			fmt.Fprintf(terminal, "punchtape: zone lock release: %v\n", rerr)
+		}
+	}()
 	if _, err := ports.FSBind.Stat(filepath.Join(zoneDir, zone.JournalDir)); err != nil {
 		if !os.IsNotExist(err) {
 			fmt.Fprintf(terminal, "punchtape: zone damaged: %v\n", err)
@@ -60,7 +74,7 @@ func Run(cwd string, terminal io.Writer) int {
 			return 1
 		}
 		if rerr != nil || len(doc.NonEmptyLines(string(words))) == 0 {
-			fmt.Fprintf(terminal, "punchtape: no instance yet — put the human's words verbatim into %s and run again\n", zone.Path(zone.DemandsSlot))
+			fmt.Fprintf(terminal, "punchtape: no instance yet — put the human's words verbatim into %s and run again\n", slotFrom(cwd, root, zone.DemandsSlot))
 			return 0
 		}
 		if err := birth(zoneDir, words); err != nil {
@@ -87,12 +101,32 @@ func Run(cwd string, terminal io.Writer) int {
 			first.Birth.Version, Version)
 		return 1
 	}
-	m, err := open(root, zoneDir, stream)
+	m, err := open(cwd, root, zoneDir, stream)
 	if err != nil {
 		fmt.Fprintf(terminal, "punchtape: %v\n", err)
 		return 1
 	}
 	return m.run(terminal)
+}
+
+// slotFrom — a zone file's name as the caller sees it from the
+// working directory: the relative path from the caller — up the tree
+// and into the zone — whenever the spelling is reachable, the
+// absolute path otherwise. The instructions speak this name — an
+// obedient reader lands in the zone from any depth of the tree.
+func slotFrom(cwd, root, name string) string {
+	p := filepath.Join(root, zone.Dirname, name)
+	rel, err := filepath.Rel(cwd, p)
+	if err == nil {
+		return filepath.ToSlash(rel)
+	}
+	return p
+}
+
+// slot — the instruction's name for a zone file, from the caller's
+// own working directory.
+func (m *machine) slot(name string) string {
+	return slotFrom(m.cwd, m.root, name)
 }
 
 // findZone — the working root: the nearest zone directory at or above
@@ -116,26 +150,30 @@ func findZone(dir string) (string, bool) {
 // run's one coverage fact over the tree. The journal's records,
 // read once at the open, ride the whole run.
 type machine struct {
-	root       string
-	zoneDir    string
-	stream     *store.Stream
-	objects    *cas.Store
-	standing   *journal.Standing
-	universe   []string // the stream's non-empty lines, numbered D1..Dn
-	covered    *fprint.Coverage
-	pins       []string // the zone's env pins, parsed once, loud on a bad line
-	rowTimeout time.Duration
-	completed  bool // the completion act rode this run
-	records    []journal.Record
-	submitted  *doc.Document // the accepted submission, when one rode
-	execFacts  []journal.ExecutionFact
-	treeBefore string // the tree's digest ahead of a locked submission
-	warnings   []string
-	tree       *treeScope // the run's walk scope: the declared universe and the verified cache
+	root        string
+	cwd         string // the caller's working directory: the instructions' paths name the zone from here
+	zoneDir     string
+	stream      *store.Stream
+	objects     *cas.Store
+	standing    *journal.Standing
+	universe    []string // the stream's non-empty lines, numbered D1..Dn
+	covered     *fprint.Coverage
+	pins        []string // the zone's env pins, parsed once, loud on a bad line
+	rowTimeout  time.Duration
+	runBudget   time.Duration // the run's own budget: what it cannot fit waits the next run
+	spent       time.Duration // the budget already spent on this run's own commands
+	completed   bool          // the completion act rode this run
+	buildFailed bool          // the declared build stood red this run
+	records     []journal.Record
+	submitted   *doc.Document // the accepted submission, when one rode
+	execFacts   []journal.ExecutionFact
+	treeBefore  string // the tree's digest ahead of a locked submission
+	warnings    []string
+	tree        *treeScope // the run's walk scope: the declared universe and the verified cache
 }
 
 // open — the instance over its zone and its already-open journal.
-func open(root, zoneDir string, stream *store.Stream) (*machine, error) {
+func open(cwd, root, zoneDir string, stream *store.Stream) (*machine, error) {
 	records, err := stream.Records()
 	if err != nil {
 		return nil, err
@@ -153,18 +191,24 @@ func open(root, zoneDir string, stream *store.Stream) (*machine, error) {
 	if err != nil {
 		return nil, err
 	}
+	runBudget, err := RunBudgetOf(pins)
+	if err != nil {
+		return nil, err
+	}
 	tree, err := newTreeScope(root, zoneDir)
 	if err != nil {
 		return nil, err
 	}
 	m := &machine{
 		root:       root,
+		cwd:        cwd,
 		zoneDir:    zoneDir,
 		stream:     stream,
 		objects:    objects,
 		standing:   standing,
 		pins:       pins,
 		rowTimeout: rowTimeout,
+		runBudget:  runBudget,
 		records:    records,
 		tree:       tree,
 	}
@@ -204,15 +248,36 @@ func (m *machine) run(terminal io.Writer) int {
 	// The inbox is read and parsed once — the lock's question and
 	// the submission's own handling see the same document.
 	inbox := filepath.Join(m.zoneDir, zone.InboxSlot)
-	if _, err := ports.FSBind.Stat(inbox); err == nil {
-		raw, rerr := ports.FSBind.ReadFile(inbox)
-		if rerr != nil {
-			fmt.Fprintf(terminal, "punchtape: %v\n", rerr)
-			return 1
+	if info, err := ports.FSBind.Stat(inbox); err == nil {
+		// The document is bounded ahead of its read: a giant inbox
+		// is refused before a byte of it enters the machine, and
+		// the read's own length answers the same refusal when the
+		// file grew between the look and the read.
+		oversized := func(n int) error {
+			return fmt.Errorf("the document is bounded — %d bytes, this one carries %d", doc.InboxBytes, n)
 		}
-		d, canonical, normErr := doc.Normalize(raw)
-		if normErr != nil {
+		var normErr error
+		if info.Size() > doc.InboxBytes {
+			normErr = oversized(int(info.Size()))
+		}
+		var raw []byte
+		if normErr == nil {
+			var rerr error
+			raw, rerr = ports.FSBind.ReadFile(inbox)
+			if rerr != nil {
+				fmt.Fprintf(terminal, "punchtape: %v\n", rerr)
+				return 1
+			}
+			if len(raw) > doc.InboxBytes {
+				normErr = oversized(len(raw))
+			}
+		}
+		d, canonical, parseErr := doc.Normalize(raw)
+		if parseErr != nil {
 			d = doc.Document{}
+		}
+		if normErr == nil {
+			normErr = parseErr
 		}
 		if m.treeLockArmed(d) {
 			facts, derr := m.tree.walk()
@@ -241,7 +306,7 @@ func (m *machine) run(terminal io.Writer) int {
 				// in the same words the terminal speaks.
 				corpus := m.corpusDoc()
 				claims := m.claimsMap(corpus)
-				instruction := "submission refused — read " + zone.Path(zone.ReportFile) + ", fix inbox.yaml in place, run again"
+				instruction := "submission refused — read " + m.slot(zone.ReportFile) + ", fix inbox.yaml in place, run again"
 				if err := m.writeState(corpus, claims, instruction); err != nil {
 					fmt.Fprintf(terminal, "punchtape: state view: %v\n", err)
 					return 1
@@ -275,6 +340,7 @@ func (m *machine) run(terminal io.Writer) int {
 		}
 	}
 	buildFailed := buildFact != nil && (buildFact.Exit != 0 || buildFact.TimedOut)
+	m.buildFailed = buildFailed
 
 	// The fingerprints: the claims once ahead of the execution —
 	// every behavior's digest once, the proofs' own measurement.
@@ -356,6 +422,16 @@ func (m *machine) run(terminal io.Writer) int {
 				break
 			}
 		}
+		// The journal carries the act's outcome — only now does the
+		// document leave the slot. A crash before this point leaves
+		// the done document standing, and the next run takes the
+		// same act again; a re-read of an act whose identical verdict
+		// already stands consumes quietly instead of recording a
+		// second point of the same truth.
+		if err := ports.FSBind.Remove(inbox); err != nil {
+			fmt.Fprintf(terminal, "punchtape: %v\n", err)
+			return 1
+		}
 	}
 	if changed || len(verdictNotes) > 0 || len(m.warnings) > 0 {
 		notes := append(append([]string(nil), m.warnings...), verdictNotes...)
@@ -370,7 +446,7 @@ func (m *machine) run(terminal io.Writer) int {
 	// record keeps the pointers the proofs were measured against.
 	// The instruction is computed once, here — the state's next line
 	// and the terminal's pointer line are this one string.
-	instruction := m.nextInstruction(corpus, claimsBefore, claimsAfter, buildFailed)
+	instruction := m.nextInstruction(corpus, claimsBefore, claimsAfter)
 	if err := m.writeState(corpus, claimsAfter, instruction); err != nil {
 		fmt.Fprintf(terminal, "punchtape: state view: %v\n", err)
 		return 1
@@ -418,7 +494,7 @@ func (m *machine) treeLockArmed(d doc.Document) bool {
 // the refusal's own fact.
 func (m *machine) handleInbox(inbox string, d doc.Document, canonical []byte, normErr error) error {
 	if normErr != nil {
-		return refusalList{{Where: zone.Path(zone.InboxSlot), Law: doc.LawDocument, Fact: normErr.Error()}}
+		return refusalList{{Where: m.slot(zone.InboxSlot), Law: doc.LawDocument, Fact: normErr.Error()}}
 	}
 	// The completion act goes first: done: true and nothing else.
 	// Any other field beside the flag is the shape law's own refusal;
@@ -427,8 +503,18 @@ func (m *machine) handleInbox(inbox string, d doc.Document, canonical []byte, no
 		if refusals := doc.Validate(d, nil); len(refusals) > 0 {
 			return refusalList(refusals)
 		}
+		// The act rides this run; the inbox leaves only after the
+		// journal carries the act's outcome — a run that dies before
+		// that leaves the document in the slot, and the next run
+		// takes the same act again. Never a vanished word.
 		m.completed = true
-		return ports.FSBind.Remove(inbox)
+		return nil
+	}
+	// The document's D ranges meet the stream's own size before any
+	// merge keys or stamps parse them: a spelling past the last line
+	// is refused here, the same law the validation's own gates carry.
+	if overflows := m.streamRangeRefusals(d); len(overflows) > 0 {
+		return refusalList(overflows)
 	}
 	// The registry as it stands after this submission — the fact the
 	// covers resolve against.
@@ -518,10 +604,11 @@ func (m *machine) handleInbox(inbox string, d doc.Document, canonical []byte, no
 			return false
 		},
 		RequirementLines: func(id string) ([]int, bool) {
-			// The ids come from the preview's own order; the lookup and
-			// the parse are total by construction.
+			// The ids come from the preview's own order — the preview
+			// carries submitted requirements too; the parse is bounded
+			// by the stream the machine carries.
 			req := preview.Requirements[id]
-			nums, _ := doc.ParseRanges(req.Lines)
+			nums, _ := doc.ParseRangesWithin(req.Lines, len(m.universe))
 			return nums, true
 		},
 		RequirementIDs: func() []string {
@@ -534,6 +621,7 @@ func (m *machine) handleInbox(inbox string, d doc.Document, canonical []byte, no
 			}
 			return out
 		},
+		UniverseSize: func() int { return len(m.universe) },
 		LineOutcome: func(id string) (string, bool) {
 			// The callers spell single demand ids; the parse is total
 			// by construction.
@@ -574,6 +662,35 @@ func (m *machine) handleInbox(inbox string, d doc.Document, canonical []byte, no
 	return ports.FSBind.Remove(inbox)
 }
 
+// streamRangeRefusals — the submitted D spellings that meet a parser
+// ahead of the validation's own gates (the preview's merge keys and
+// the orders' stamps): each is bounded by the stream the machine
+// carries; an overflow answers its own refusal, a broken spelling
+// flows on to the gates that own its voice.
+func (m *machine) streamRangeRefusals(d doc.Document) []doc.Refusal {
+	var out []doc.Refusal
+	overflow := func(where string, err error) {
+		if _, ok := err.(*doc.RangeError); ok {
+			out = append(out, doc.Refusal{Where: where, Law: doc.LawDocument, Fact: err.Error()})
+		}
+	}
+	for i, marker := range d.Markers {
+		for j, list := range marker.Lines {
+			_, err := doc.ParseRangesWithin([]string{list}, len(m.universe))
+			overflow(fmt.Sprintf("not-a-requirement[%d].lines[%d]", i, j), err)
+		}
+	}
+	for i, key := range d.Remove {
+		_, err := doc.ParseRangesWithin([]string{key}, len(m.universe))
+		overflow(fmt.Sprintf("remove[%d]", i), err)
+	}
+	for i, order := range d.Open {
+		_, err := doc.ParseRangesWithin([]string{order.Demand}, len(m.universe))
+		overflow(fmt.Sprintf("open[%d].demand", i), err)
+	}
+	return out
+}
+
 // orderLineNumber — the order's demand line number, zero when
 // unparsable.
 func orderLineNumber(order doc.OpenOrder) int {
@@ -590,9 +707,10 @@ func orderLineNumber(order doc.OpenOrder) int {
 // of its line or a replacement that leaves the awaiting state.
 func (m *machine) askCloseRefusals(d doc.Document, preview doc.Registry) []doc.Refusal {
 	retired := doc.ParseRemovals(d.Remove)
+	stream := len(m.universe)
 	occupied := func(n int) bool {
 		for _, id := range preview.Order {
-			if nums, err := doc.ParseRanges(preview.Requirements[id].Lines); err == nil {
+			if nums, err := doc.ParseRangesWithin(preview.Requirements[id].Lines, stream); err == nil {
 				for _, k := range nums {
 					if k == n {
 						return true
@@ -601,7 +719,7 @@ func (m *machine) askCloseRefusals(d doc.Document, preview doc.Registry) []doc.R
 			}
 		}
 		for _, marker := range preview.Markers {
-			if nums, err := doc.ParseRanges(marker.Lines); err == nil {
+			if nums, err := doc.ParseRangesWithin(marker.Lines, stream); err == nil {
 				for _, k := range nums {
 					if k == n {
 						return true
@@ -613,7 +731,7 @@ func (m *machine) askCloseRefusals(d doc.Document, preview doc.Registry) []doc.R
 			if in.Outcome != doc.OutcomeAnswer && in.Outcome != doc.OutcomeExecute {
 				continue
 			}
-			if nums, err := doc.ParseRanges(in.Lines); err == nil {
+			if nums, err := doc.ParseRangesWithin(in.Lines, stream); err == nil {
 				for _, k := range nums {
 					if k == n {
 						return true
@@ -629,7 +747,7 @@ func (m *machine) askCloseRefusals(d doc.Document, preview doc.Registry) []doc.R
 			continue
 		}
 		for _, ref := range note.Refs {
-			if nums, err := doc.ParseRanges([]string{ref}); err == nil && len(nums) == 1 {
+			if nums, err := doc.ParseRangesWithin([]string{ref}, stream); err == nil && len(nums) == 1 {
 				cited[nums[0]] = true
 			}
 		}
@@ -709,9 +827,11 @@ func lawPrinted(id string) bool {
 }
 
 // demandLine — the D id's line of the run's numbered universe: its
-// own text and whether it exists.
+// own text and whether it exists. The parse is bounded by the
+// universe's own count — a wide spelling answers false, it never
+// generates.
 func (m *machine) demandLine(id string) (string, bool) {
-	nums, err := doc.ParseRanges([]string{id})
+	nums, err := doc.ParseRangesWithin([]string{id}, len(m.universe))
 	if err != nil || len(nums) != 1 || nums[0] < 1 || nums[0] > len(m.universe) {
 		return "", false
 	}
@@ -877,7 +997,9 @@ func (m *machine) runExecutions() error {
 		if in.Outcome != doc.OutcomeExecute {
 			continue
 		}
+		start := time.Now()
 		res := RunCommand(Argv(in.Run), m.root, RunEnv(m.pins), m.rowTimeout)
+		m.spent += time.Since(start)
 		fact := journal.ExecutionFact{
 			At:           m.standing.RunNumber + 1,
 			Lines:        in.Lines,
@@ -967,10 +1089,16 @@ func (m *machine) claimsMap(corpus doc.Document) map[string]claimsFacts {
 }
 
 // executeStale — the fingerprints' verdict per row, the execution of
-// the stale ones.
+// the stale ones — one at a time inside the run's own budget: what
+// the budget cannot fit waits the next run, named by a warning.
 func (m *machine) executeStale(corpus doc.Document, claims map[string]claimsFacts, envHash string) ([]journal.RowFact, []rowReport) {
-	var facts []journal.RowFact
-	var reports []rowReport
+	type pending struct {
+		key      string
+		row      doc.Row
+		rowBytes []byte
+		proof    string
+	}
+	var queue []pending
 	for _, b := range corpus.Behaviors {
 		behFacts := claims[b.ID]
 		for i, row := range b.Rows {
@@ -981,50 +1109,62 @@ func (m *machine) executeStale(corpus doc.Document, claims map[string]claimsFact
 			// names: its rows are honestly always stale.
 			fact, ok := m.standing.Rows[key]
 			stale := !ok || fact.Proof != proof || len(b.Claims) == 0
-			if !stale {
-				continue
+			if stale {
+				queue = append(queue, pending{key: key, row: row, rowBytes: rowBytes, proof: proof})
 			}
-			res := RunCommand(Argv(row.Run), m.root, RunEnv(m.pins), m.rowTimeout)
-			rp := rowReport{Key: key, Run: row.Run}
-			var broken []string
-			switch {
-			case res.Err != nil:
-				broken = []string{"launch: " + res.Err.Error()}
-				rp.Exit = -1
-			case res.TimedOut:
-				broken = []string{fmt.Sprintf("timed out after %s — the deadline defaults to 300 s; PUNCHTAPE_ROW_TIMEOUT names whole seconds", m.rowTimeout)}
-				rp.Exit = res.Exit
-			default:
-				rp.Exit = res.Exit
-				rp.Stdout = res.Stdout
-				broken = doc.Compare(row.Expect, res.Exit, res.Stdout, func(p string) ([]byte, error) {
-					return ports.FSBind.ReadFile(filepath.Join(m.root, filepath.FromSlash(p)))
-				})
-			}
-			// A command the row could not find is the environment's
-			// own story: the row carries the machine's law with it —
-			// inheritance, pins, relative paths — so the fix needs
-			// no knowledge of any world.
-			if res.Err == nil && !res.TimedOut &&
-				(res.Exit == 127 || strings.Contains(res.Stderr, "command not found")) {
-				broken = append(broken,
-					"hint: the command was not found in the row's PATH — rows run with the "+
-						"PATH and HOME of the shell that runs the machine plus the "+
-						".punchtape/env pins; make the command reachable from that shell, "+
-						"pin it (KEY=VALUE, relative paths only) or call project files by "+
-						"explicit relative path")
-			}
-			status := journal.StatusGreen
-			if len(broken) > 0 || res.Err != nil || res.TimedOut {
-				status = journal.StatusRed
-			}
-			facts = append(facts, journal.RowFact{
-				Key: key, Row: domain.Digest(rowBytes), Status: status, Exit: rp.Exit,
-				Facts: broken, Proof: proof,
-			})
-			rp.Facts = broken
-			reports = append(reports, rp)
 		}
+	}
+	var facts []journal.RowFact
+	var reports []rowReport
+	for _, p := range queue {
+		if m.spent+m.rowTimeout > m.runBudget {
+			m.warnings = append(m.warnings, fmt.Sprintf("run budget spent — %d rows wait the next run", len(queue)-len(facts)))
+			return facts, reports
+		}
+		row := p.row
+		key := p.key
+		start := time.Now()
+		res := RunCommand(Argv(row.Run), m.root, RunEnv(m.pins), m.rowTimeout)
+		m.spent += time.Since(start)
+		rp := rowReport{Key: key, Run: row.Run}
+		var broken []string
+		switch {
+		case res.Err != nil:
+			broken = []string{"launch: " + res.Err.Error()}
+			rp.Exit = -1
+		case res.TimedOut:
+			broken = []string{fmt.Sprintf("timed out after %s — the deadline defaults to 300 s; PUNCHTAPE_ROW_TIMEOUT names whole seconds", m.rowTimeout)}
+			rp.Exit = res.Exit
+		default:
+			rp.Exit = res.Exit
+			rp.Stdout = res.Stdout
+			broken = doc.Compare(row.Expect, res.Exit, res.Stdout, func(p string) ([]byte, error) {
+				return ports.FSBind.ReadFile(filepath.Join(m.root, filepath.FromSlash(p)))
+			})
+		}
+		// A command the row could not find is the environment's
+		// own story: the row carries the machine's law with it —
+		// inheritance, pins, relative paths — so the fix needs
+		// no knowledge of any world.
+		if res.Err == nil && !res.TimedOut &&
+			(res.Exit == 127 || strings.Contains(res.Stderr, "command not found")) {
+			broken = append(broken,
+				"hint: the command was not found in the row's PATH — rows run with the "+
+					"PATH and HOME of the shell that runs the machine plus the "+
+					".punchtape/env pins; make the command reachable from that shell, "+
+					"pin it (KEY=VALUE, relative paths only) or call project files by "+
+					"explicit relative path")
+		}
+		status := journal.StatusGreen
+		if len(broken) > 0 || res.Err != nil || res.TimedOut {
+			status = journal.StatusRed
+		}
+		facts = append(facts, journal.RowFact{
+			Key: key, Row: domain.Digest(p.rowBytes), Status: status, Exit: rp.Exit,
+			Facts: broken, Proof: p.proof,
+		})
+		rp.Facts = broken
+		reports = append(reports, rp)
 	}
 	return facts, reports
 }
@@ -1159,11 +1299,19 @@ type verdictBlocker struct {
 func (m *machine) verdictBlockers(corpus doc.Document, claims, claimsAfter map[string]claimsFacts) ([]verdictBlocker, error) {
 	envHash := EnvHash(m.pins)
 	var out []verdictBlocker
+	// The build speaks first: a verdict over a red build is a seal on
+	// a broken foundation — the reference names it the first blocker.
+	if m.buildFailed {
+		out = append(out, verdictBlocker{
+			note:        "verdict: not yet — the build is red",
+			instruction: m.buildRedInstruction(),
+		})
+	}
 	if v := m.standing.TreeLockViolation; v != nil {
 		if facts, werr := m.tree.walk(); werr == nil && facts.digest != v.Before {
 			out = append(out, verdictBlocker{
 				note:        "verdict: not yet — the tree changed under answer/execute/describe intents (law:demand)",
-				instruction: "the tree moved under answer/execute/describe intents (law:demand) — fix the bytes back or submit the change as work to " + zone.Path(zone.InboxSlot),
+				instruction: "the tree moved under answer/execute/describe intents (law:demand) — fix the bytes back or submit the change as work to " + m.slot(zone.InboxSlot),
 			})
 		}
 	}
@@ -1173,7 +1321,7 @@ func (m *machine) verdictBlockers(corpus doc.Document, claims, claimsAfter map[s
 			out = append(out, verdictBlocker{
 				note: fmt.Sprintf("verdict: not yet — drift unresolved: a submission must come after run %d", since),
 				instruction: fmt.Sprintf("verdict drifted since run %d — re-earn it: submit after that run, then write done: true to %s and run",
-					since, zone.Path(zone.InboxSlot)),
+					since, m.slot(zone.InboxSlot)),
 			})
 		}
 	}
@@ -1181,7 +1329,7 @@ func (m *machine) verdictBlockers(corpus doc.Document, claims, claimsAfter map[s
 		names := strings.Join(unpinned, ", ")
 		out = append(out, verdictBlocker{
 			note:        fmt.Sprintf("verdict: not yet — behaviors without a green pinned row: %s", names),
-			instruction: fmt.Sprintf("behaviors without a green pinned row: %s — submit to %s a row whose expect pins its exact output", names, zone.Path(zone.InboxSlot)),
+			instruction: fmt.Sprintf("behaviors without a green pinned row: %s — submit to %s a row whose expect pins its exact output", names, m.slot(zone.InboxSlot)),
 		})
 	}
 	if !m.proven(corpus, claims, envHash) {
@@ -1191,7 +1339,7 @@ func (m *machine) verdictBlockers(corpus doc.Document, claims, claimsAfter map[s
 		red, stale := m.countRows(corpus)
 		instruction := fmt.Sprintf("%d row(s) stale — run again to execute them", stale)
 		if red > 0 {
-			instruction = fmt.Sprintf("%d row(s) red — read %s, fix, run again", red, zone.Path(zone.ReportFile))
+			instruction = fmt.Sprintf("%d row(s) red — read %s, fix, run again", red, m.slot(zone.ReportFile))
 		}
 		out = append(out, verdictBlocker{
 			note:        "verdict: not yet — a row is red or stale",
@@ -1202,14 +1350,14 @@ func (m *machine) verdictBlockers(corpus doc.Document, claims, claimsAfter map[s
 		spelled := strings.Join(holes, ", ")
 		out = append(out, verdictBlocker{
 			note:        fmt.Sprintf("verdict: not yet — unresolved lines: %s", spelled),
-			instruction: fmt.Sprintf("unresolved lines: %s — submit to %s the carrier each declared outcome asks (a requirement on the line, a not-a-requirement marker, or an answer — removing a carrier re-opens its line)", spelled, zone.Path(zone.InboxSlot)),
+			instruction: fmt.Sprintf("unresolved lines: %s — submit to %s the carrier each declared outcome asks (a requirement on the line, a not-a-requirement marker, or an answer — removing a carrier re-opens its line)", spelled, m.slot(zone.InboxSlot)),
 		})
 	}
 	if orphans := m.orphanRequirements(corpus); len(orphans) > 0 {
 		names := strings.Join(orphans, ", ")
 		out = append(out, verdictBlocker{
 			note:        fmt.Sprintf("verdict: not yet — the requirements %s stand uncovered by any behavior's covers", names),
-			instruction: fmt.Sprintf("the requirements %s stand uncovered — submit to %s a behavior whose covers name them", names, zone.Path(zone.InboxSlot)),
+			instruction: fmt.Sprintf("the requirements %s stand uncovered — submit to %s a behavior whose covers name them", names, m.slot(zone.InboxSlot)),
 		})
 	}
 	uncovered, err := m.uncoveredLines(corpus)
@@ -1219,14 +1367,14 @@ func (m *machine) verdictBlockers(corpus doc.Document, claims, claimsAfter map[s
 	if uncovered != "" {
 		out = append(out, verdictBlocker{
 			note:        uncovered,
-			instruction: fmt.Sprintf("%d uncovered lines — submit their claims or loud exclusions to %s", m.treeHoles(corpus), zone.Path(zone.InboxSlot)),
+			instruction: fmt.Sprintf("%d uncovered lines — submit their claims or loud exclusions to %s", m.treeHoles(corpus), m.slot(zone.InboxSlot)),
 		})
 	}
 	for _, order := range m.standing.Registry.Open {
 		if order.State == doc.StateAwaiting {
 			out = append(out, verdictBlocker{
 				note:        fmt.Sprintf("verdict: not yet — awaiting order %s: %s", order.Demand, order.Question),
-				instruction: fmt.Sprintf("awaiting order %s: %s — put the human's answer into %s to close it", order.Demand, order.Question, zone.Path(zone.DemandsSlot)),
+				instruction: fmt.Sprintf("awaiting order %s: %s — put the human's answer into %s to close it", order.Demand, order.Question, m.slot(zone.DemandsSlot)),
 			})
 		}
 	}
@@ -1442,6 +1590,12 @@ func (m *machine) finish(terminal io.Writer, instruction string) int {
 	return 0
 }
 
+// buildRedInstruction — the red build's own imperative, the one
+// voice of the terminal line and the verdict's first blocker.
+func (m *machine) buildRedInstruction() string {
+	return "build red — read " + m.slot(zone.ReportFile) + ", fix the build, run again"
+}
+
 // nextInstruction — the one imperative that answers "what do I do
 // now" from the standing alone: every state the machine can stand in
 // has exactly one instruction, and it names the file to touch. The
@@ -1449,25 +1603,25 @@ func (m *machine) finish(terminal io.Writer, instruction string) int {
 // holds the verdict by — and with none, the corpus's own state does.
 // The terminal's pointer line and state.md's next: line are this one
 // computed text — never two truths.
-func (m *machine) nextInstruction(corpus doc.Document, claims, claimsAfter map[string]claimsFacts, buildFailed bool) string {
-	if buildFailed {
-		return "build red — read " + zone.Path(zone.ReportFile) + ", fix the build, run again"
+func (m *machine) nextInstruction(corpus doc.Document, claims, claimsAfter map[string]claimsFacts) string {
+	if m.buildFailed {
+		return m.buildRedInstruction()
 	}
 	if len(corpus.Behaviors) == 0 {
 		if len(corpus.Requirements) == 0 && len(corpus.Markers) == 0 && len(corpus.Exclusions) == 0 &&
 			len(corpus.Open) == 0 && corpus.BuildCmd() == "" {
-			return "corpus empty — submit the first document as " + zone.Path(zone.InboxSlot) + " (copy " + zone.Path(zone.TemplateFile) + ")"
+			return "corpus empty — submit the first document as " + m.slot(zone.InboxSlot) + " (copy " + m.slot(zone.TemplateFile) + ")"
 		}
-		return "no behaviors stand — submit to " + zone.Path(zone.InboxSlot) + " a behavior with a pinned row"
+		return "no behaviors stand — submit to " + m.slot(zone.InboxSlot) + " a behavior with a pinned row"
 	}
 	if blockers, err := m.verdictBlockers(corpus, claims, claimsAfter); err == nil && len(blockers) > 0 {
 		return blockers[0].instruction
 	}
 	if m.standing.Verdict != nil && m.standing.Verdict.CorpusVersion == m.standing.CorpusVersion {
 		return fmt.Sprintf("verdict #%d standing — show %s to the human; new work goes to %s as a document",
-			m.standing.Verdict.N, zone.Path(zone.StateFile), zone.Path(zone.InboxSlot))
+			m.standing.Verdict.N, m.slot(zone.StateFile), m.slot(zone.InboxSlot))
 	}
-	return "all green — write done: true to " + zone.Path(zone.InboxSlot) + " and run to record the verdict"
+	return "all green — write done: true to " + m.slot(zone.InboxSlot) + " and run to record the verdict"
 }
 
 // readFileOrEmpty — a missing file reads as empty.

@@ -5,6 +5,7 @@ package fprint
 
 import (
 	"testing"
+	"time"
 
 	"github.com/neurophant/punchtape/internal/domain"
 )
@@ -146,5 +147,42 @@ func TestLineCoverageArithmetic(t *testing.T) {
 	cov = LineCoverage(nil, nil, files)
 	if cov.Total != 8 || cov.Claimed != 0 || len(cov.Holes) != 2 {
 		t.Fatalf("a bare tree is whole open: %+v", cov)
+	}
+}
+
+// TestHoldClipsToRealLines — an exclusion spelled far past a file's
+// own lines holds only what the file carries: the arithmetic never
+// runs past the real count, whatever the spelling says.
+func TestHoldClipsToRealLines(t *testing.T) {
+	start := time.Now()
+	cov := LineCoverage(nil, []string{"f.txt:1-9000000000"}, []FileLineCount{{Path: "f.txt", Lines: 3}})
+	if elapsed := time.Since(start); elapsed > time.Second {
+		t.Fatalf("the clip must be immediate, took %s", elapsed)
+	}
+	if cov.ExcludedLines != 3 || cov.Total != 3 || len(cov.Holes) != 0 {
+		t.Fatalf("the tail past the file holds nothing real: %+v", cov)
+	}
+}
+
+// TestExcludedLinesClipToRealLines — the excluded-lines count is
+// measured over the file's real lines: one file of three lines
+// excluded by a wide spelling closes whole, no hole.
+func TestExcludedLinesClipToRealLines(t *testing.T) {
+	cov := LineCoverage(nil, []string{"f.txt:1-1000"}, []FileLineCount{{Path: "f.txt", Lines: 3}})
+	if cov.ExcludedLines != 3 || cov.Total != 3 || len(cov.Holes) != 0 {
+		t.Fatalf("a wide exclusion of three real lines: %+v", cov)
+	}
+}
+
+// TestClaimedCountsClaimsAndExclusions — a claim and an exclusion on
+// neighboring lines each count their own line: the claimed counter
+// carries both, the excluded counter the exclusion's alone.
+func TestClaimedCountsClaimsAndExclusions(t *testing.T) {
+	cov := LineCoverage([]string{"f.txt:1-1"}, []string{"f.txt:2-2"}, []FileLineCount{{Path: "f.txt", Lines: 3}})
+	if cov.Claimed != 2 || cov.ExcludedLines != 1 || len(cov.Holes) != 1 {
+		t.Fatalf("claims and exclusions each count their line: %+v", cov)
+	}
+	if cov.Holes["f.txt"][0] != (Range{First: 3, Last: 3}) {
+		t.Fatalf("the unclaimed tail stays a hole: %+v", cov.Holes)
 	}
 }

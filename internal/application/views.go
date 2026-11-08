@@ -258,8 +258,12 @@ func (m *machine) writeState(corpus doc.Document, claims map[string]claimsFacts,
 				fmt.Fprintf(&b, "- %s — %s\n", ex.Path, ex.Reason)
 			}
 		}
+		share := 0
+		if cov.Total > 0 {
+			share = 100 * cov.ExcludedLines / cov.Total
+		}
 		fmt.Fprintf(&b, "excluded lines: %d ranges (%d %% of tree)\n",
-			len(m.standing.Registry.Exclusions), m.excludedShare(cov))
+			len(m.standing.Registry.Exclusions), share)
 		if m.tree.declared() {
 			fmt.Fprintf(&b, "outside the universe: %d files\n", m.tree.lastFacts.outside)
 			fmt.Fprintf(&b, "universe: %d of %d files\n",
@@ -289,32 +293,6 @@ func (m *machine) treeHoles(corpus doc.Document) int {
 		}
 	}
 	return n
-}
-
-// excludedShare — the loud exclusions' share of the tree, whole
-// percents: arithmetic over the already-counted coverage fact.
-func (m *machine) excludedShare(cov fprint.Coverage) int {
-	held := map[string]map[int]bool{}
-	for _, ex := range m.standing.Registry.Exclusions {
-		rel, first, last, err := fprint.ParseLineRange(ex.Range)
-		if err != nil {
-			continue
-		}
-		if held[rel] == nil {
-			held[rel] = map[int]bool{}
-		}
-		for n := first; n <= last; n++ {
-			held[rel][n] = true
-		}
-	}
-	excluded := 0
-	for _, f := range held {
-		excluded += len(f)
-	}
-	if cov.Total == 0 {
-		return 0
-	}
-	return 100 * excluded / cov.Total
 }
 
 // writeHoles — the tree's whole hole ledger, uncapped: the state's
@@ -622,7 +600,7 @@ func (m *machine) reportRefusals(refusals []doc.Refusal) error {
 	for _, r := range refusals {
 		fmt.Fprintf(&b, "%s: %s (%s)\n", r.Where, r.Fact, r.Law)
 	}
-	fmt.Fprintf(&b, "\nthe submission stays in %s — fix it there and run again\n", zone.Path(zone.InboxSlot))
+	fmt.Fprintf(&b, "\nthe submission stays in %s — fix it there and run again\n", m.slot(zone.InboxSlot))
 	return m.writeIfChanged(filepath.Join(m.zoneDir, zone.ReportFile), b.Bytes())
 }
 

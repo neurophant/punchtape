@@ -5,9 +5,11 @@
 package doc
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestParseRangesEveryShape(t *testing.T) {
@@ -92,5 +94,28 @@ func TestNonEmptyLinesNumberTheNonEmptyInFileOrder(t *testing.T) {
 	}
 	if empty := NonEmptyLines(""); len(empty) != 0 {
 		t.Fatalf("an empty stream numbers nothing: %q", empty)
+	}
+}
+
+// TestParseRangesWithinRejectsBeyond — a range past the stream's own
+// count answers before any number is generated: the error names the
+// line and the stream's size, the bound itself stays lawful. The
+// spelling's size stays battery-safe — a regressed guard costs
+// milliseconds, not the host; the wide-scale proof runs fenced.
+func TestParseRangesWithinRejectsBeyond(t *testing.T) {
+	start := time.Now()
+	_, err := ParseRangesWithin([]string{"D1..D100000"}, 5)
+	if elapsed := time.Since(start); elapsed > time.Second {
+		t.Fatalf("the refusal must be immediate, took %s", elapsed)
+	}
+	var re *RangeError
+	if !errors.As(err, &re) || re.Line != 100000 || re.Max != 5 {
+		t.Fatalf("the overflow must name its line and the stream, got %v", err)
+	}
+	if nums, err := ParseRangesWithin([]string{"D1..D5"}, 5); err != nil || len(nums) != 5 {
+		t.Fatalf("the bound itself stays lawful: %v %v", nums, err)
+	}
+	if nums, err := ParseRanges([]string{"D1..D7"}); err != nil || len(nums) != 7 {
+		t.Fatalf("the plain grammar stays whole: %v %v", nums, err)
 	}
 }
