@@ -1,5 +1,15 @@
-# punchtape
+[![CI](https://github.com/neurophant/punchtape/actions/workflows/ci.yml/badge.svg)](https://github.com/neurophant/punchtape/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/neurophant/punchtape)](https://github.com/neurophant/punchtape/releases/latest)
+[![license](https://img.shields.io/github/license/neurophant/punchtape)](LICENSE)
+[![DOI](https://img.shields.io/badge/DOI-10.2139%2Fssrn.7566638-0D1117)](https://doi.org/10.2139/ssrn.7566638)
+
+# <img src="docs/img/wordmark.png" width="340" alt="punchtape">
 [English](README.md) · [Русский](README.ru.md) · **中文**
+
+![punchtape 演示](docs/img/demo-agent.gif)
+
+*你的原话逐字进入。机器自己运行每一项检查。代理无法宣布完成——
+它只能让工作真正完成。*
 
 **你的 AI 写代码。punchtape 来检查——「done」没有真正成立，它就
 绝不停手。**

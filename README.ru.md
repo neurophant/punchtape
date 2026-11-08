@@ -1,5 +1,15 @@
-# punchtape
+[![CI](https://github.com/neurophant/punchtape/actions/workflows/ci.yml/badge.svg)](https://github.com/neurophant/punchtape/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/neurophant/punchtape)](https://github.com/neurophant/punchtape/releases/latest)
+[![license](https://img.shields.io/github/license/neurophant/punchtape)](LICENSE)
+[![DOI](https://img.shields.io/badge/DOI-10.2139%2Fssrn.7566638-0D1117)](https://doi.org/10.2139/ssrn.7566638)
+
+# <img src="docs/img/wordmark.png" width="340" alt="punchtape">
 [English](README.md) · **Русский** · [中文](README.zh.md)
+
+![демо punchtape](docs/img/demo-agent.gif)
+
+*Твои слова входят дословно. Машина сама прогоняет каждую проверку. Агент
+не может объявить работу готовой — он может только сделать её готовой.*
 
 **Ваш ИИ пишет код. punchtape проверяет его — и не останавливается,
 пока «готово» не станет готово по-настоящему.**

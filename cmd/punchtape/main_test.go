@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -30,6 +31,9 @@ func TestRunWithoutAWorkingDirectoryRefuses(t *testing.T) {
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Skipf("the working directory is not readable: %v", err)
+	}
+	if runtime.GOOS == "darwin" {
+		t.Skip("darwin still answers getwd over an unlinked working directory; the refusal pinned here is the linux kernel's contract")
 	}
 	defer os.Chdir(wd)
 	dir := t.TempDir()

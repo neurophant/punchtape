@@ -1,5 +1,15 @@
-# punchtape
+[![CI](https://github.com/neurophant/punchtape/actions/workflows/ci.yml/badge.svg)](https://github.com/neurophant/punchtape/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/neurophant/punchtape)](https://github.com/neurophant/punchtape/releases/latest)
+[![license](https://img.shields.io/github/license/neurophant/punchtape)](LICENSE)
+[![DOI](https://img.shields.io/badge/DOI-10.2139%2Fssrn.7566638-0D1117)](https://doi.org/10.2139/ssrn.7566638)
+
+# <img src="docs/img/wordmark.png" width="340" alt="punchtape">
 **English** · [Русский](README.ru.md) · [中文](README.zh.md)
+
+![punchtape demo](docs/img/demo-agent.gif)
+
+*Your words go in verbatim. The machine runs every check itself. The agent
+cannot declare done — it can only make done true.*
 
 **Your AI writes the code. punchtape checks it — and does not stop
 until "done" is really done.**

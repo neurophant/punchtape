@@ -1286,7 +1286,7 @@ behaviors:
       claims:
         - count.txt:1-3
       rows:
-        - run: sh -c "wc -l < count.txt"
+        - run: sh -c "wc -l < count.txt | tr -d ' '"
           expect:
             out: "3\n"
 `)
@@ -1313,7 +1313,7 @@ behaviors:
       claims:
         - count.txt:1-3
       rows:
-        - run: sh -c "wc -l < count.txt"
+        - run: sh -c "wc -l < count.txt | tr -d ' '"
           expect:
             out: "3\n"
 `)
@@ -1356,7 +1356,7 @@ behaviors:
         - count.txt:1-3
       covers: [R1]
       rows:
-        - run: sh -c "wc -l < count.txt"
+        - run: sh -c "wc -l < count.txt | tr -d ' '"
           expect:
             out: "3\n"
 `)
@@ -1371,7 +1371,7 @@ behaviors:
         - count.txt:1-3
       covers: [R1]
       rows:
-        - run: sh -c "wc -l < count.txt"
+        - run: sh -c "wc -l < count.txt | tr -d ' '"
           expect:
             out: "3\n"
 `)
@@ -1437,7 +1437,7 @@ behaviors:
         - count.txt:1-3
       covers: [R1]
       rows:
-        - run: sh -c "wc -l < count.txt"
+        - run: sh -c "wc -l < count.txt | tr -d ' '"
           expect:
             out: "contains: 3"
 `)
@@ -1479,7 +1479,7 @@ behaviors:
         - count.txt:1-3
       covers: [R1]
       rows:
-        - run: sh -c "wc -l < count.txt"
+        - run: sh -c "wc -l < count.txt | tr -d ' '"
           expect:
             out: "3\n"
 `)
@@ -1603,7 +1603,7 @@ behaviors:
         - count.txt:1-3
       covers: [R1]
       rows:
-        - run: sh -c "wc -l < count.txt"
+        - run: sh -c "wc -l < count.txt | tr -d ' '"
           expect:
             out: "3\n"
     - id: tool/print
@@ -1705,7 +1705,7 @@ behaviors:
         - count.txt:3-3
       covers: [R3]
       rows:
-        - run: sh -c "printf 'count '; wc -l < count.txt"
+        - run: sh -c "printf 'count '; wc -l < count.txt | tr -d ' '"
           expect:
             out: "count 3\n"
 `)
@@ -1772,7 +1772,7 @@ behaviors:
         - count.txt:1-1
       covers: [R1]
       rows:
-        - run: sh -c "seq 3 | wc -l"
+        - run: sh -c "seq 3 | wc -l | tr -d ' '"
           expect:
             out: "3\n"
 `)
@@ -1888,7 +1888,7 @@ behaviors:
         - count.txt:1-3
       covers: [R1]
       rows:
-        - run: sh -c "wc -l < count.txt"
+        - run: sh -c "wc -l < count.txt | tr -d ' '"
           expect:
             out: "3\n"
     - id: tool/print
@@ -1908,7 +1908,7 @@ behaviors:
         - count.txt:3-3
       covers: [R3]
       rows:
-        - run: sh -c "printf 'count '; wc -l < count.txt"
+        - run: sh -c "printf 'count '; wc -l < count.txt | tr -d ' '"
           expect:
             out: "count 3\n"
 `)

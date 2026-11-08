@@ -1,0 +1,31 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+      - uses: astral-sh/setup-uv@v5
+      - name: the repository tooling venv, pinned by uv.lock
+        run: make venv
+      - name: the go analysis tools the battery drives
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          go install golang.org/x/lint/golint@latest
+          go install mvdan.cc/unparam@latest
+          go install golang.org/x/tools/gopls@latest
+          go install github.com/mibk/dupl@latest
+      - name: the full battery
+        run: |
+          if [ "$(uname -s)" = "Darwin" ]; then make check COVERAGE_GATE=open; else make check; fi

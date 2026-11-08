@@ -1,0 +1,12 @@
+[project]
+name = "punchtape"
+version = "0.5.1"
+requires-python = "==3.12.*"
+dependencies = [
+    "mypy==2.4.1",
+    "ruff==0.17.4",
+    "types-pyyaml==6.0.12.20261103",
+]
+
+[tool.uv]
+package = false

@@ -358,7 +358,7 @@ behaviors:
         - count.txt:1-2
       covers: [R1]
       rows:
-        - run: sh -c "wc -l < count.txt"
+        - run: sh -c "wc -l < count.txt | tr -d ' '"
           expect:
             out: "2\n"
 `)

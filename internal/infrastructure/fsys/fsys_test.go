@@ -261,8 +261,13 @@ func TestOSWiring(t *testing.T) {
 	if err := osfs.WriteAtomic("/dev/null/x/f.yaml", []byte("d")); err == nil {
 		t.Fatal("a write under a file path must fail at the directory step")
 	}
-	if err := osfs.WriteAtomic("/proc/fsys-no-write.yaml", []byte("d")); err == nil {
-		t.Fatal("a write into the read-only proc must fail at the temp file step")
+	ro := filepath.Join(t.TempDir(), "read-only")
+	if err := os.Mkdir(ro, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	// EACCES: the temp file step under a read-only directory
+	if err := osfs.WriteAtomic(filepath.Join(ro, "no-write.yaml"), []byte("d")); err == nil {
+		t.Fatal("a write into a read-only directory must fail at the temp file step")
 	}
 	if err := osfs.AppendFile("/proc/fsys-no-append.log", []byte("d")); err == nil {
 		t.Fatal("an append into the read-only proc must fail at the open step")
