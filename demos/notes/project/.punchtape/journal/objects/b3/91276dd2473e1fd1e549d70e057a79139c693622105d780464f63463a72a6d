@@ -1,0 +1,17 @@
+id: notes/show
+name: show prints one note and refuses a missing one
+prose: show 1 prints the note; show 9 exits non-zero
+claims:
+- notes.js:22-29
+covers:
+- R3
+rows:
+- run: rm -f notes.json && node notes.js add first && node notes.js show 1
+  expect:
+    rc: 0
+    out: |
+      1
+      first
+- run: node notes.js show 9
+  expect:
+    rc: 3

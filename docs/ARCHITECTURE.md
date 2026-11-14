@@ -38,7 +38,7 @@ CALL with no arguments, and the whole conversation — the human's
 words, the agent's documents, the machine's answers — rides files
 of one hidden directory, the zone. This document describes the
 machine exactly as the code implements it: every process, every
-structure, every logical branch. It stands on itself; nothing
+structure, every logical branch. It is self-contained; nothing
 outside it is needed to understand the machine.
 
 ## What the machine is
@@ -81,8 +81,8 @@ Everything an agent or a human can ever meet:
   exits 0 before any state is touched. It is a human affordance;
   the contract never mentions it and no machine path reads it.
 - **The argument refusal.** Any other arguments produce one line —
-  `punchtape: the call takes no arguments — run `punchtape` alone;
-  this refusal is the whole action of this launch` — and exit 1,
+  ``punchtape: the call takes no arguments — run `punchtape` alone;
+  this refusal is the whole action of this launch`` — and exit 1,
   before any state is touched.
 - **The terminal line.** Exactly one line per successful run:
   `punchtape: run <N> — <instruction>`. The instruction is the
@@ -130,7 +130,8 @@ The composition root (`cmd/punchtape`) mounts the production
 ports — the filesystem binding and the process binding — takes
 the current working directory, and hands both to the machine's
 one entry point. Everything below is that entry point's
-algorithm.
+algorithm. Every internal call, caller → callee, is listed in
+[calls.md](maps/calls.md).
 
 ```mermaid
 flowchart TD
@@ -221,7 +222,7 @@ Every run past the birth opens the instance the same way:
    the value law below) is a loud refusal naming the file, the
    line number, the line and the law — exit 1, before any state
    moves. The row-deadline pin (`PUNCHTAPE_ROW_TIMEOUT`) is
-   parsed with the same breath: whole positive seconds or a loud
+   parsed in the same breath: whole positive seconds or a loud
    refusal.
 4. **The universe.** The zone's optional `universe` file is read —
    one root-relative path a line, comments and blank lines
@@ -274,8 +275,8 @@ flowchart TD
 
 Every machine-owned write that cannot land (a journal append, a
 view, the corpus heal, the AGENTS block, the tmp clear) is a loud
-failure: the run prints the error and exits 1 — the machine does
-not keep a stale face in silence.
+failure: the run prints the error and exits 1 — the machine never
+quietly leaves an old page standing.
 
 ## The demand stream
 
@@ -326,15 +327,14 @@ The refusal is the machine's own journaled fact: the record lands
 in the journal before the report view is written, so a screen
 that cannot land never eats the fact. The submission's bytes
 write nothing — the document stays in the slot, the author fixes
-the named place in the same file and runs again; a refusal costs
-one run and nothing else.
+the named place in the same file and runs again.
 
 ### The completion act
 
 An `inbox.yaml` carrying exactly `done: true` — the bare flag and
 not one other field — is the completion act: the deliberate door
-to the verdict, nothing to retype and nothing to fake. The slot
-is consumed and the run continues through its ordinary steps (the
+to the verdict. The slot is consumed and the run continues
+through its ordinary steps (the
 build still runs, stale rows still execute); the verdict step at
 the end decides whether the act closes a verdict or names the
 holes. The act is counted as its own journaled fact, separate
@@ -344,7 +344,7 @@ another counts the acts that finished the work.
 ### The document's decode and canonical bytes
 
 The decode is strict, and an armor pass walks the parsed tree
-before the model ever sees it: exactly one YAML document, no
+before anything else reads it: exactly one YAML document, no
 anchors, no aliases, no tags, no merge keys, no tab in
 indentation, no duplicate or unknown fields. Anything the machine
 does not itself write or mean is refused at the slot — a trap
@@ -443,7 +443,7 @@ interpretation. The enforced rules, each bound to its law:
 | the build command is non-empty when present | law:document |
 | open orders ride standing demand lines with a real state | law:candor |
 | an awaiting order closes only over a later human line, cited by a decision note | law:candor |
-| remove keys of the four spellings name standing things | law:document |
+| remove keys of the five spellings name standing things | law:document |
 | a marker carries its reason | law:document |
 | expect file paths are root-relative | law:paths |
 | the tree does not move under answer, execute or describe intents — the digests hold the verdict | law:demand |
@@ -463,9 +463,7 @@ note; otherwise the refusal names the law and the recipe.
 
 ## The merge laws
 
-The economy of submissions: what a document does not list, it
-does not change — and the number of submissions never affects the
-price.
+What a document does not list, it does not change.
 
 - **Behaviors merge by id.** A listed id that stands has its head
   replaced whole (name, prose, claims, covers) and its rows
@@ -595,8 +593,7 @@ the page headers all say run 0.
 A **lesson** is a red→green transition of this run, fixed as pure
 data: the previous fact's first broken reason, all its broken
 facts, the row's bytes before and after (answered by the journal's
-own row-bytes index, by digest), and the two run numbers. Zero
-tokens of any model — the machine measured the fix itself. The
+own row-bytes index, by digest), and the two run numbers. The
 lessons land on the knowledge page, grouped by reason.
 
 ## The verdict
@@ -644,7 +641,7 @@ the same table: the report lists the notes whole; the terminal and
 the state page's `next:` line speak the first blocker's
 instruction. The proof arithmetic rides the before-map (the
 digests the proofs were measured against); the drift question
-rides the after-map (the tree as the run left it) — two truths on
+rides the after-map (the tree as the run left it) — two maps on
 purpose: a row may lawfully edit its own claimed file, and the
 maps then differ.
 
@@ -697,26 +694,35 @@ After the facts, the views — generated images of the journal,
 rewritten whole when their content changes, never touched when it
 does not (byte-compare first, atomic write only on difference).
 
-**`state.md`** — the standing on one page, in order: the header
-with the run number; the demands accounting — `demands: X/Y
-lines; requirements N standing, K covered; markers: M` — and the
-unresolved lines with their reasons when any; the queue as a fact
-of the files (`queue: submission waiting` / `queue: empty`); the
-last no-new-demands signature while it stands; `corpus: v<n>, <b>
-behaviors`; the last execution; `submissions: <a> accepted, <r>
-refused, <c> completed`; `machine at birth: <version>`; the
-verdict line — `verdict: #<n> on v<c>, run <r>, signature <12
-hex>` with `— open (drift since run N)`, `— standing over N
-uncovered lines` or `— standing`; the verdict history (the recent
-ten, the elision counting the rest); the deferred orders with
-their questions and reasons; one line per behavior — `- <id>: <n>
-rows (claims F files / L lines; proof <12 hex>) — <g> green, <s>
-stale[, <r> RED]`; the uncovered lines (the first ten files, the
-elision pointing to the holes ledger); the excluded files with
-their reasons; `excluded lines: N ranges (P % of tree)`; the
-outside and inside counts when a universe stands declared; the
-knowledge counts; and `next:` — the one instruction, the same
-text as the terminal line.
+**`state.md`** — the standing on one page, in this order:
+
+- the header with the run number;
+- the demands accounting — `demands: X/Y lines; requirements N
+  standing, K covered; markers: M` — and the unresolved lines
+  with their reasons when any;
+- the queue as a fact of the files (`queue: submission waiting` /
+  `queue: empty`);
+- the last no-new-demands signature while it stands;
+- `corpus: v<n>, <b> behaviors`;
+- the last execution;
+- `submissions: <a> accepted, <r> refused, <c> completed`;
+- `machine at birth: <version>`;
+- the verdict line — `verdict: #<n> on v<c>, run <r>, signature
+  <12 hex>` with `— open (drift since run N)`, `— standing over
+  N uncovered lines` or `— standing`;
+- the verdict history (the recent ten, the elision counting the
+  rest);
+- the deferred orders with their questions and reasons;
+- one line per behavior — `- <id>: <n> rows (claims F files /
+  L lines; proof <12 hex>) — <g> green, <s> stale[, <r> RED]`;
+- the uncovered lines (the first ten files, the elision pointing
+  to the holes ledger);
+- the excluded files with their reasons; `excluded lines: N
+  ranges (P % of tree)`;
+- the outside and inside counts when a universe stands declared;
+- the knowledge counts;
+- `next:` — the one instruction, the same text as the terminal
+  line.
 
 **`holes.md`** — the tree's whole hole ledger, uncapped: every
 open range per file, the list the state page points to when it
@@ -786,7 +792,7 @@ ever touched.
 
 **The teaching refresh** — `contract.md`, `template.yaml` and
 `reference.md` are rewritten only when the canon's own bytes
-change: a zone never teaches a law its machine has left.
+change.
 
 **The finish** — the scratch directory `tmp/` is removed whole,
 and the terminal receives its one line: `punchtape: run <N> —
@@ -825,6 +831,9 @@ flowchart TD
     VerdictStanding -- "new words arrive, the next document reopens the work" --> RedRows
 ```
 
+The instance's whole life as one static picture:
+[lifecycle.svg](maps/lifecycle.svg).
+
 The instance's life in words: a directory gains an instance when
 the first non-empty line lands in the stream and the next run
 births it; the corpus is built by documents; rows go red and stale
@@ -837,7 +846,7 @@ fresh directory.
 
 ## The journal — the one source of truth
 
-Every fact the machine holds dear is an append-only record. Ten
+Every fact the machine keeps is an append-only record. Ten
 kinds exist, exactly one payload each:
 
 | kind | payload | the fact |
@@ -953,6 +962,17 @@ left in the tree wants a claim or a loud exclusion.
 
 ## The code map
 
+The shape of the code is mapped, not retold. `make maps` rebuilds
+docs/maps straight from the sources: [calls.md](maps/calls.md)
+holds the complete internal call list, caller → callee;
+[types.md](maps/types.md) holds every type as goplantuml reads it
+from the code; [packages.svg](maps/packages.svg) shows the call
+edges between the packages, layer by layer; and
+[deps.svg](maps/deps.svg) shows the import graph. One map is
+written by hand and rendered by the same command:
+[lifecycle.svg](maps/lifecycle.svg), the protocol's life cycle on
+one page. The list below says what each part owns.
+
 - `cmd/punchtape` — the composition root: mount the production
   ports, one call, the version flag, the argument refusal.
 - `internal/ports` — the port contracts (`FS`, `Exec`) and the
@@ -1012,9 +1032,9 @@ must round-trip byte-exact; objects verified on write and on read;
 no wall clock in any record. The shipped binaries are built
 `-trimpath -buildvcs=false` — byte-identical regardless of the
 build machine's paths and git state, for four targets: linux and
-darwin, amd64 and arm64. The same zone and the same tree produce
-the same bytes on every machine — the journal of one history is
-byte-identical everywhere.
+darwin, amd64 and arm64. The same zone, the same tree and the same
+environment produce the same bytes on any machine — and a journal
+copied between machines stays byte-identical.
 
 ## The build-time gates
 

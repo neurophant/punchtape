@@ -5,7 +5,10 @@
 BINARY := punchtape
 COV := /tmp/punchtape-check
 COVERPKG := ./cmd/...,./internal/...
-PYFILES := $(shell git ls-files '*.py')
+# Demo project slices (demos/*/project/), not machine code: their
+# style is their authors', the machine never runs them.
+PYFILES := $(shell git ls-files '*.py' | grep -v '^demos/')
+GOPKGS := ./cmd/... ./internal/...
 MYPYCACHE := /tmp/punchtape-mypy
 # The battery's speed ceiling. Its ONLY job is to catch an accidental
 # blow-up — a hang, a sleep, a quadratic walk — before the field
@@ -20,7 +23,7 @@ BATTERY_LIMIT := 120s
 # reference platform of the strict gate is linux.
 COVERAGE_GATE ?= strict
 
-.PHONY: build install clean vet fmt dist check docs-parity python-lint venv
+.PHONY: build install clean vet fmt dist check docs-parity python-lint venv maps
 
 # The repository-local tooling venv, pinned by uv.lock: ruff, mypy
 # and the stubs the campaign tools import.
@@ -51,15 +54,15 @@ python-lint:
 # two coverage sources merge by the block's maximum count: the same
 # block seen by several test binaries counts once, as executed.
 check: docs-parity python-lint
-	test -z "$$(gofmt -l .)"
-	go vet ./...
-	staticcheck ./...
-	diag=$$(golint ./...); test -z "$$diag" || { echo "$$diag"; exit 1; }
-	diag=$$(unparam ./...); test -z "$$diag" || { echo "$$diag"; exit 1; }
-	diag=$$(gopls check $$(git ls-files '*.go')); test -z "$$diag" || { echo "$$diag"; exit 1; }
-	dupl -threshold 100 $$(git ls-files '*.go' | grep -v '_test\.go$$') | grep -q '^Found total 0 clone' || { echo 'duplicate code found'; exit 1; }
+	test -z "$$(gofmt -l $(shell git ls-files '*.go' | grep -v '^demos/'))"
+	go vet $(GOPKGS)
+	staticcheck $(GOPKGS)
+	diag=$$(golint $(GOPKGS)); test -z "$$diag" || { echo "$$diag"; exit 1; }
+	diag=$$(unparam $(GOPKGS)); test -z "$$diag" || { echo "$$diag"; exit 1; }
+	diag=$$(gopls check $$(git ls-files '*.go' | grep -v '^demos/')); test -z "$$diag" || { echo "$$diag"; exit 1; }
+	dupl -threshold 100 $$(git ls-files '*.go' | grep -v '^demos/' | grep -v '_test\.go$$') | grep -q '^Found total 0 clone' || { echo 'duplicate code found'; exit 1; }
 	start=$$(date +%s); \
-	go test -count=1 ./... -coverpkg=$(COVERPKG) -coverprofile=$(COV).test.out || exit 1; \
+	go test -count=1 $(GOPKGS) -coverpkg=$(COVERPKG) -coverprofile=$(COV).test.out || exit 1; \
 	elapsed=$$(($$(date +%s) - start)); \
 	echo $$elapsed > $(COV).elapsed; \
 	test $$elapsed -le 120 || { echo "battery too slow: $${elapsed}s over $(BATTERY_LIMIT)"; exit 1; }
@@ -93,10 +96,10 @@ install:
 	./install.sh
 
 vet:
-	go vet ./...
+	go vet $(GOPKGS)
 
 fmt:
-	gofmt -l -w .
+	gofmt -l -w $(shell git ls-files '*.go' | grep -v '^demos/')
 
 clean:
 	rm -f $(BINARY)
@@ -114,3 +117,41 @@ dist:
 	cd dist && for f in punchtape-*; do case "$$f" in *.sha256) continue;; esac; sha256sum "$$f" > "$$f.sha256"; done
 	cp get-punchtape.sh dist/
 	@echo "dist/: $$(ls dist | tr '\n' ' ')"
+
+# The code maps, regenerated straight from the code. Text carries the
+# completeness — the full call list and the type sheets; two small
+# diagrams carry the shape — the package graph and the protocol's life
+# cycle. Nothing here fights a dense layout: every output fits a page.
+CALLGRAPH := golang.org/x/tools/cmd/callgraph@v0.52.0
+GODEPGRAPH := github.com/kisielk/godepgraph@v1.0.0
+GOPLANTUML := github.com/jfeliu007/goplantuml/cmd/goplantuml@v1.6.3
+MAPS := docs/maps
+
+maps:
+	mkdir -p $(MAPS)
+	go run $(CALLGRAPH) -format=graphviz ./cmd/punchtape > $(MAPS)/calls.edges.full
+	grep -E '"(\(\*)?github\.com/neurophant/punchtape[^"]*" -> "(\(\*)?github\.com/neurophant/punchtape[^"]*"' $(MAPS)/calls.edges.full \
+	  | grep -v '\.init"' | LC_ALL=C sort > $(MAPS)/calls.edges
+	rm $(MAPS)/calls.edges.full
+	{ echo "# The call list"; echo; \
+	  echo "Every internal call of the machine — caller → callee, sorted."; echo; \
+	  sed -e 's/[[:space:]]*--[a-z]*-[0-9:]*-->[[:space:]]*/ → /' -e 's#github\.com/neurophant/punchtape/##g' $(MAPS)/calls.edges; } > $(MAPS)/calls.md
+	awk -f tools/maps_packages.awk $(MAPS)/calls.edges > $(MAPS)/packages.dot
+	rm $(MAPS)/calls.edges
+	{ echo "# The type sheets"; echo; \
+	  echo "The machine's types as goplantuml reads them from the code;"; \
+	  echo "the source of truth is the code itself."; echo; \
+	  echo '```plantuml'; \
+	  go run $(GOPLANTUML) -recursive ./internal; \
+	  echo '```'; } > $(MAPS)/types.md
+	go run $(GODEPGRAPH) -s ./cmd/punchtape \
+	  | grep -E '^(digraph|splines|nodesep|ranksep|node \[|edge \[|\})|neurophant/punchtape|\./cmd/punchtape|"github.com/goccy/go-yaml" \[' \
+	  | grep -v ' -> "github.com/goccy/go-yaml/' \
+	  | sed -e 's#github.com/neurophant/punchtape/##g' -e 's#"github.com/goccy/go-yaml"#"goccy/go-yaml"#g' \
+	  | sed -e 's/ color="[^"]*" URL="[^"]*" target="_blank"//' \
+	  | sed -e 's/node \[shape="box",style="rounded,filled"\]/node [shape=box, fontname="monospace", fontsize=11]/' \
+	  | sed -e 's/edge \[arrowsize="0.5"\]/edge [fontname="monospace", fontsize=9, arrowsize=0.7]/' \
+	  | dot -Tsvg -Gmargin=0.3 -o $(MAPS)/deps.svg
+	dot -Tsvg $(MAPS)/packages.dot -o $(MAPS)/packages.svg
+	dot -Tsvg $(MAPS)/lifecycle.dot -o $(MAPS)/lifecycle.svg
+	@echo "maps/: $$(ls $(MAPS) | tr '\n' ' ')"

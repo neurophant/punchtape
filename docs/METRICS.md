@@ -262,7 +262,7 @@ where solo is cheaper in tokens (×1.11), cpp a token parity to 12K of
   polishing of refusals and stops, within noise. Judging machine cells
   costs slightly less (69.39M vs 72.30M, ×1.04) — the rendered zone
   prose reads heavier than a raw solo tree.
-- **Stacks and senses.** The machine's best soil is a buildless
+- **Stacks and senses.** The machine's best case is a buildless
   interpreted stack (js: an own short cycle per machine pass); its
   worst is long compiles (rust: each machine pass pays the build, and
   the time edge shrinks to ×1.12). By sense, conduit fits the machine

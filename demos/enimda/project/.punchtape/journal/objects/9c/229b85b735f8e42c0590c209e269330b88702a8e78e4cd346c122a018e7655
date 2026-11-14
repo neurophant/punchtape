@@ -1,0 +1,23 @@
+id: lib/scan
+name: the borders on the fixtures
+prose: three fixtures scanned fast, offsets pinned
+claims:
+- enimda/__init__.py:13-134
+covers:
+- R2
+rows:
+- run: python3 -c "from enimda import ENIMDA; print(ENIMDA(fp='tests/fixed/bordered.jpg').scan(fast=True))"
+  expect:
+    rc: 0
+    out: |
+      (4, 3, 3, 4)
+- run: python3 -c "from enimda import ENIMDA; print(ENIMDA(fp='tests/fixed/clear.jpg').scan(fast=True))"
+  expect:
+    rc: 0
+    out: |
+      (0, 0, 0, 0)
+- run: python3 -c "from enimda import ENIMDA; print(ENIMDA(fp='tests/fixed/outlined.jpg').scan(fast=True))"
+  expect:
+    rc: 0
+    out: |
+      (4, 2, 4, 4)

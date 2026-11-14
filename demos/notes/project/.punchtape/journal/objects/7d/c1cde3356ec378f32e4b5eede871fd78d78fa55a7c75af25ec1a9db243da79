@@ -1,0 +1,16 @@
+id: notes/list
+name: list prints notes oldest first
+prose: two adds then list prints alpha then beta, oldest first
+claims:
+- notes.js:20-21
+covers:
+- R2
+rows:
+- run: rm -f notes.json && node notes.js add alpha && node notes.js add beta && node notes.js list
+  expect:
+    rc: 0
+    out: |
+      1
+      2
+      alpha
+      beta

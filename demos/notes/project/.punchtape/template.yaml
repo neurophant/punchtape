@@ -1,0 +1,45 @@
+# The document: copy me, edit, submit as .punchtape/inbox.yaml.
+# The machine merges by id — unlisted parts stand, a listed behavior
+# carries its whole head; the human's words enter .punchtape/demands.md,
+# the machine takes them itself.
+work: what broke, what was fixed, what was decided — the narrative of this submission
+# intents:   # every new demand line declares its outcome here, retold in prose
+#   - {lines: [D6], outcome: execute, prose: the retelling, run: "./tool --version"}
+# each outcome's carrier rides this document: answer→text, execute→run, work/describe→a requirement's lines, mark→a not-a-requirement entry, ask→open: awaiting
+# build: "./build all"   # one build command; it runs first
+# mandate: [{line: D12, target: seg/old}]   # the ordering line and the standing thing it permits to replace
+remove: []   # standing keys: R… requirements, behavior ids, D<n> markers-or-orders, "path:first-last" exclusions; a declared line is never redeclared
+# requirements:
+#   - id: R1             # R then letters, digits, dots
+#     lines: [D1..D3]    # the demand lines this requirement occupies
+#     prose: the unwinding of the demand in human words
+#     refines: R0        # the parent, when this is a decomposition
+# not-a-requirement — the marker a mark line claims:
+#   - lines: [D4]
+#     reason: a heading, not a demand
+# uncovered-lines:
+#   - {range: "gen/out.go:1-40", reason: generated code, refs: [D1]}
+# open:
+#   - {demand: D14, question: stage two?, state: awaiting}
+#   - {demand: D15, question: and three?, state: deferred, reason: the human said later}
+# notes:
+#   - kind: work         # directive | decision | exclusion | lesson | work
+#     text: a free-text note
+#     refs: [D1, R1, "law:done"]
+behaviors:
+  - id: tool/first   # [a-z0-9-] segments joined by /
+    name: one line
+    prose: what the user gets and why
+    claims: ["src/tool.go:12-48"]   # the behavior's exact lines of code
+    # covers: [R1]   # the requirements this behavior proves
+  rows:   # the run is the row's key — the same run replaces its row, unlisted rows stand
+  # a row retires only with its behavior whole: remove the id under its mandate and re-add it in one document
+    - run: "./tool src out"   # one command: a shell line or an argv list
+        expect:                 # rc absent wants 0; out/files pin exact bytes — rc alone pins nothing
+          rc: 0
+          out: "the exact bytes"   # "contains: " prefixes a substring; the unprefixed pin proves
+# The four of YAML cooking:
+# - a scalar holding ": " or a comma takes quotes: {out: "rc: 0"}, {reason: "done, not dead"}; tabs never indent.
+# - a flow list's element holding ":" takes quotes: [D1, "law:done"] — a bare law:done breaks the decode.
+# - a longer prose continues on the next line, indented deeper than its key.
+# - a multi-line pin stays one line: out: "first\nlast\n".

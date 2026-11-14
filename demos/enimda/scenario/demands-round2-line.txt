@@ -1,0 +1,1 @@
+enimda answers from the command line: python3 -m enimda.cli <image> prints the four borders.

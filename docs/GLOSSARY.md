@@ -397,7 +397,7 @@ bound to the law the contract prints, and every cited law one the
 contract prints. What is enforced is printed; what is printed is
 enforced.
 
-**Lesson** — one fixed red, fixed as pure data: the reason class,
+**Lesson** — one red turned green, fixed as pure data: the reason class,
 the row key, the broken facts, the row's bytes before and after
 (answered by the journal's row-bytes index), and the two run
 numbers. Written by the run record itself — zero tokens of any
@@ -571,7 +571,7 @@ document, the intents, the registry, the merge, the execution, the
 universe, the verdict, the faces, the pins, the damage, the
 constants — written in the canon, generated into the zone at the
 birth and refreshed whenever the canon changes. The full knowledge
-always under hand, so the agent never guesses.
+always at hand, so the agent never guesses.
 → canon, → contract, → template.
 
 **Refusal** — the machine's answer to a broken submission: one
@@ -593,12 +593,14 @@ requirements, markers, exclusions and orders together — the
 words' whole account sealed in one digest and carried by the
 verdict record.
 
-**Remove** — the document's retirement list, four spellings: a
+**Remove** — the document's retirement list, five spellings: a
 requirement id, a behavior id, a `D<n>` marker-or-order key, a
-`path:first-last` exclusion key. Every key must stand; removals
-retire first in the merge; retiring a requirement re-opens its
-lines and demands the same submission re-carry every cover of it;
-a behavior retires whole with its rows, under a → mandate.
+`path:first-last` exclusion key — and a fifth: any other spelling
+is refused, for it names nothing standing. Every key must
+stand; removals retire first in the merge; retiring a requirement
+re-opens its lines and demands the same submission re-claim every
+cover of it; a behavior retires whole with its rows, under a
+→ mandate.
 
 **Report** — `report.md`: the last fact-changing event's whole
 picture — for a run, the build's line, the executions, the green

@@ -1,0 +1,14 @@
+id: notes/persist
+name: state survives a restart
+prose: a note added in one process is listed by the next one
+claims:
+- notes.js:30-32
+covers:
+- R4
+rows:
+- run: rm -f notes.json && node notes.js add pinned && node notes.js list
+  expect:
+    rc: 0
+    out: |
+      1
+      pinned

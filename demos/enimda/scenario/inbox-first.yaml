@@ -1,0 +1,36 @@
+# The first document of the enimda session: the standing library
+# claimed whole — the version line and the border detection on the
+# fixtures. Submitted at step 3 of replay.sh.
+work: the standing library claimed whole; the version and the fixture borders
+intents:
+  - {lines: [D1], outcome: work, prose: the version line holds}
+  - {lines: [D2], outcome: work, prose: the fixture borders hold}
+remove: []
+requirements:
+  - id: R1
+    lines: [D1]
+    prose: the version line prints
+  - id: R2
+    lines: [D2]
+    prose: the borders on the fixtures print
+behaviors:
+  - id: lib/version
+    name: the version line
+    prose: the module reports its version
+    claims: ["enimda/__init__.py:1-12"]
+    covers: [R1]
+    rows:
+      - run: python3 -c "import enimda; print(enimda.__version__)"
+        expect: {rc: 0, out: "2.1.0\n"}
+  - id: lib/scan
+    name: the borders on the fixtures
+    prose: three fixtures scanned fast, offsets pinned
+    claims: ["enimda/__init__.py:13-134"]
+    covers: [R2]
+    rows:
+      - run: python3 -c "from enimda import ENIMDA; print(ENIMDA(fp='tests/fixed/bordered.jpg').scan(fast=True))"
+        expect: {rc: 0, out: "(4, 3, 3, 4)\n"}
+      - run: python3 -c "from enimda import ENIMDA; print(ENIMDA(fp='tests/fixed/clear.jpg').scan(fast=True))"
+        expect: {rc: 0, out: "(0, 0, 0, 0)\n"}
+      - run: python3 -c "from enimda import ENIMDA; print(ENIMDA(fp='tests/fixed/outlined.jpg').scan(fast=True))"
+        expect: {rc: 0, out: "(4, 2, 4, 4)\n"}

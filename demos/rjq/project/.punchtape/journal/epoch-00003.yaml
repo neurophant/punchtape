@@ -1,0 +1,42 @@
+---
+kind: submission
+submission:
+  corpus-version: 2
+  uncovered-lines:
+  - range: src/lib.rs:1-287
+    reason: the queue's runtime needs a live Redis; the offline document pins the connection-error contract through the CLI, and the library's own lines wait for a document that runs against a service
+    refs:
+    - D2
+  doc-addr: a345d12dc9afe60674ffbc6de6e03775cd4ad8b0293ee75b5a70c4af59e00189
+---
+kind: no-new-demands
+no-new-demands:
+  lines: 2
+  run: 3
+---
+kind: run
+run:
+  "n": 3
+  build:
+    exit: 0
+---
+kind: run
+run:
+  "n": 4
+  build:
+    exit: 0
+---
+kind: verdict
+verdict:
+  "n": 1
+  corpus-version: 2
+  signature: d9c1f6eb10c75c81173edba2b5836d402acb45500ff9f0d4bcc8fb719dcf73a4
+  registry-digest: 09bd39ab6b4e5e0236b0f47da2a34f721db9fc691918057ec83ff49554fcdd21
+  scopes:
+  - id: cli/status-err
+    pointer: 2af98c7a21cda088043f631c27b79e540b81e682b88dcd8e791ec9f368d36799
+  run: 4
+---
+kind: completion
+completed:
+  run: 4

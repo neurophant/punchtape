@@ -1,0 +1,87 @@
+---
+kind: submission
+submission:
+  corpus-version: 1
+  build: cargo build
+  intents:
+  - lines:
+    - D1
+    outcome: work
+    prose: the CLI reaches the queue through status
+  - lines:
+    - D2
+    outcome: work
+    prose: a failed ask prints the exact error line and exits one
+  requirements:
+  - id: R1
+    lines:
+    - D1
+    prose: the CLI reaches the queue through status
+  - id: R2
+    lines:
+    - D2
+    prose: a failed ask prints the exact error line and exits one
+  added:
+  - id: cli/status-err
+    addr: 20ea07ed74224b40abf28e1c0c6068b1f63a175193094e40ce9ee27d70688b04
+  doc-addr: e017fbb9466443f154ca811c49357ca7e5cddde686d850c11d72404fe7491d70
+---
+kind: no-new-demands
+no-new-demands:
+  lines: 2
+  run: 1
+---
+kind: run
+run:
+  "n": 1
+  build:
+    exit: 0
+  rows:
+  - key: cli/status-err/0
+    row: 1e2c78a85c6c38e41d44e62aa552e74a5f89facc41d46e42aa48fe3d005ba19d
+    status: red
+    exit: 0
+    facts:
+    - "exit: got 0, want 1"
+    proof: a9c999df577fb04c347c85638dfb3bde196166b946731dadc64191727f2a81ca
+  - key: cli/status-err/1
+    row: db72a84004b28b4d7c1cf35d453a75ee69a42f3a7357c6063ea8c74766e1bfc6
+    status: red
+    exit: 0
+    facts:
+    - "exit: got 0, want 1"
+    proof: c6d33c025d5f0847d9a7e007559ee82a027d2ae2057486a2b9f761515a3886e6
+---
+kind: run
+run:
+  "n": 2
+  build:
+    exit: 0
+  rows:
+  - key: cli/status-err/0
+    row: 1e2c78a85c6c38e41d44e62aa552e74a5f89facc41d46e42aa48fe3d005ba19d
+    status: green
+    exit: 1
+    proof: 9aab0bb6cfb6b3bf422bd8bf083591e6c1af36bf73011ce0ec69d67e16646e41
+  - key: cli/status-err/1
+    row: db72a84004b28b4d7c1cf35d453a75ee69a42f3a7357c6063ea8c74766e1bfc6
+    status: green
+    exit: 1
+    proof: 44a3c458af5732e53091a642073254690395ae7873856c60984fdf910b970abb
+  lessons:
+  - reason: "exit: got 0, want 1"
+    key: cli/status-err/0
+    facts:
+    - "exit: got 0, want 1"
+    red-row: "run: ./target/debug/rjq-cli redis://127.0.0.1:1/ q x\nexpect:\n  rc: 1\n  out: |\n    err Connection refused (os error 111)\n"
+    green-row: "run: ./target/debug/rjq-cli redis://127.0.0.1:1/ q x\nexpect:\n  rc: 1\n  out: |\n    err Connection refused (os error 111)\n"
+    red-run: 1
+    green-run: 2
+  - reason: "exit: got 0, want 1"
+    key: cli/status-err/1
+    facts:
+    - "exit: got 0, want 1"
+    red-row: "run: ./target/debug/rjq-cli garbage q x\nexpect:\n  rc: 1\n  out: |\n    err Redis URL did not parse\n"
+    green-row: "run: ./target/debug/rjq-cli garbage q x\nexpect:\n  rc: 1\n  out: |\n    err Redis URL did not parse\n"
+    red-run: 1
+    green-run: 2

@@ -1,0 +1,30 @@
+intents:
+- lines:
+  - D3
+  outcome: work
+  prose: the CLI prints the four borders
+work: the command-line feature; new lines claimed, the library untouched
+requirements:
+- id: R3
+  lines:
+  - D3
+  prose: the CLI prints the four borders of an image
+behaviors:
+- id: cli/borders
+  name: the command-line borders
+  prose: two fixtures through the CLI, offsets pinned
+  claims:
+  - enimda/cli.py:1-17
+  covers:
+  - R3
+  rows:
+  - run: python3 -m enimda.cli tests/fixed/bordered.jpg
+    expect:
+      rc: 0
+      out: |
+        4 3 3 4
+  - run: python3 -m enimda.cli tests/fixed/clear.jpg
+    expect:
+      rc: 0
+      out: |
+        0 0 0 0

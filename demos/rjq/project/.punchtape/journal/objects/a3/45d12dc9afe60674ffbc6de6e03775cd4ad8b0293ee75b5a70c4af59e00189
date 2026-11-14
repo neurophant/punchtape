@@ -1,0 +1,6 @@
+work: loud exclusion for the live-Redis library, then the completion act
+uncovered-lines:
+- range: src/lib.rs:1-287
+  reason: the queue's runtime needs a live Redis; the offline document pins the connection-error contract through the CLI, and the library's own lines wait for a document that runs against a service
+  refs:
+  - D2

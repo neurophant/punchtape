@@ -1,0 +1,22 @@
+[package]
+name = "rjq"
+version = "0.3.0"
+authors = ["Anton Smolin"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/embali/rjq/"
+homepage = "https://github.com/embali/rjq/"
+documentation = "https://docs.rs/rjq/"
+keywords = ["queue", "fifo", "job", "redis", "worker"]
+categories = ["algorithms", "concurrency", "development-tools"]
+description = """Redis job queue"""
+
+[badges]
+travis-ci = { repository = "embali/rjq" }
+
+[dependencies]
+redis = "0.8.0"
+uuid = { version = "0.5.0", features = ["v4"] }
+serde = "1.0.1"
+serde_json = "1.0.0"
+serde_derive = "1.0.1"

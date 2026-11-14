@@ -1,0 +1,20 @@
+digraph lifecycle {
+  graph [fontname="monospace", rankdir=TB, margin=0.3, splines=ortho, nodesep=0.4]
+  node [shape=box, fontname="monospace", fontsize=11]
+  edge [fontname="monospace", fontsize=9, arrowsize=0.7]
+  contract [label="the contract\n(the first run prints it)"]
+  demands [label="demands.md\n(the human's words)"]
+  inbox [label="inbox.yaml\n(the submission)"]
+  run [label="the run\n(checks execute)"]
+  report [label="report.md\n(what failed)"]
+  done [label="done: true\n(the sign-off)"]
+  verdict [label="the verdict\n(signed, standing)"]
+  views [label="state.md, spec\n(the standing pages)"]
+  contract -> demands -> inbox -> run
+  run -> report [label=" red", constraint=false]
+  report -> inbox [label=" fix", constraint=false]
+  run -> done [label=" green"]
+  done -> verdict
+  verdict -> views
+  views -> inbox [label=" the next task", style=dashed, constraint=false]
+}

@@ -1,0 +1,10 @@
+work: loud exclusions for the two uncovered files, then the completion act
+uncovered-lines:
+- range: AGENTS.md:1-9
+  reason: the machine's own marked block, not the work's source
+  refs:
+  - D1
+- range: notes.json:1-1
+  reason: runtime state of the notes utility, rows recreate it
+  refs:
+  - D4

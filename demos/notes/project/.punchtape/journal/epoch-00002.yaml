@@ -1,0 +1,124 @@
+---
+kind: submission
+submission:
+  corpus-version: 1
+  intents:
+  - lines:
+    - D1
+    outcome: work
+    prose: notes add saves a note and prints its number
+  - lines:
+    - D2
+    outcome: work
+    prose: notes list prints the notes oldest first
+  - lines:
+    - D3
+    outcome: work
+    prose: notes show prints one note
+  - lines:
+    - D4
+    outcome: work
+    prose: state lives in notes.json and survives a restart
+  requirements:
+  - id: R1
+    lines:
+    - D1
+    prose: add saves a note and prints its number
+  - id: R2
+    lines:
+    - D2
+    prose: list prints the notes one per line, oldest first
+  - id: R3
+    lines:
+    - D3
+    prose: show prints one note and refuses a missing one
+  - id: R4
+    lines:
+    - D4
+    prose: the state file survives a restart
+  added:
+  - id: notes/add
+    addr: 53a7200bd349eb95074ea5f85eb5f8b35a702cca488f4041a76580dbc010abe0
+  - id: notes/list
+    addr: 7dc1cde3356ec378f32e4b5eede871fd78d78fa55a7c75af25ec1a9db243da79
+  - id: notes/show
+    addr: b391276dd2473e1fd1e549d70e057a79139c693622105d780464f63463a72a6d
+  - id: notes/persist
+    addr: b9bcb318bec1e91cd3bb25161244b212804bbaaf2350a0b2f224edf7d0252d3b
+  doc-addr: 55906759cafd17bde821a5bde53a68793028d00fc44c141617268b1775d134f4
+---
+kind: no-new-demands
+no-new-demands:
+  lines: 4
+  run: 1
+---
+kind: run
+run:
+  "n": 1
+  rows:
+  - key: notes/add/0
+    row: 6ff2b976e15f0567c375be92a72c5069851591ce75ae6f55c1f61a415097f9f6
+    status: green
+    exit: 0
+    proof: d9d59e12b2f7d9d1b89faa2e325c9e68902876bdac23fb5c81986de7af9b8568
+  - key: notes/list/0
+    row: 04bf23ed8806d65df4d1e9d6fba844971cb56ef847b8496df617f95e68e79cda
+    status: red
+    exit: 0
+    facts:
+    - "stdout: want \"1\\n2\\nalpha\\nbeta\\n\", got \"1\\n2\\nbeta\\nalpha\\n\""
+    proof: 0d32699fb7dcd69ed9fdc8a2c0bc9aac9e6043137b37525e21f454ebbbecea98
+  - key: notes/show/0
+    row: 5569f9a2653ca7e7621dc208d922ed2b43355dd3d547519e183c0d6e4c133648
+    status: green
+    exit: 0
+    proof: d7447b8503c243bebd520fd2d38cd46294c152422d309d59998672aab0a584a0
+  - key: notes/show/1
+    row: f27008e6dc8979a75c59bdbd99883711bf591f8eee6a79a0a5f10975a963d0b5
+    status: red
+    exit: 0
+    facts:
+    - "exit: got 0, want 3"
+    proof: 579e17f9605a2196b0ad38ee8bfa2d0841a5c7ddb84be2bb10cd688c936ad583
+  - key: notes/persist/0
+    row: 63d61f0563512afbd14d5ad3a07ff04b51c5fe980eb2590b74ba9b7c0c16b391
+    status: green
+    exit: 0
+    proof: 17f0c961110d9efe374413c92b362c9d69661a9f9f70d8dc29db20a85d3295ab
+---
+kind: run
+run:
+  "n": 2
+  rows:
+  - key: notes/list/0
+    row: 04bf23ed8806d65df4d1e9d6fba844971cb56ef847b8496df617f95e68e79cda
+    status: green
+    exit: 0
+    proof: b8b064cb3c7b1dd7f9c849355c26c71cd755335ddac25ea41517cd1fb9a76845
+  - key: notes/show/0
+    row: 5569f9a2653ca7e7621dc208d922ed2b43355dd3d547519e183c0d6e4c133648
+    status: green
+    exit: 0
+    proof: 3d5cf57dea820b3d426855ec2d8ae96269dd3b7d3e8d769640f25dc63bc177df
+  - key: notes/show/1
+    row: f27008e6dc8979a75c59bdbd99883711bf591f8eee6a79a0a5f10975a963d0b5
+    status: green
+    exit: 3
+    proof: 57d66e2d9fa3a15ceeec8104faeef070a1fe67cafe6221e823ba9cd9637e96aa
+  lessons:
+  - reason: "stdout: want \"1\\n2\\nalpha\\nbeta\\n\", got \"1\\n2\\nbeta\\nalpha\\n\""
+    key: notes/list/0
+    facts:
+    - "stdout: want \"1\\n2\\nalpha\\nbeta\\n\", got \"1\\n2\\nbeta\\nalpha\\n\""
+    red-row: "run: rm -f notes.json && node notes.js add alpha && node notes.js add beta && node notes.js list\nexpect:\n  rc: 0\n  out: |\n    1\n    2\n    alpha\n    beta\n"
+    green-row: "run: rm -f notes.json && node notes.js add alpha && node notes.js add beta && node notes.js list\nexpect:\n  rc: 0\n  out: |\n    1\n    2\n    alpha\n    beta\n"
+    red-run: 1
+    green-run: 2
+  - reason: "exit: got 0, want 3"
+    key: notes/show/1
+    facts:
+    - "exit: got 0, want 3"
+    red-row: "run: node notes.js show 9\nexpect:\n  rc: 3\n"
+    green-row: "run: node notes.js show 9\nexpect:\n  rc: 3\n"
+    red-run: 1
+    green-run: 2
