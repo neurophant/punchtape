@@ -1,0 +1,47 @@
+# Gouija Relay Node Dockerfile
+# Multi-stage build for minimal image size
+
+# Build stage
+FROM golang:1.24-alpine AS builder
+
+RUN apk add --no-cache git
+
+WORKDIR /build
+
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the binary
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o gouija ./cmd/gouija
+
+# Runtime stage
+FROM alpine:3.19
+
+RUN apk add --no-cache ca-certificates tzdata
+
+# Create non-root user
+RUN adduser -D -H -s /sbin/nologin gouija
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /build/gouija /app/gouija
+
+# Set ownership
+RUN chown -R gouija:gouija /app
+
+USER gouija
+
+# Default port for relay
+EXPOSE 8080
+
+# Environment variables (can be overridden)
+ENV GOUIJA_QUIET=1
+
+# Default command - relay mode
+ENTRYPOINT ["/app/gouija", "relay"]
+CMD ["--listen", ":8080"]

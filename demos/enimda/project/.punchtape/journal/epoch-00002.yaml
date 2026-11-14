@@ -1,0 +1,75 @@
+---
+kind: submission
+submission:
+  corpus-version: 1
+  intents:
+  - lines:
+    - D1
+    outcome: work
+    prose: the version line holds
+  - lines:
+    - D2
+    outcome: work
+    prose: the fixture borders hold
+  requirements:
+  - id: R1
+    lines:
+    - D1
+    prose: the version line prints
+  - id: R2
+    lines:
+    - D2
+    prose: the borders on the fixtures print
+  added:
+  - id: lib/version
+    addr: 2e080298049cc491cf3eff6eeaf23ce1293fa09910923e988d3eacd1115e4801
+  - id: lib/scan
+    addr: 9c229b85b735f8e42c0590c209e269330b88702a8e78e4cd346c122a018e7655
+  doc-addr: 4293c64e9ab42a11c33742fa94e9d0a51c2f450966ff06c7b7ad68dff6725d7c
+---
+kind: no-new-demands
+no-new-demands:
+  lines: 2
+  run: 1
+---
+kind: run
+run:
+  "n": 1
+  rows:
+  - key: lib/version/0
+    row: bc38d3e745bab29ed4fec12e242e36d10d11ff7bf58072328155753498ceb90c
+    status: green
+    exit: 0
+    proof: 728eec9f7b0ecf27bbb7036acc56f436d9d1eb06a4da4067980a47816331aaeb
+  - key: lib/scan/0
+    row: cc4b6503ef131be84e462adf88bd832828688022166d54fd172f7f9dda1316df
+    status: green
+    exit: 0
+    proof: 6e95a81b31659cee9aa44bfad2b1195356be2806b26fd0fbb5dcf05c51c7250e
+  - key: lib/scan/1
+    row: 8f758cdd4aab5bb551d994685776ca49a24ab5b8d0947751ddd5785590c5b53e
+    status: green
+    exit: 0
+    proof: 6e94f1435749c92c2e735ba79f8be08c1e84ad83f112223c39415a0929d9db52
+  - key: lib/scan/2
+    row: 6ef742b7ca666ee8b292bbb9aca1f4ab5c9207db74c816bd5509becf64660ebd
+    status: green
+    exit: 0
+    proof: 88dc08218a2e52a1731b969139ded5f48b40948bb88838493fcd32d19084fb1d
+---
+kind: verdict
+verdict:
+  "n": 1
+  corpus-version: 1
+  signature: 9ec0cda00d35bd7ced81aa589a9899937057e745cc79bf5ca8c17c8bd1252588
+  registry-digest: fa39a3e616a5ee726f793b121fc815b8b8332c5bba72e31affff8f08f4b3272a
+  scopes:
+  - id: lib/scan
+    pointer: 67821d943546179eb14694a2fb1b0c7b136f19e8098a0d0cbbf9d55db533fcd5
+  - id: lib/version
+    pointer: 963fa7269ac23b7b3615587c16574c8cbe2343e134144a2a77edb20407e1b169
+  run: 1
+---
+kind: completion
+completed:
+  run: 1

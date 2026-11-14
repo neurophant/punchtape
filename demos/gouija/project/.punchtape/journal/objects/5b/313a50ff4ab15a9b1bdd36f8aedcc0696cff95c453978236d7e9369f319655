@@ -1,0 +1,10 @@
+work: loud exclusions for the start-up paths, then the completion act
+uncovered-lines:
+- range: cmd/gouija/main.go:218-368
+  reason: relay start-up; its refusals log to stderr with a wall clock, so no exact-bytes pin exists yet; a future document claims it with fixtures
+  refs:
+  - law:proof
+- range: cmd/gouija/main.go:369-474
+  reason: proxy start-up and shutdown handling; same missing pin as relay; a future document claims it with fixtures
+  refs:
+  - law:proof

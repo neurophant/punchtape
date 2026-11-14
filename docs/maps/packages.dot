@@ -1,0 +1,47 @@
+digraph packages {
+  graph [fontname="monospace", rankdir=TB, margin=0.3, nodesep=0.6, ranksep=0.7, splines=ortho]
+  node [shape=box, fontname="monospace", fontsize=11]
+  edge [fontname="monospace", fontsize=9, arrowsize=0.7]
+  "github.com/neurophant/punchtape/internal/application" [label="application"]
+  "github.com/neurophant/punchtape/internal/domain/fprint" [label="domain/fprint"]
+  "github.com/neurophant/punchtape/internal/infrastructure/store" [label="infrastructure/store"]
+  "github.com/neurophant/punchtape/internal/infrastructure/store/cas" [label="infrastructure/store/cas"]
+  "github.com/neurophant/punchtape/internal/domain" [label="domain"]
+  "github.com/neurophant/punchtape/internal/domain/doc" [label="domain/doc"]
+  "github.com/neurophant/punchtape/internal/domain/journal" [label="domain/journal"]
+  "github.com/neurophant/punchtape/internal/application/canon" [label="application/canon"]
+  "github.com/neurophant/punchtape/internal/domain/zone" [label="domain/zone"]
+  "github.com/neurophant/punchtape/internal/infrastructure/process" [label="infrastructure/process"]
+  "github.com/neurophant/punchtape/cmd/punchtape" [label="cmd/punchtape"]
+  { rank=same;
+ "github.com/neurophant/punchtape/internal/infrastructure/store"; "github.com/neurophant/punchtape/internal/infrastructure/store/cas"; "github.com/neurophant/punchtape/internal/infrastructure/process"; }
+  { rank=same;
+ "github.com/neurophant/punchtape/internal/application"; "github.com/neurophant/punchtape/internal/application/canon"; }
+  { rank=same;
+ "github.com/neurophant/punchtape/cmd/punchtape"; }
+  { rank=same;
+ "github.com/neurophant/punchtape/internal/domain/fprint"; "github.com/neurophant/punchtape/internal/domain"; "github.com/neurophant/punchtape/internal/domain/doc"; "github.com/neurophant/punchtape/internal/domain/journal"; "github.com/neurophant/punchtape/internal/domain/zone"; }
+  "github.com/neurophant/punchtape/internal/domain/journal" -> "github.com/neurophant/punchtape/internal/domain" [constraint=false]
+  "github.com/neurophant/punchtape/internal/application" -> "github.com/neurophant/punchtape/internal/infrastructure/store/cas"
+  "github.com/neurophant/punchtape/internal/application" -> "github.com/neurophant/punchtape/internal/application/canon" [constraint=false]
+  "github.com/neurophant/punchtape/internal/application" -> "github.com/neurophant/punchtape/internal/domain/journal"
+  "github.com/neurophant/punchtape/internal/application/canon" -> "github.com/neurophant/punchtape/internal/domain/doc"
+  "github.com/neurophant/punchtape/internal/infrastructure/process" -> "github.com/neurophant/punchtape/internal/domain/doc"
+  "github.com/neurophant/punchtape/internal/domain/journal" -> "github.com/neurophant/punchtape/internal/infrastructure/store/cas"
+  "github.com/neurophant/punchtape/internal/application" -> "github.com/neurophant/punchtape/internal/domain/fprint"
+  "github.com/neurophant/punchtape/internal/application" -> "github.com/neurophant/punchtape/internal/domain/doc"
+  "github.com/neurophant/punchtape/internal/application" -> "github.com/neurophant/punchtape/internal/domain/zone"
+  "github.com/neurophant/punchtape/internal/domain/doc" -> "github.com/neurophant/punchtape/internal/application"
+  "github.com/neurophant/punchtape/internal/domain/fprint" -> "github.com/neurophant/punchtape/internal/domain/zone" [constraint=false]
+  "github.com/neurophant/punchtape/internal/domain/journal" -> "github.com/neurophant/punchtape/internal/domain/doc" [constraint=false]
+  "github.com/neurophant/punchtape/internal/domain/doc" -> "github.com/neurophant/punchtape/internal/infrastructure/store/cas"
+  "github.com/neurophant/punchtape/internal/application" -> "github.com/neurophant/punchtape/internal/domain"
+  "github.com/neurophant/punchtape/internal/domain/fprint" -> "github.com/neurophant/punchtape/internal/domain" [constraint=false]
+  "github.com/neurophant/punchtape/internal/domain/doc" -> "github.com/neurophant/punchtape/internal/domain/fprint" [constraint=false]
+  "github.com/neurophant/punchtape/internal/application" -> "github.com/neurophant/punchtape/internal/infrastructure/process"
+  "github.com/neurophant/punchtape/internal/application" -> "github.com/neurophant/punchtape/internal/infrastructure/store"
+  "github.com/neurophant/punchtape/internal/infrastructure/store" -> "github.com/neurophant/punchtape/internal/domain/journal"
+  "github.com/neurophant/punchtape/internal/domain/journal" -> "github.com/neurophant/punchtape/internal/application"
+  "github.com/neurophant/punchtape/internal/domain/doc" -> "github.com/neurophant/punchtape/internal/domain/zone" [constraint=false]
+  "github.com/neurophant/punchtape/cmd/punchtape" -> "github.com/neurophant/punchtape/internal/application"
+}

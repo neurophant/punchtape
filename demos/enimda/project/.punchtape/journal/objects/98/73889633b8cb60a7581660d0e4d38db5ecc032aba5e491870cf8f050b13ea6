@@ -1,0 +1,18 @@
+id: cli/borders
+name: the command-line borders
+prose: two fixtures through the CLI, offsets pinned
+claims:
+- enimda/cli.py:1-17
+covers:
+- R3
+rows:
+- run: python3 -m enimda.cli tests/fixed/bordered.jpg
+  expect:
+    rc: 0
+    out: |
+      4 3 3 4
+- run: python3 -m enimda.cli tests/fixed/clear.jpg
+  expect:
+    rc: 0
+    out: |
+      0 0 0 0

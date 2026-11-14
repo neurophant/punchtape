@@ -1,0 +1,40 @@
+---
+kind: submission
+submission:
+  corpus-version: 2
+  uncovered-lines:
+  - range: AGENTS.md:1-9
+    reason: the machine's own marked block, not the work's source
+    refs:
+    - D1
+  - range: notes.json:1-1
+    reason: runtime state of the notes utility, rows recreate it
+    refs:
+    - D4
+  doc-addr: cd67535896edee6bbe205234ff225efeea5a522512bc615be597eb92593cea1f
+---
+kind: no-new-demands
+no-new-demands:
+  lines: 4
+  run: 3
+---
+kind: verdict
+verdict:
+  "n": 1
+  corpus-version: 2
+  signature: 2cb5bbe8a1f602d9b69ec6bc626cb9ffa07f6458659407824148e4e07c13b692
+  registry-digest: 88c5a3659d174063141cae64787181c5d3e844ae4bb3b8abc98c42180583e10d
+  scopes:
+  - id: notes/add
+    pointer: e89f52e444291f2da93b664f4c8604218b5a337baf9f9541fdf75a0aabdc337b
+  - id: notes/list
+    pointer: 46832763864d69360be3e1f88a3f79c9d9dcbcaf58468c045122958f97c170ae
+  - id: notes/persist
+    pointer: db3428fe8d955ab6e6b2525d042409f845c692bd314613e87c994dcb6c3f9d10
+  - id: notes/show
+    pointer: 128de6075a9a981e49fc68aa8c78686e27de2282b9059a8703b148f30d210274
+  run: 2
+---
+kind: completion
+completed:
+  run: 2

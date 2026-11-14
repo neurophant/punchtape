@@ -1,0 +1,10 @@
+# The second document of the gouija backfill: loud exclusions for the
+# start-up paths no byte-exact pin can hold yet. Submitted at step 4 of
+# replay.sh. Both modes refuse a missing key by writing to the log —
+# the log line carries a wall clock, so stdout stays empty and the pin
+# law refuses the row. The exclusion says so, with its reason.
+work: loud exclusions for the start-up paths, then the completion act
+remove: []
+uncovered-lines:
+  - {range: "cmd/gouija/main.go:218-368", reason: "relay start-up; its refusals log to stderr with a wall clock, so no exact-bytes pin exists yet; a future document claims it with fixtures", refs: ["law:proof"]}
+  - {range: "cmd/gouija/main.go:369-474", reason: "proxy start-up and shutdown handling; same missing pin as relay; a future document claims it with fixtures", refs: ["law:proof"]}

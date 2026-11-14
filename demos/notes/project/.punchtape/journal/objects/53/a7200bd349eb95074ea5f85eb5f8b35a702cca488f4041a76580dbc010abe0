@@ -1,0 +1,14 @@
+id: notes/add
+name: add saves a note and prints its number
+prose: two adds number 1 then 2
+claims:
+- notes.js:1-19
+covers:
+- R1
+rows:
+- run: rm -f notes.json && node notes.js add hello && node notes.js add world
+  expect:
+    rc: 0
+    out: |
+      1
+      2

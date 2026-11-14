@@ -1,0 +1,66 @@
+# Gouija Docker Compose
+# Unified configuration for both proxy and relay nodes
+#
+# Usage:
+#   1. Generate environment file:
+#      ./generate-env.sh
+#
+#   2. Deploy proxy node only (on external server):
+#      docker compose up -d gouija-proxy
+#
+#   3. Deploy relay node only (on local machine):
+#      docker compose up -d gouija-relay
+#
+#   4. Deploy both (for local testing):
+#      docker compose up -d
+#
+#   5. View logs:
+#      docker compose logs -f gouija-proxy
+#      docker compose logs -f gouija-relay
+
+services:
+  gouija-proxy:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.proxy
+    image: gouija-proxy:latest
+    container_name: gouija-proxy
+    restart: unless-stopped
+    ports:
+      - "${PROXY_PORT:-9000}:${PROXY_PORT:-9000}"
+    env_file:
+      - .env
+    environment:
+      - GOUIJA_QUIET=1
+    command:
+      - "--listen"
+      - ":${PROXY_PORT:-9000}"
+      - "--transport"
+      - "${TRANSPORT:-tcp}"
+      - "--require-auth"
+
+  gouija-relay:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.relay
+    image: gouija-relay:latest
+    container_name: gouija-relay
+    restart: unless-stopped
+    ports:
+      - "${RELAY_PORT:-8080}:${RELAY_PORT:-8080}"
+    env_file:
+      - .env
+    environment:
+      - GOUIJA_QUIET=1
+    command:
+      - "--listen"
+      - ":${RELAY_PORT:-8080}"
+      - "--proxy-addr"
+      - "${PROXY_ADDR:-gouija-proxy:9000}"
+      - "--transport"
+      - "${TRANSPORT:-tcp}"
+      - "--require-auth"
+      - "--pool-size"
+      - "${POOL_SIZE:-5}"
+    depends_on:
+      - gouija-proxy

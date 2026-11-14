@@ -1,0 +1,48 @@
+---
+kind: submission
+submission:
+  corpus-version: 2
+  uncovered-lines:
+  - range: cmd/gouija/main.go:218-368
+    reason: relay start-up; its refusals log to stderr with a wall clock, so no exact-bytes pin exists yet; a future document claims it with fixtures
+    refs:
+    - law:proof
+  - range: cmd/gouija/main.go:369-474
+    reason: proxy start-up and shutdown handling; same missing pin as relay; a future document claims it with fixtures
+    refs:
+    - law:proof
+  doc-addr: 5b313a50ff4ab15a9b1bdd36f8aedcc0696cff95c453978236d7e9369f319655
+---
+kind: no-new-demands
+no-new-demands:
+  lines: 2
+  run: 2
+---
+kind: run
+run:
+  "n": 2
+  build:
+    exit: 0
+---
+kind: run
+run:
+  "n": 3
+  build:
+    exit: 0
+---
+kind: verdict
+verdict:
+  "n": 1
+  corpus-version: 2
+  signature: 9adf209abb3741a71e7bd610fe54b84c2d79dd3fee82a5459887e77785e37f41
+  registry-digest: 9aa27c64c58081bb289ba544530f7c88fdc213c4a6059503b32d3c79fea7b45e
+  scopes:
+  - id: cli/usage
+    pointer: 467d33a0da7098c596f0bf43e58db27c41a280f00cb382b5ec45fe67114ee656
+  - id: cli/version
+    pointer: 3bd56d1c8b4f3f7f2561658b6798200c6bdc1d218beff79a6101acdeb279acf1
+  run: 3
+---
+kind: completion
+completed:
+  run: 3

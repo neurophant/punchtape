@@ -1,0 +1,46 @@
+intents:
+- lines:
+  - D1
+  outcome: work
+  prose: the version line prints and holds
+- lines:
+  - D2
+  outcome: work
+  prose: the usage page prints and holds
+work: first document of the backfill; the CLI's printed contract, pinned where bytes are exact
+build: go build -o gouija-demo ./cmd/gouija
+requirements:
+- id: R1
+  lines:
+  - D1
+  prose: the version line prints
+- id: R2
+  lines:
+  - D2
+  prose: the usage page prints
+behaviors:
+- id: cli/version
+  name: the version line
+  prose: version prints the exact line and exits zero
+  claims:
+  - cmd/gouija/main.go:1-61
+  covers:
+  - R1
+  rows:
+  - run: ./gouija-demo version
+    expect:
+      rc: 0
+      out: |
+        gouija version 1.3.0
+- id: cli/usage
+  name: the usage page
+  prose: help prints the whole usage page to stdout and exits zero
+  claims:
+  - cmd/gouija/main.go:62-217
+  covers:
+  - R2
+  rows:
+  - run: ./gouija-demo help
+    expect:
+      rc: 0
+      out: "Gouija - Two-stage encrypted proxy\n\nUsage:\n  gouija <mode> [options]\n\nModes:\n  relay    Run as HTTP proxy, forward encrypted traffic to proxy node\n  proxy    Run as proxy node, decrypt and forward to target resources\n\nCommon Options:\n  --quiet              Suppress informational logging (errors still logged)\n\nRelay Mode:\n  gouija relay [options]\n\n  Basic Options:\n    --listen <addr>      Address to listen on (default: :8080)\n    --proxy-addr <addr>  Address of proxy node (required)\n    --key <key>          Pre-shared encryption key (or set GOUIJA_KEY env)\n    --salt <salt>        Custom salt for key derivation (or set GOUIJA_SALT env)\n    --pool-size <n>      Target number of connections to proxy (default: 5)\n    --timeout <duration> Connection timeout (default: 30s)\n    --transport <mode>   Transport mode: tcp or ws (default: tcp)\n    --ws-path <path>     WebSocket endpoint path (default: /ws)\n    --tls                Use TLS for WebSocket transport (wss://)\n    --auth-user <user>   HTTP Proxy authentication username (optional)\n    --auth-pass <pass>   HTTP Proxy authentication password (optional)\n    --require-auth       Require challenge-response authentication with proxy node\n    --quiet              Suppress informational logging\n\n  Connection Management - Connection Pacing:\n    --conn-pacing <duration>    Delay between new connections (default: 500ms)\n    --max-concurrent-dials <n>  Max simultaneous dial attempts (default: 2)\n\n  Connection Management - Exponential Backoff:\n    --backoff-initial <duration>  Initial backoff interval (default: 5s)\n    --backoff-max <duration>      Maximum backoff interval (default: 120s)\n    --backoff-multiplier <n>      Backoff multiplier (default: 2.0)\n    --backoff-jitter <n>          Jitter factor 0-1 (default: 0.2 = ±20%)\n\n  Adaptive Pool Sizing:\n    --min-pool-size <n>      Minimum number of connections (default: 1)\n    --max-pool-size <n>      Maximum number of connections (default: 10)\n    --growth-threshold <n>   Grow pool when utilization exceeds (default: 0.8)\n    --shrink-threshold <n>   Shrink pool when utilization below (default: 0.2)\n\n  TCP Settings:\n    --keepalive              Enable TCP keepalive (default: true)\n    --keepalive-interval <d> TCP keepalive interval (default: 30s)\n\n  Bandwidth Throttling:\n    --max-bandwidth <n>   Maximum bandwidth in bytes/second (default: 0 = unlimited)\n    --burst-size <n>      Maximum burst size in bytes (default: 64KB)\n\nProxy Mode:\n  gouija proxy [options]\n\n  Options:\n    --listen <addr>      Address to listen on (default: :9000)\n    --key <key>          Pre-shared encryption key (or set GOUIJA_KEY env)\n    --salt <salt>        Custom salt for key derivation (or set GOUIJA_SALT env)\n    --timeout <duration> Connection timeout (default: 30s)\n    --transport <mode>   Transport mode: tcp or ws (default: tcp)\n    --ws-path <path>     WebSocket endpoint path (default: /ws)\n    --tls-cert <path>    TLS certificate file (for wss:// server)\n    --tls-key <path>     TLS private key file (for wss:// server)\n    --require-auth       Require challenge-response authentication from relay nodes\n    --quiet              Suppress informational logging\n\n  TCP Settings:\n    --keepalive              Enable TCP keepalive (default: true)\n    --keepalive-interval <d> TCP keepalive interval (default: 30s)\n\nTransport Modes:\n  tcp    Raw TCP connection (default, best performance)\n  ws     WebSocket over HTTP/HTTPS\n\nAuthentication:\n  There are two types of authentication:\n  \n  1. HTTP Proxy Authentication (--auth-user/--auth-pass):\n     Protects the relay node from unauthorized HTTP clients.\n     Clients must provide credentials to use the proxy.\n  \n  2. Proxy Node Authentication (--require-auth):\n     Protects the proxy node from unauthorized relay nodes.\n     Uses challenge-response HMAC authentication based on the pre-shared key.\n     Both relay and proxy must use --require-auth for this to work.\n\nConnection Management Features:\n  1. Connection Pacing: Spreads connection establishment over time instead\n     of creating all connections simultaneously at startup.\n\n  2. Exponential Backoff: When connections fail, uses increasing delays\n     between retries instead of fixed intervals. Includes jitter to prevent\n     \"thundering herd\" problems.\n\n  3. Adaptive Pool Sizing: Automatically grows/shrinks the connection pool\n     based on utilization, reducing unnecessary connections.\n\n  4. Bandwidth Throttling: Optional rate limiting to smooth traffic bursts.\n\nExamples:\n  # TCP mode (default) - Start proxy node\n  gouija proxy --listen :9000 --key \"my-secret-key\"\n\n  # TCP mode - Start relay node with HTTP proxy authentication\n  gouija relay --listen :8080 --proxy-addr proxy.example.com:9000 --key \"my-secret-key\" \\\n    --auth-user myuser --auth-pass mypassword\n\n  # Conservative configuration with connection management\n  gouija relay --listen :8080 --proxy-addr proxy.example.com:9000 --key \"my-secret-key\" \\\n    --pool-size 3 --conn-pacing 1s --max-concurrent-dials 1\n\n  # With custom salt for key derivation\n  gouija proxy --listen :9000 --key \"my-secret-key\" --salt \"my-custom-salt-2024\"\n  gouija relay --listen :8080 --proxy-addr proxy.example.com:9000 --key \"my-secret-key\" --salt \"my-custom-salt-2024\"\n\n  # With proxy node authentication (both sides must enable it)\n  gouija proxy --listen :9000 --key \"my-secret-key\" --require-auth\n  gouija relay --listen :8080 --proxy-addr proxy.example.com:9000 --key \"my-secret-key\" --require-auth\n\n  # WebSocket mode - Start proxy on port 443 with TLS\n  gouija proxy --listen :443 --key \"secret\" --transport ws --tls-cert cert.pem --tls-key key.pem\n\n  # WebSocket mode - Start relay connecting via WSS\n  gouija relay --listen :8080 --proxy-addr proxy.example.com:443 --key \"secret\" --transport ws --tls\n\n  # With bandwidth throttling (10 MB/s limit)\n  gouija relay --listen :8080 --proxy-addr proxy.example.com:9000 --key \"secret\" \\\n    --max-bandwidth 10485760\n\n  # Using environment variables\n  export GOUIJA_KEY=\"my-secret-key\"\n  export GOUIJA_SALT=\"my-custom-salt\"\n  export GOUIJA_AUTH_USER=\"myuser\"\n  export GOUIJA_AUTH_PASS=\"mypassword\"\n  gouija relay --proxy-addr proxy.example.com:9000\n\n  # Quiet mode for better performance\n  gouija proxy --listen :9000 --key \"secret\" --quiet\n  gouija relay --listen :8080 --proxy-addr proxy.example.com:9000 --key \"secret\" --quiet\n\n  # Client usage with HTTP proxy authentication\n  curl -x http://myuser:mypassword@localhost:8080 https://example.com\n\nEnvironment Variables:\n  GOUIJA_KEY        Pre-shared encryption key (alternative to --key flag)\n  GOUIJA_SALT       Custom salt for key derivation (alternative to --salt flag)\n  GOUIJA_AUTH_USER  HTTP Proxy authentication username (alternative to --auth-user)\n  GOUIJA_AUTH_PASS  HTTP Proxy authentication password (alternative to --auth-pass)\n  GOUIJA_QUIET      Set to \"1\" or \"true\" to enable quiet mode\n"

@@ -6,37 +6,134 @@
 # <img src="docs/img/wordmark.png" width="340" alt="punchtape">
 **English** · [Русский](README.ru.md) · [中文](README.zh.md)
 
+**Your AI writes the code. punchtape makes it get the entire job
+done — start to finish, with every claim proven.**
+
 ![punchtape demo](docs/img/demo-agent.gif)
 
-*Your words go in verbatim. The machine runs every check itself. The agent
-cannot declare done — it can only make done true.*
+*Your words are taken down word for word. The machine runs every
+check itself. The agent cannot declare done — it can only make
+done true.*
 
-**Your AI writes the code. punchtape checks it — and does not stop
-until "done" is really done.**
+punchtape is a small state machine for your computer. Your AI
+assistant runs it while working. The machine runs real checks of
+the AI's work, tells the AI what to fix, and records the finish
+when every check passes. You read the result — you do not check
+anything yourself.
 
-punchtape is a small program for your computer. Your AI assistant
-runs it while it works. The program runs real checks of the AI's
-work, tells the AI what to fix, and records the finish when every
-check passes. You read the result — you do not check anything
-yourself.
-
-This is not another harness, and it has nothing to do with
-harnesses. The harness runs your assistant's conversation;
-punchtape is an external transactional state machine: one program
-beside your project that owns the task's state — the words, the
-checks, the facts, the recorded finishes — and drives the agent
-through the work from the first line to the sealed end. Not a
-plugin and not a library inside the agent: an arbiter on the
-outside. Whatever environment your assistant lives in stays
-exactly what it is; punchtape adds the one thing it lacks — a
-party outside the conversation that owns the task's truth.
+Whether you use Cursor, Claude Code, Windsurf, Aider, GLM or Kimi
+— any agent that can run a shell — this is for you, and your
+setup stays exactly as it is. punchtape is not another harness and not a plugin
+inside the agent: it stands beside your project as the outside
+party. It keeps the whole record of the task and drives the agent
+through the work until the job is actually done. In precise terms, it is an
+external transactional state machine: the arbiter stands outside
+the conversation, and that outside position is the whole point.
 
 Free. MIT license. Linux and macOS. Works offline. No account.
+
+## Try it
+
+You need two things — your AI assistant and Linux or macOS.
+Nothing else. Prefer to look first? The [demos](demos/) below
+open without installing anything.
+
+Ready to run? Three steps:
+
+1. Open the folder the work will live in — a new empty one, or
+   your existing project.
+2. Paste this line to your assistant. It installs the machine and
+   sets everything up by itself:
+
+```text
+Read https://github.com/neurophant/punchtape/blob/main/docs/BOOTSTRAP.md and act by it.
+```
+
+3. Describe what you want in ordinary words. A new task, for
+   example:
+
+```text
+Make a notes utility: notes add <text> saves a note and prints its number;
+notes list prints the notes one per line, oldest first; notes show <number>
+prints one note; state lives in notes.json and survives a restart.
+```
+
+Or a project that already exists:
+
+```text
+Bring this repo under punchtape: read the code, write checks for the behavior that already exists, make them all pass.
+```
+
+That's it. The assistant and the machine do the work; you read
+the result.
+
+Installing by hand instead: one command in a terminal —
+
+```bash
+curl -fsSL https://github.com/neurophant/punchtape/releases/latest/download/get-punchtape.sh | bash
+```
+
+It downloads one small binary, verifies its checksum, and puts
+one command — `punchtape` — into `~/.local/bin`. No admin rights,
+no account; once per computer.
+
+Every scenario — a new project, a standing repo, a feature, a bug,
+a new model, a handover — is walked in **[docs/USAGE.md](docs/USAGE.md)**,
+with a ready prompt for each and the team cookbook.
+
+## The problem it solves
+
+This is what normally happens:
+
+1. You give a task to your AI.
+2. The AI answers: "Done! All tested!"
+3. The first check against your own words shows otherwise: bugs,
+   missing pieces, half of the ask quietly dropped.
+4. You send it back. "Done! All tested!" — still not. And again.
+   And again.
+5. The loop is yours: check, send back, re-check — until the
+   result comes close to what you actually asked for.
+
+That is not bad luck. An AI left alone grades its own homework:
+it writes, declares success, and moves on — the claim "done"
+costs it nothing. Proving the claim has always been your job.
+punchtape takes that job away: your words become the law of the
+task, each claim is measured by running it, and the work cannot
+end until it is genuinely finished.
+
+## The solution
+
+- You write your task in normal words. Your assistant puts your
+  words — unchanged, one line each — into `.punchtape/demands.md`;
+  the machine takes them from the file itself and verifies the
+  recorded words on every run: editing any recorded word stops
+  the machine.
+- Next to the code, the assistant writes a document describing the
+  work: what each line of your task means, which requirements the
+  words become, and for each behavior, a check: a real command,
+  the exact output it must print, and the exact code lines it
+  stands behind.
+- The machine runs the checks itself, in your project folder, and
+  compares bytes. A check passes or fails — the machine sees the
+  real result and never asks the AI.
+- A failed check lands in `.punchtape/report.md` — what was
+  expected, what actually happened. The assistant reads it, fixes
+  the code or the checks. Repeat.
+- When everything passes, the assistant sends one line —
+  `done: true` — and the machine re-checks everything and records
+  the finish with a checksum, in files inside your project.
+- Words, checks, results, finishes — all of it is written into
+  `.punchtape/`, the zone: the machine's own folder inside your
+  project. Nothing is stored in any cloud. Copy the folder — the
+  whole history moves with it, byte-identical.
+
+You never learn commands. The AI runs the machine; you write
+prompts as always.
 
 ## The numbers, measured
 
 Three rounds of field tests — real tasks, one group working with
-the program, one without, independent blind judges — published as
+the machine, one without, independent blind judges — published as
 a paper (a preprint, not peer-reviewed; the methodology and the
 raw campaign data are open):
 
@@ -49,291 +146,140 @@ raw campaign data are open):
 
 | per 25 tasks | without punchtape | with punchtape |
 |---|---|---|
-| human-style acceptances | 32 | 2 |
+| times you had to verify and accept the work | 32 | 2 |
 | your verifying time (est.) | 4.4–7.3 h | 0.8–1.3 h |
 | total task cost | 5–19× higher | baseline |
 | tasks accepted on first submission | — | 25 of 25 |
 
-Blind judges checked 1720 points across both groups and found 0
-missing in each. All numbers, year by year:
+Blind judges checked 1720 points across both groups and found
+nothing missing in either group. All numbers, series by series:
 **[docs/METRICS.md](docs/METRICS.md)**; how the tests were run:
 **[docs/RESEARCH.md](docs/RESEARCH.md)**.
 
-## The problem it solves
+## Demos — read a session without installing anything
 
-This is what normally happens:
+Four recorded cases, each a real run of this version. The full
+session record — the whole `.punchtape/` folder — sits in the
+repository, and each case's `replay.sh` replays it from scratch
+on your machine:
 
-1. You give a task to your AI.
-2. The AI answers: "Done! All tested!"
-3. You check the work yourself. This takes 30–60 minutes.
-4. You find two bugs and one missing feature.
-5. You send it back. Repeat tomorrow.
-
-Step 3 is the expensive part. Not the writing — the checking. And
-it is always your job. punchtape takes step 3 away: the program
-runs the checks, not you, and it will not record the finish while
-anything is broken, missing or silently skipped.
-
-## How it works, concretely
-
-- You write your task in normal words. Example: *"Make a notes
-  utility: notes add saves a note…"* Your assistant puts your
-  words — unchanged, one line each — into `.punchtape/demands.md`.
-- Next to the code, your assistant writes a document describing
-  the work: what each line of your task means (its outcome:
-  work, answer, question…), which requirements the words become,
-  and for each piece of behavior a check — a real command plus
-  the exact output it must print.
-- The program takes your words from the file itself (the agent
-  never retypes them into documents), runs the checks itself, in
-  your project folder, and compares bytes. A check passes or
-  fails — the program sees the real result, it never asks the AI.
-- If a check fails, the program tells the AI exactly what was
-  expected and what actually happened. The AI fixes it. Repeat.
-- When everything passes, your AI sends one line — `done: true`
-  — and the program re-checks everything and records the finish:
-  date-free, with a checksum, in files inside your project.
-- Every task, every word, every check, every result is written
-  into files in `.punchtape/` inside your project. Nothing is
-  stored in any cloud. Copy the folder — the whole history moves
-  with it, byte-identical.
-
-You never learn commands. The AI runs the program; you write
-prompts as always.
+| case | stack | what happens | verdict |
+|---|---|---|---|
+| [notes](demos/notes/) | Node.js | a new project from zero: a broken build caught red, fixed, every file accounted for, the finish sealed | #1 · 2cb5bbe8a1f6 |
+| [gouija](demos/gouija/) | Go | an existing repo brought under the machine: 1 of 25 files claimed, the rest openly excluded | #1 · 9adf209abb37 |
+| [enimda](demos/enimda/) | Python | a new feature on finished work: the library untouched, a CLI added, a second finish sealed | #2 · c987b51fd4ce |
+| [rjq](demos/rjq/) | Rust | a bug caught and fixed: a silent failure pinned down, guarded forever | #1 · d9c1f6eb10c7 |
 
 ## What you get
 
-- **You stop checking the AI's work.** The program checks it,
-  every time, on every change.
+- **The work runs start to finish — with proofs.** The machine
+  hands the agent its next step, measures each claim by running
+  it, and records the finish only when every gate is green —
+  sealed with a checksum over exactly what passed.
+- **You get your time back.** The machine runs the checks — every
+  task, every change — and the table above counts what it hands
+  back to you.
+- **It works with everything.** Project, language, framework,
+  workflow, harness, agent — the machine is agnostic to all of
+  it. It sees files, commands and bytes.
 - **Nothing from your task gets silently dropped.** Every line of
   your words must be given an outcome, and every line of your
   project must be either covered by a check's claim or crossed
-  out openly, with a reason that cites your words or the law.
-  Otherwise: no finish.
+  out openly, with a reason. Otherwise: no finish.
+- **The machine remembers — mechanically.** Steps, failures,
+  fixes — all of it lands in plain files as pure data, no model
+  in between. New session, new AI model, next month — the work
+  continues exactly where it stopped. The past cannot be edited,
+  and the record is yours — no account, no cloud.
+- **Strictly deterministic.** Same task, same code, same
+  conditions — the same answer, on your laptop, on the server,
+  next year.
+- **Nothing for you to operate.** No commands, no config, no
+  setup: your words are the whole interface, and the agent runs
+  the machine.
 - **Edits are cheap.** Change one file → only the checks claiming
   lines of that file run again. Everything that still holds is
   not re-run.
 - **If something breaks after the finish, you see it.** The
-  program records which run broke it and which run healed it.
-- **Nothing is lost between sessions.** New chat, new AI model,
-  next month — open the folder and continue. All history is in
-  files, and the past cannot be edited: a touched past line stops
-  the machine.
-- **It works with anything you build, any way you build it.** Any
-  language, any framework, any project shape, any workflow, any
-  harness — the machine knows none of them and needs none of
-  them.
+  machine records which run broke it and which run healed it.
 
 Full list with every detail: **[docs/FEATURES.md](docs/FEATURES.md)**
 
-## How to use it
+## Works with everything
 
-### 1. Install — once per computer
+The machine is agnostic to all of it: project, language, stack,
+workflow, preferences, harness, agent. None of that matters to
+it — it sees files, commands and bytes, nothing else. That is
+the design, not a gap: a checker that knew your stack would be
+one more thing to break when the stack changes. Use whatever you
+want, however you usually work.
 
-Paste this to your AI assistant — or run it yourself in a
-terminal:
+## Requirements
 
-```text
-Install punchtape and run all work through it:
-
-  curl -fsSL https://github.com/neurophant/punchtape/releases/latest/download/get-punchtape.sh | bash
-```
-
-What this does: downloads one small program, verifies its
-checksum, puts one command — `punchtape` — into `~/.local/bin`.
-No admin rights, no account. You do this once per computer, never
-per project. (Build from source instead: `git clone
-https://github.com/neurophant/punchtape && cd punchtape &&
-./install.sh` — needs Go 1.26+.)
-
-One more line, once: if your assistant has permanent instructions
-(a place where you write standing rules for it), add there "run
-all work through punchtape" — and you will never have to write it
-in a prompt again.
-
-### 2. Start any new project — first one or the tenth
-
-Open a new, empty folder. Write your task to your assistant in
-normal words:
-
-```text
-Make a notes utility: notes add <text> saves a note and prints its
-number; notes list prints the notes one per line, oldest first;
-notes show <number> prints one note; state lives in notes.yaml and
-survives a restart.
-```
-
-When to add the line "run all work through punchtape" to your
-prompt — a simple rule:
-
-- The folder already runs punchtape (it has a `.punchtape`
-  folder)? → **Not needed.** The file `AGENTS.md` in that folder
-  already tells every AI tool about it.
-- You once put that line into your assistant's permanent
-  instructions (most assistants have them)? → **Not needed,
-  anywhere, ever.**
-- New empty folder, and your assistant has no such permanent
-  instruction? → **Add the line.**
-- Not sure? → **Add the line.** It never hurts.
-
-What happens, step by step:
-
-1. Your assistant runs `punchtape` in the folder. The folder is
-   empty, so the program prints its contract — one page with the
-   whole law of the machine on it: what to do, which files to
-   write, in what shape. Your assistant reads it and knows the
-   entire process. You explain nothing.
-2. Your assistant puts your task text — your words, unchanged,
-   one line each — into `.punchtape/demands.md`. The next run
-   births the zone: the contract, the template and a reference
-   page — the machine's full manual, always under hand — land
-   beside the words, and from that moment the past of your words
-   is sealed (a touched past line is zone damage — the machine
-   stops), while new words keep entering the same file at any
-   moment.
-3. Your assistant copies `.punchtape/template.yaml` to
-   `.punchtape/inbox.yaml` and fills it in: the narrative of the
-   submission, the declared outcome of every new line of your
-   words, the requirements, and the checks — behaviors with their
-   exact claimed lines of code and rows of commands with pinned
-   expected output.
-4. The program takes your words itself, merges the document,
-   runs the build (when declared) and every check that went
-   stale. Failed checks land in `.punchtape/report.md` — what
-   was expected, what actually happened. Your assistant reads
-   that file and fixes the code or the rows. One line in the
-   terminal always says what to do now, for example (a real
-   line):
-
-   ```text
-   punchtape: run 1 — 2 row(s) red — read .punchtape/report.md, fix, run again
-   ```
-
-5. All checks green → the terminal says so, and your assistant
-   writes exactly one line to the inbox: `done: true`. That is
-   the sign-off — nothing to retype, nothing to format.
-6. The program re-checks everything — every row green with a
-   pinned proof, your words resolved whole, every requirement
-   covered, the tree equal to its claims plus loud exclusions, no
-   open question — and records the verdict. From now on
-   `.punchtape/state.md` shows: `verdict: #1 … — standing`, with
-   its checksum. Show that file to anyone who asks if it works.
-
-The next new project after this one is the same thing again:
-empty folder, task in words, done. Each folder is separate;
-nothing from one project leaks into another.
-
-### 3. Continue a project that already runs on punchtape
-
-Open that project folder — or any folder inside it (the program
-looks upward and finds its zone). Write what you want, in words:
-
-```text
-Add an open command — show only the unclosed notes.
-```
-
-It does not matter who picks this up: your usual assistant, a new
-session, a different AI model, a teammate. The file `AGENTS.md`
-in the project root contains a short note from punchtape — every
-AI tool reads that file on arrival — and the note points to
-`.punchtape/state.md`, one page: where the work stands, what is
-next. So anyone continues in seconds.
-
-What happens with your change: your words join
-`.punchtape/demands.md`; the checks claiming the changed files run again; the
-checks that still hold are not re-run and cost nothing. When the
-addition works, the machine records finish #2 — then #3, #4…
-Each verdict is its own recorded fact with its own checksum, and
-if a later change breaks a sealed result, the machine names the
-run that caught it and the run that healed it.
-
-## Real prompts for real situations
-
-**A bug.**
-`notes show 3 prints nothing when there is no note 3 — fix it and prove it cannot happen again.`
-Your assistant adds a check for the wanted behavior (it fails —
-the bug exists), fixes the code, the check passes, and that check
-stays in the project forever: it re-runs whenever the lines it
-claims change.
-
-**An existing project that never used punchtape.**
-`Bring this repo under punchtape: read the code, write the checks for the behavior that already exists, and get them all passing.`
-The program measures what your code really does today and drafts
-the exclusion list for the rest. From then on every change is
-measured against that.
-
-**A new AI model took over.**
-`Continue this project through punchtape — read .punchtape/state.md first, then finish what is missing.`
-The new model needs no old chat: the project folder holds
-everything.
-
-**Hand the project to a teammate.**
-Copy the folder. Done. Words, checks, results, history, finishes —
-everything is inside, byte-identical.
+- Linux and macOS on amd64 or arm64. Windows is not supported.
+- A unix shell — Linux and macOS have it built in. A command sees
+  only `PATH`, `HOME` and the values your project itself sets.
+- One binary, one command. No background processes — the machine runs
+  only when called, and whatever a command left running dies with
+  it. The code contains no network calls at all: no login, no
+  account, no telemetry. Your code stays on your machine.
+- You need an AI assistant — the machine never writes code
+  itself.
+- For a one-time throwaway script this is too much; for anything
+  you will edit again, this is where it pays.
+- Building from source instead of a release needs Go 1.26+
+  (`git clone https://github.com/neurophant/punchtape && cd punchtape && ./install.sh`).
 
 ## Honest limits
 
-The machine measures bytes and sets — never meaning. A recorded
-verdict proves formal integrity: every line of your words
-resolved, every row green with its pinned bytes, the tree equal
-to claims plus loud exclusions. It does not prove the code does
-what you meant — that last look stays yours (the spec pages put
-the claim and the check side by side for exactly this).
+The machine compares real output byte by byte — it never reads
+meaning. A recorded finish proves the checks passed exactly as
+written: your words resolved, every check green, the whole tree
+accounted for. It does not prove the code does what
+you meant — that last look stays yours (the spec pages put the
+claim and the check side by side for exactly this).
 
-- The machine never sees your chat. Words enter
-  `.punchtape/demands.md` by the agent's hand; the machine takes them from
-  the file itself and seals the past — but it cannot know a word
-  that was never written down. A submission that brought no new
-  words signs "no new words"; a false signature stands in the
-  journal forever, visible on the state page.
-- The document is YAML, written by the agent: a prose value
-  holding ": " or a comma takes quotes; a multi-line pin stays
-  one line; tabs in indentation are refused. In the latest field
-  rehearsal this was the most common refusal — each names its
-  place, none loses data.
-- One zone, one machine: a zone born by another version of
+- The machine never sees your chat. It takes your words from
+  `.punchtape/demands.md` and checks the record on every run —
+  but it cannot know a word that was never written down.
+- The agent's submission is YAML, and YAML has sharp edges:
+  quoting rules, no tabs. In the latest field rehearsal this was
+  the most common refusal — each one names its exact place, and
+  nothing is lost.
+- One zone, one machine: a zone born on another version of
   punchtape is refused — archive it and start fresh.
-- Linux and macOS only; rows run through the unix shell, and a
-  command sees only `PATH`, `HOME` and the zone's pinned values.
-- Runs serialize on a zone lock (`run.lock`, kernel-released,
-  death-safe; local filesystems) — a parallel call waits its turn.
-- Never edit `.punchtape/journal/` by hand — the machine verifies
-  every record and refuses what does not recompose.
-
-## Is it for you?
-
-- Works with any language and framework — the program knows none
-  of them and does not need to. Stack, libraries, project shape,
-  workflow, harness, approach — use whatever you want, however
-  you are used to, as the task requires.
-- Linux and macOS today. Windows is not supported.
-- You need an AI assistant — the program never writes code
-  itself.
-- For a one-time throwaway script — too much. For anything you
-  will edit again — this is where it pays.
-
-## Free, private, offline
-
-MIT license. One program, one command. No background processes —
-it runs only when called, and whatever a command left running
-dies with it. The code contains no network calls at all: no
-login, no account, no telemetry. Your code stays on your machine.
+- Never edit the files inside `.punchtape/journal/` by hand —
+  the machine checks every record and rejects any mismatch.
+- Several agents may work one zone: runs take turns
+  automatically, one at a time. But the machine does not split
+  the work between agents — who does what is the task owner's
+  call. punchtape is an arbiter, not a coordinator.
 
 ## Documentation
 
+- **[docs/BOOTSTRAP.md](docs/BOOTSTRAP.md)** — the one-line start
+  for your AI assistant: it bootstraps itself from this page.
+- **[docs/USAGE.md](docs/USAGE.md)** — every scenario walked, with
+  ready prompts; the team cookbook: the zone in the repo or
+  outside it, conflicts and their recipes.
 - **[docs/FEATURES.md](docs/FEATURES.md)** — every feature and
   what it gives you.
-- **[docs/METRICS.md](docs/METRICS.md)** — the measured numbers.
-- **[docs/RESEARCH.md](docs/RESEARCH.md)** — the study behind
-  them.
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — how the
-  machine works inside, every process in detail.
-- **[docs/GLOSSARY.md](docs/GLOSSARY.md)** — every term
-  explained.
+  machine works inside, every process in detail, over generated
+  code maps.
+- **[docs/METRICS.md](docs/METRICS.md)** — the measured numbers.
+  **[docs/RESEARCH.md](docs/RESEARCH.md)** — the study behind
+  them.
+- **[docs/GLOSSARY.md](docs/GLOSSARY.md)** — every term explained.
+- **[docs/FAQ.md](docs/FAQ.md)** — every question, asked and
+  answered with links to the facts.
+- **[demos/](demos/)** — four recorded sessions on four stacks.
+- **[CHANGELOG.md](CHANGELOG.md)** — the history of releases, what
+  each version changed.
 
 ## FAQ
 
-**Why not just CI or pytest?**
+**How is this different from CI or pytest?**
 CI checks code after you push it, and the verdict is read by a
 human. punchtape works inside the task loop: it owns the task's
 coverage (every line of your words declared, every line of the
@@ -346,8 +292,8 @@ competitor. Your CI stays; punchtape closes the loop before it.
 A harness runs your assistant's conversation and lives inside the
 agent's environment — it is one of the parties. punchtape is the
 external party that owns the task's truth: the state, the proofs,
-the verdict. Your harness stays exactly what it is; the arbiter
-is added beside it.
+the verdict. Your harness stays exactly what it is; the arbiter is
+added beside it.
 
 **Can the agent cheat it?**
 It can refuse to play — that is your call as the task owner (one
@@ -361,12 +307,15 @@ meaning; see Honest limits above.
 **Where do the numbers come from?**
 Three rounds of field tests with blind judges, published as a
 preprint (not peer-reviewed) — the methodology and the raw
-campaign data are open in the repository. Poke holes: a found
-flaw gets fixed and credited.
+campaign data are open in the repository.
+
+Every question, each answer grounded in a link, is
+**[docs/FAQ.md](docs/FAQ.md)**.
 
 ## Why the name
 
-Punched tape — a nod at once to the punched card, the paper tape,
-and Turing's machine. A hole, once punched, cannot be unpunched.
+Punched tape — a nod to the punched card, the paper tape, and
+Turing's machine all at once. A hole, once punched, cannot be
+unpunched.
 Same here: every recorded fact stays as it was. Everything
 changes — **the tape remains.**

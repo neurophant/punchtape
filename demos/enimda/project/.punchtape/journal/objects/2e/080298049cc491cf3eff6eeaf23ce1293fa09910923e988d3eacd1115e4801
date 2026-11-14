@@ -1,0 +1,13 @@
+id: lib/version
+name: the version line
+prose: the module reports its version
+claims:
+- enimda/__init__.py:1-12
+covers:
+- R1
+rows:
+- run: python3 -c "import enimda; print(enimda.__version__)"
+  expect:
+    rc: 0
+    out: |
+      2.1.0

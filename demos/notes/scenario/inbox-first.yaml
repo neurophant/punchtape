@@ -1,0 +1,59 @@
+# The first document of the notes session: the checks the agent pins
+# while the defective notes.js stands. Submitted at step 2 of replay.sh.
+# Rows that write start from a clean state file; the read-only refusal
+# row runs on whatever state stands — its outcome is state-independent.
+work: first checks for the notes utility; rows that write start from a clean state file
+intents:
+  - {lines: [D1], outcome: work, prose: notes add saves a note and prints its number}
+  - {lines: [D2], outcome: work, prose: notes list prints the notes oldest first}
+  - {lines: [D3], outcome: work, prose: notes show prints one note}
+  - {lines: [D4], outcome: work, prose: state lives in notes.json and survives a restart}
+remove: []
+requirements:
+  - id: R1
+    lines: [D1]
+    prose: add saves a note and prints its number
+  - id: R2
+    lines: [D2]
+    prose: list prints the notes one per line, oldest first
+  - id: R3
+    lines: [D3]
+    prose: show prints one note and refuses a missing one
+  - id: R4
+    lines: [D4]
+    prose: the state file survives a restart
+behaviors:
+  - id: notes/add
+    name: add saves a note and prints its number
+    prose: two adds number 1 then 2
+    claims: ["notes.js:1-19"]
+    covers: [R1]
+    rows:
+      - run: rm -f notes.json && node notes.js add hello && node notes.js add world
+        expect: {rc: 0, out: "1\n2\n"}
+  - id: notes/list
+    name: list prints notes oldest first
+    prose: two adds then list prints alpha then beta, oldest first
+    claims: ["notes.js:20-21"]
+    covers: [R2]
+    rows:
+      - run: rm -f notes.json && node notes.js add alpha && node notes.js add beta && node notes.js list
+        expect: {rc: 0, out: "1\n2\nalpha\nbeta\n"}
+  - id: notes/show
+    name: show prints one note and refuses a missing one
+    prose: show 1 prints the note; show 9 exits non-zero
+    claims: ["notes.js:22-29"]
+    covers: [R3]
+    rows:
+      - run: rm -f notes.json && node notes.js add first && node notes.js show 1
+        expect: {rc: 0, out: "1\nfirst\n"}
+      - run: node notes.js show 9
+        expect: {rc: 3}
+  - id: notes/persist
+    name: state survives a restart
+    prose: a note added in one process is listed by the next one
+    claims: ["notes.js:30-32"]
+    covers: [R4]
+    rows:
+      - run: rm -f notes.json && node notes.js add pinned && node notes.js list
+        expect: {rc: 0, out: "1\npinned\n"}

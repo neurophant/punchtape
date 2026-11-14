@@ -23,6 +23,9 @@ BASES = [
     "docs/ARCHITECTURE.md",
     "docs/GLOSSARY.md",
     "docs/METRICS.md",
+    "docs/BOOTSTRAP.md",
+    "docs/FAQ.md",
+    "docs/USAGE.md",
 ]
 LANGS = ("ru", "zh")
 

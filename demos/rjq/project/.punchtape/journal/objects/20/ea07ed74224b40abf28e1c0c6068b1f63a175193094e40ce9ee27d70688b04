@@ -1,0 +1,19 @@
+id: cli/status-err
+name: the loud ask
+prose: the ask goes through status to the queue; a refused connection and an unparsable url both print the exact error line and exit one
+claims:
+- src/bin/rjq-cli.rs:1-24
+covers:
+- R1
+- R2
+rows:
+- run: ./target/debug/rjq-cli redis://127.0.0.1:1/ q x
+  expect:
+    rc: 1
+    out: |
+      err Connection refused (os error 111)
+- run: ./target/debug/rjq-cli garbage q x
+  expect:
+    rc: 1
+    out: |
+      err Redis URL did not parse

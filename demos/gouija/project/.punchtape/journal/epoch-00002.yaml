@@ -1,0 +1,51 @@
+---
+kind: submission
+submission:
+  corpus-version: 1
+  build: go build -o gouija-demo ./cmd/gouija
+  intents:
+  - lines:
+    - D1
+    outcome: work
+    prose: the version line prints and holds
+  - lines:
+    - D2
+    outcome: work
+    prose: the usage page prints and holds
+  requirements:
+  - id: R1
+    lines:
+    - D1
+    prose: the version line prints
+  - id: R2
+    lines:
+    - D2
+    prose: the usage page prints
+  added:
+  - id: cli/version
+    addr: 5ee2beda7dd03c9669500a74a21852dd6503e7a7b64cce64145ae330cb4b50e6
+  - id: cli/usage
+    addr: 6477008d7106d793e498cf6aa490c59a14fa82a795028c8c470b10dfced32c36
+  doc-addr: d22160c4639e09fb3f0e277bf009dfce15ff0c9a9a5f720e3b4d8f69a26939c4
+---
+kind: no-new-demands
+no-new-demands:
+  lines: 2
+  run: 1
+---
+kind: run
+run:
+  "n": 1
+  build:
+    exit: 0
+  rows:
+  - key: cli/version/0
+    row: 2e6d178decae983561f35b983857e9179cc8f5ba074a2fe78bc99c413ebb4036
+    status: green
+    exit: 0
+    proof: 146de32a36596d27b7bc2442fe20075fe0272d38a43d981f6cd289a8c00a065e
+  - key: cli/usage/0
+    row: 7ceac9dbc562491b95cbc51f9ae8a593667d0bef9e8efa15e90cbd47855ec018
+    status: green
+    exit: 0
+    proof: 8482a630666c69fd43a50faf763196bbc25033cc6e64f0040b87772d847e6144
