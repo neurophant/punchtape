@@ -149,7 +149,7 @@ campaigns 的原始数据全部公开）：
 | 案例 | 技术栈 | 发生了什么 | 裁决 |
 |---|---|---|---|
 | [notes](demos/notes/) | Node.js | 从零开始的新项目：坏掉的构建被当场抓住、修好、每个文件都有交代、完成封存 | #1 · 2cb5bbe8a1f6 |
-| [redacted](demos/redacted/) | Go | 现存仓库纳入机器：25 个文件中 claim 了 1 个，其余被公开豁免 | #1 · 9adf209abb37 |
+| [tapsum](demos/tapsum/) | Go | 现存仓库纳入机器：7 个文件中 claim 了 1 个，其余被公开豁免 | #1 · 8f087e3b7fbb |
 | [enimda](demos/enimda/) | Python | 已完成工作上的新功能：库未动、加了一个 CLI、第二个完成封存 | #2 · c987b51fd4ce |
 | [rjq](demos/rjq/) | Rust | 一个 bug 被抓住并修好：无声的失败被钉死、永世看守 | #1 · d9c1f6eb10c7 |
 

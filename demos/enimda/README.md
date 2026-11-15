@@ -125,4 +125,4 @@ New to the machine? [`../../README.md`](../../README.md) is the
 front page; [`../../docs/BOOTSTRAP.md`](../../docs/BOOTSTRAP.md)
 is the one-line start for your own agent. The fresh-project story
 is [`../notes/`](../notes/README.md); the standing-repo backfill
-is [`../redacted/`](../redacted/README.md).
+is [`../tapsum/`](../tapsum/README.md).

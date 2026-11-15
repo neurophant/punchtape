@@ -164,7 +164,7 @@ this story, on a standing Rust library.
 `Bring this repo under punchtape: read the code, write checks for the behavior that already exists, make them all pass.`
 The machine measures what your code really does today and drafts
 the exclusion list for the rest. From then on every change is
-measured against that. The redacted demo is this story, on a
+measured against that. The tapsum demo is this story, on a
 standing Go repo; the enimda demo shows the feature that comes
 after it.
 

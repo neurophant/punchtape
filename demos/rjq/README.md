@@ -110,5 +110,5 @@ New to the machine? [`../../README.md`](../../README.md) is the
 front page; [`../../docs/BOOTSTRAP.md`](../../docs/BOOTSTRAP.md)
 is the one-line start for your own agent. The other three cases:
 [notes](../notes/README.md): a fresh project;
-[redacted](../redacted/README.md): a standing repo;
+[tapsum](../tapsum/README.md): a standing repo;
 [enimda](../enimda/README.md): a feature and a second verdict.

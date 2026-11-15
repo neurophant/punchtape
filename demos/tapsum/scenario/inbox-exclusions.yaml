@@ -1,0 +1,8 @@
+# The second document of the tapsum backfill: loud exclusions for the
+# watch loop no byte-exact pin can hold yet. Submitted at step 4 of
+# replay.sh. Every watch pass logs a wall clock, so the pin law
+# refuses the row. The exclusion says so, with its reason.
+work: loud exclusions for the watch loop, then the completion act
+remove: []
+uncovered-lines:
+  - {range: "cmd/tapsum/main.go:56-82", reason: "the watch loop; every logged pass carries a wall clock, so no exact-bytes pin exists yet; a future document claims it with fixtures", refs: ["law:proof"]}

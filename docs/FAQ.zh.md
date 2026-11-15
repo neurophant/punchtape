@@ -225,7 +225,7 @@ Verification。机器查形式完整：言语全部了结、每条 row 以钉住
 精确字节），由机器运行，在 spec 页上与言语并排。散文钉不住
 的地方，诚实的形式是带理由的响亮豁免，而不是假装精确。
 证据：文档法则——[ARCHITECTURE.zh.md](ARCHITECTURE.zh.md)；
-一个真实 corpus 的形状——[demos/redacted](../demos/redacted/)。
+一个真实 corpus 的形状——[demos/tapsum](../demos/tapsum/)。
 
 **agent 会靠全部重写来满足 spec——没写下来的行为就丢了。**
 会：从没写下的言语保护不了，没有工具能改变这一点。机器对

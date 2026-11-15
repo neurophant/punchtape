@@ -264,7 +264,7 @@ the spec page. Where prose cannot pin something down, the honest
 form is a loud exclusion with a reason, not a pretense of
 precision.
 Proof: the document law — [ARCHITECTURE.md](ARCHITECTURE.md);
-the shape of a real corpus — [demos/redacted](../demos/redacted/).
+the shape of a real corpus — [demos/tapsum](../demos/tapsum/).
 
 **The agent will meet the spec by rewriting everything — behavior nobody wrote down is lost.**
 Yes: words that were never written cannot be protected — no tool

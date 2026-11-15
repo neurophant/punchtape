@@ -168,7 +168,7 @@ on your machine:
 | case | stack | what happens | verdict |
 |---|---|---|---|
 | [notes](demos/notes/) | Node.js | a new project from zero: a broken build caught red, fixed, every file accounted for, the finish sealed | #1 · 2cb5bbe8a1f6 |
-| [redacted](demos/redacted/) | Go | an existing repo brought under the machine: 1 of 25 files claimed, the rest openly excluded | #1 · 9adf209abb37 |
+| [tapsum](demos/tapsum/) | Go | an existing repo brought under the machine: 1 of 7 files claimed, the rest openly excluded | #1 · 8f087e3b7fbb |
 | [enimda](demos/enimda/) | Python | a new feature on finished work: the library untouched, a CLI added, a second finish sealed | #2 · c987b51fd4ce |
 | [rjq](demos/rjq/) | Rust | a bug caught and fixed: a silent failure pinned down, guarded forever | #1 · d9c1f6eb10c7 |
 
