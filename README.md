@@ -21,14 +21,16 @@ the AI's work, tells the AI what to fix, and records the finish
 when every check passes. You read the result — you do not check
 anything yourself.
 
-Whether you use Cursor, Claude Code, Windsurf, Aider, GLM or Kimi
-— any agent that can run a shell — this is for you, and your
-setup stays exactly as it is. punchtape is not another harness and not a plugin
+Whether you work in an IDE (Cursor, GitHub Copilot) or the
+terminal (Claude Code, Codex CLI) doesn't matter. punchtape works
+with any agent that has a shell — and doesn't care which frontier
+model stands behind it. Your setup stays exactly as it is.
+punchtape is not another harness and not a plugin
 inside the agent: it stands beside your project as the outside
 party. It keeps the whole record of the task and drives the agent
 through the work until the job is actually done. In precise terms, it is an
-external transactional state machine: the arbiter stands outside
-the conversation, and that outside position is the whole point.
+external transactional state machine: the arbiter judges the work,
+not the words — and the agent cannot get past its verdicts.
 
 Free. MIT license. Linux and macOS. Works offline. No account.
 
