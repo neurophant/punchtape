@@ -36,6 +36,16 @@ jobs:
         run: |
           export PATH="/opt/homebrew/bin:/usr/local/bin:/home/linuxbrew/.linuxbrew/bin:$PATH"
           brew install neurophant/tap/punchtape
+          "$(brew --prefix)/bin/punchtape" | head -3
+      - name: the deb package installs from the release
+        if: matrix.runner == 'ubuntu-latest' || matrix.runner == 'ubuntu-24.04-arm'
+        run: |
+          arch=amd64; [ "${{ matrix.runner }}" = 'ubuntu-24.04-arm' ] && arch=arm64
+          url=$(curl -fsSL https://api.github.com/repos/neurophant/punchtape/releases/latest | grep -o 'https://[^"]*punchtape_[0-9.]*_'"$arch"'\.deb' | head -1)
+          test -n "$url" || { echo "no deb asset found for $arch" >&2; exit 1; }
+          curl -fsSL -o /tmp/punchtape.deb "$url"
+          sudo dpkg -i /tmp/punchtape.deb
+          /usr/bin/punchtape | head -3
       - name: the darwin-amd64 release binary, through Rosetta
         if: matrix.mode == 'rosetta'
         run: |
