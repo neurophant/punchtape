@@ -40,7 +40,7 @@ Check, don't guess:
 | punchtape installed? | `command -v punchtape` | empty output — not installed |
 | inside a zone? | a `.punchtape/` directory in the current directory or any parent | the project already runs on punchtape |
 | the working root | look around: an empty folder, or a project with code | fresh start, or bringing a standing project in |
-| system | `uname -s` and `uname -m` | Linux and macOS on amd64/arm64 are supported; Windows is not |
+| system | `uname -s` and `uname -m` | Linux and macOS on amd64/arm64 are supported; Windows is not yet |
 
 ## Step 2 — offer the human a choice
 

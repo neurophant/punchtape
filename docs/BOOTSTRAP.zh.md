@@ -37,7 +37,7 @@
 | punchtape 已安装？ | `command -v punchtape` | 空输出——未安装 |
 | 在区内？ | 当前目录或任一父目录中有 `.punchtape/` 目录 | 项目已运行在 punchtape 上 |
 | 工作根 | 环顾四周：空文件夹，还是带代码的项目 | 全新开始，还是接入一个现有项目 |
-| 系统 | `uname -s` 与 `uname -m` | 支持 Linux 与 macOS 的 amd64/arm64；不支持 Windows |
+| 系统 | `uname -s` 与 `uname -m` | 支持 Linux 与 macOS 的 amd64/arm64；暂不支持 Windows |
 
 ## 第二步——给人类一个选择
 
