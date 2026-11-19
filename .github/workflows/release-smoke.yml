@@ -1,0 +1,36 @@
+name: release-smoke
+# Live verification of the release artifacts on real hardware:
+# the installer + the release binary + a full agent session to a
+# standing verdict, plus the real homebrew tap. Manual trigger only
+# (and on every published release).
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  release-smoke:
+    strategy:
+      matrix:
+        include:
+          - { runner: ubuntu-latest,     os: Linux-amd64 }
+          - { runner: macos-13,          os: macOS-Intel }
+          - { runner: macos-latest,      os: macOS-ARM }
+          - { runner: ubuntu-24.04-arm,  os: Linux-arm64-native }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: install via the release installer (binary + checksum)
+        run: |
+          curl -fsSL https://github.com/neurophant/punchtape/releases/latest/download/get-punchtape.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: the contract prints
+        run: punchtape | head -3
+      - name: the homebrew tap installs the real formula
+        if: ${{ matrix.runner != 'ubuntu-24.04-arm' }}
+        run: |
+          export PATH="/opt/homebrew/bin:/usr/local/bin:/home/linuxbrew/.linuxbrew/bin:$PATH"
+          brew install neurophant/tap/punchtape
+      - name: a full session, to a standing verdict
+        run: bash scripts/release-smoke.sh
