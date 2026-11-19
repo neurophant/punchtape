@@ -1,8 +1,10 @@
 name: release-smoke
 # Live verification of the release artifacts on real hardware:
 # the installer + the release binary + a full agent session to a
-# standing verdict, plus the real homebrew tap. Manual trigger only
-# (and on every published release).
+# standing verdict, plus the real homebrew tap. The Intel-Mac cell
+# runs the darwin-amd64 release binary through Rosetta on an M-mac
+# (GitHub retires its Intel runners). Manual trigger only (and on
+# every published release).
 
 on:
   workflow_dispatch:
@@ -14,23 +16,36 @@ jobs:
     strategy:
       matrix:
         include:
-          - { runner: ubuntu-latest,     os: Linux-amd64 }
-          - { runner: macos-13,          os: macOS-Intel }
-          - { runner: macos-latest,      os: macOS-ARM }
-          - { runner: ubuntu-24.04-arm,  os: Linux-arm64-native }
+          - { runner: ubuntu-latest,     os: Linux-amd64,          mode: native }
+          - { runner: macos-latest,      os: macOS-ARM,            mode: native }
+          - { runner: macos-latest,      os: macOS-Intel-Rosetta,  mode: rosetta }
+          - { runner: ubuntu-24.04-arm,  os: Linux-arm64-native,   mode: native }
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: install via the release installer (binary + checksum)
+        if: matrix.mode == 'native'
         run: |
           curl -fsSL https://github.com/neurophant/punchtape/releases/latest/download/get-punchtape.sh | bash
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: the contract prints
+        if: matrix.mode == 'native'
         run: punchtape | head -3
       - name: the homebrew tap installs the real formula
-        if: ${{ matrix.runner != 'ubuntu-24.04-arm' }}
+        if: matrix.mode == 'native' && matrix.runner != 'ubuntu-24.04-arm'
         run: |
           export PATH="/opt/homebrew/bin:/usr/local/bin:/home/linuxbrew/.linuxbrew/bin:$PATH"
           brew install neurophant/tap/punchtape
+      - name: the darwin-amd64 release binary, through Rosetta
+        if: matrix.mode == 'rosetta'
+        run: |
+          curl -fsSL -o "$HOME/punchtape-darwin-amd64" https://github.com/neurophant/punchtape/releases/latest/download/punchtape-darwin-amd64
+          curl -fsSL -o "$HOME/punchtape-darwin-amd64.sha256" https://github.com/neurophant/punchtape/releases/latest/download/punchtape-darwin-amd64.sha256
+          (cd "$HOME" && shasum -a 256 -c punchtape-darwin-amd64.sha256)
+          mkdir -p "$HOME/.local/bin"
+          printf '#!/bin/sh\nexec arch -x86_64 "$HOME/punchtape-darwin-amd64" "$@"\n' > "$HOME/.local/bin/punchtape"
+          chmod +x "$HOME/.local/bin/punchtape" "$HOME/punchtape-darwin-amd64"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          punchtape | head -3
       - name: a full session, to a standing verdict
         run: bash scripts/release-smoke.sh
