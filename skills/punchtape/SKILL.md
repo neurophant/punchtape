@@ -42,8 +42,8 @@ work stands done is the machine's verdict, never your announcement.
 
 - punchtape installed (`command -v punchtape`). Homebrew:
   `brew install neurophant/tap/punchtape` (macOS, Linux x86_64).
-  Other install paths and the full bootstrap live in the repo:
-  https://github.com/neurophant/punchtape/blob/main/docs/BOOTSTRAP.md
+  The repo carries all documentation (README, docs/):
+  https://github.com/neurophant/punchtape
 - Linux or macOS on amd64/arm64. Windows is not supported yet -
   say so to the human and stop.
 - A unix shell. Any agent with a shell works. The machine does not
@@ -164,6 +164,9 @@ signature. The agent never announces done - the machine does.
 
 ## Safety and side effects
 
+- Install footprint: one static binary in ~/.local/bin (or the Homebrew
+  prefix), zone files inside the project directory. No system paths,
+  no sudo, no background processes.
 - The machine runs only when called. Whatever a command left
   running dies with it. No background processes.
 - Commands inside checks execute with the agent's shell
@@ -182,5 +185,5 @@ signature. The agent never announces done - the machine does.
 ## Sources
 
 - Repo: https://github.com/neurophant/punchtape
-- Bootstrap: https://github.com/neurophant/punchtape/blob/main/docs/BOOTSTRAP.md
+- Documentation: https://github.com/neurophant/punchtape (README, docs/)
 - Site with a recorded session: https://punchtape.dev
