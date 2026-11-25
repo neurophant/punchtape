@@ -69,8 +69,8 @@ or crossed out openly with a reason that cites your words or the
 machine's law. Anything unresolved, unclaimed or unanswered → no
 finish; the machine names exactly what is missing. When everything
 passes, the finish is sealed with a signature over which checks
-passed on which version of your corpus — a "done" you can hand to
-your boss, your customer, or yourself six months later.
+passed on which version of your corpus — a record of what was
+proven, which `punchtape --verify` re-proves on request.
 
 ### One spec, any implementation — and a readable manual for free
 
@@ -129,21 +129,23 @@ on the server, next year. Records carry no timestamps; every write
 is atomic; a history file copied between machines is
 byte-identical. If the machine dies mid-write, the next run
 quarantines the torn tail and keeps every intact record — and
-nobody, not the AI and not you by accident, can edit the past:
-history only grows, and a touched past line of your words stops
-the machine cold. A result that was green in March means the same
-thing in October.
+an edited record is refused by name: history grows under the
+machine's hand, and a touched past line of your words stops the
+machine cold. An agent that recomputes every hash consistently can
+rewrite the journal — the honest limits say so. A result that was
+green in March means the same thing in October.
 
 ### History in files — across sessions, models and months
 
 The decisions, the fixes, the history — all of it used to live in
 a chat that gets closed and forgotten, so every new session
 re-broke the same things. Now every step is written into files
-inside your project, in a form that cannot be edited afterwards:
+inside your project, in a form the machine verifies on every run:
 what was asked, what was delivered, what failed, how it got fixed.
-The machine also saves the lessons by itself — each red row it
-later saw green, with the row's bytes before and after and the two
-run numbers — measured, not typed: zero tokens of any model. Swap
+The machine also saves the lessons by itself — each row that went
+red and was then corrected to green, with the row's bytes before
+and after and the two run numbers — measured, not typed: zero
+tokens of any model. Swap
 the AI model, close the session, come back in a year: the record
 remembers everything, and the work continues exactly where it
 stopped.
@@ -319,22 +321,24 @@ in the terminal and on the page: if it is on disk, it is current.
 When the machine says it worked (exit 0), it worked — problems
 found inside the work are data, not crashes. When it says the call
 didn't happen (exit 1), it didn't. Wrap it in any script and trust
-the answer.
+the answer. `punchtape --verify` is the one call whose exit code judges
+the work: 0 only when every row ran green and every verdict gate stood
+in that run.
 
-### One command, no flags
+### One command for the agent
 
-No flags, no menus, no modes: the agent runs one word and gets one
-line back — the next action, pointing at the file to touch. The
-single exception is `--version`, a human affordance the contract
-never mentions. That is also why the machine cannot be misused by
-a model that hallucinates a flag: there are no flags to
-hallucinate.
+The agent's surface is one word: no flags, no menus, no modes — it
+runs one word and gets one line back, the next action, pointing at
+the file to touch. Two flags exist, both for the human and neither in
+the agent's loop: `--version`, and `--verify`, which re-runs
+everything and writes nothing. A model that invents a flag costs
+itself one run and changes no fact.
 
 ### `done: true` is the whole sign-off
 
 How does the AI formally say "it's done"? It writes one line to
 the inbox — `done: true` and nothing else. That bare line is the
-sign-off; the machine then re-measures everything itself. Nothing
+sign-off; the machine then checks every gate itself. Nothing
 to invent, nothing to format, nothing to get wrong on the last
 mile.
 
@@ -400,4 +404,17 @@ stated plainly:
   the machine is an arbiter of facts — not a coordinator of
   agents.
 - **Never edit the journal by hand.** Every record is verified on
-  load; what does not recompose is refused by name.
+  load; what does not recompose is refused by name. The check proves
+  the journal agrees with itself, not who wrote it: an agent that
+  recomputes every hash consistently passes it — `punchtape --verify`
+  answers by running the rows.
+- **The zone is within the agent's reach.** The machine checks that
+  the journal agrees with itself, not who wrote it. A verdict you did
+  not watch being earned is re-proved with `punchtape --verify`,
+  where the agent cannot write: in CI or on another machine, every
+  row runs again.
+- **Mark, exclusion and the row's command are the agent's
+  judgments.** The verdict line counts the words marked
+  not-a-requirement and the share of the tree excluded. Their
+  reasons sit in `trace.md` and `holes.md`, each row's command on its
+  spec page.

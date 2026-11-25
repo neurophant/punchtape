@@ -1019,8 +1019,6 @@ intents:
     - {lines: [D1], outcome: work, prose: the line is declared as work}
 requirements:
     - {id: R1, lines: [D1], prose: the many rows}
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: b/one
       name: one

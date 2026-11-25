@@ -18,10 +18,12 @@ import (
 )
 
 // Stream — the journal's records over the epoch files of a
-// directory.
+// directory. ReadOnly answers a torn tail as the damage it is and
+// heals nothing: the caller must leave the zone as it found it.
 type Stream struct {
-	dir   string
-	files []string
+	dir      string
+	files    []string
+	ReadOnly bool
 }
 
 // OpenStream — the stream over a journal directory; a missing
@@ -71,9 +73,9 @@ func (s *Stream) FirstRecord() (journal.Record, error) {
 }
 
 // loadFile — one epoch file's records; a torn tail loads the intact
-// records and quarantines the torn bytes. A chunk that does not
-// parse outside the final position is damage by hand — an honest
-// error, never a silent drop.
+// records and quarantines the torn bytes — unless the stream is read
+// only: then the torn tail is refused like any damage by hand — an
+// honest error, never a silent drop.
 func (s *Stream) loadFile(path string) ([]journal.Record, error) {
 	data, err := ports.FSBind.ReadFile(path)
 	if err != nil {
@@ -84,7 +86,7 @@ func (s *Stream) loadFile(path string) ([]journal.Record, error) {
 	for i, chunk := range chunks {
 		var rec journal.Record
 		if err := journal.DecodeRecord(chunk, &rec); err != nil {
-			if i == len(chunks)-1 {
+			if i == len(chunks)-1 && !s.ReadOnly {
 				if err := quarantine(path, data, chunks[:i]); err != nil {
 					return nil, err
 				}

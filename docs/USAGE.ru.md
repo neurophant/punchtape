@@ -93,7 +93,7 @@
    оставшиеся дыры:
 
    ```
-   punchtape: run 2 — 10 uncovered lines — submit their claims or loud exclusions to .punchtape/inbox.yaml
+   punchtape: run 2 — 1 uncovered lines — submit their claims or loud exclusions to .punchtape/inbox.yaml
    ```
 
    Файлы, которых работа не покрывает, получают громкие исключения —
@@ -103,16 +103,16 @@
    подпись — нечего перепечатывать, нечего форматировать.
 
    ```
-   punchtape: run 2 — all green — write done: true to .punchtape/inbox.yaml and run to record the verdict
+   punchtape: run 3 — all green — write done: true to .punchtape/inbox.yaml and run to record the verdict
    ```
 
-6. Машина перепроверяет всё: каждый ряд зелёный с закреплённым
+6. Машина проверяет каждые ворота: каждый ряд зелёный с закреплённым
    пруфом, ваши слова разобраны целиком, каждое требование покрыто,
    дерево равно своим клеймам плюс громким исключениям, ни одного
    открытого вопроса — и записывает вердикт:
 
    ```
-   punchtape: run 2 — verdict #1 standing — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
+   punchtape: run 3 — verdict #1 standing — 0 of 4 words marked not-a-requirement, 3 % of the tree excluded — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
    ```
 
    С этого момента `.punchtape/state.md` показывает: `verdict: #1 … —
@@ -200,9 +200,102 @@
 остаётся целым. Разработчик (и ваш CI) видит простое дерево. При
 передаче задачи переезжает папка, а не ветка. Когда зоны
 расходятся, правда живёт в собственной записи машины: журнале,
-который нельзя править без того, чтобы машина не назвала это. Цена
+повреждённые записи которого машина называет при загрузке — и
+который может пройти согласованная перезапись, поэтому
+перепроверяйте его командой `punchtape --verify` там, где агент
+не может писать. Цена
 тоже ясна: клон без зоны начинается пустым, так что эта форма
 больше подходит одиночному владельцу или явной передаче, чем толпе.
+
+### Проверьте вердикт сами
+
+Машину запускает агент, и зона — это папка, в которую агент может
+писать. `punchtape --verify` — вызов, который не доверяет ничему из
+этого: он заново запускает сборку и каждый ряд, ничего не пишет, и
+его код выхода равен 0 только тогда, когда после этого прогона
+устояли все ворота вердикта:
+
+```bash
+punchtape --verify
+```
+
+Ответ даёт последняя строка. На зоне, чей журнал согласованно
+переписан:
+
+```text
+red hello/say/0 — stdout: want "hello\n", got "goodbye\n"
+verdict: not yet — behaviors without a green pinned row: hello/say
+verdict: not yet — a row is red or stale
+punchtape: verify — not proven — 0 of 1 words marked not-a-requirement, 0 % of the tree excluded
+```
+
+На честной зоне:
+
+```text
+punchtape: verify — proven — 1 rows run green — 0 of 1 words marked not-a-requirement, 0 % of the tree excluded
+```
+
+Прочитайте последнюю строку дважды: она считает слова, которые агент
+пометил как не требование, и долю дерева, которую он исключил.
+Причины лежат в `trace.md` и `holes.md`, а команда каждого ряда — на
+его странице спецификации, рядом со строками, которые он заявляет.
+
+Проверка нужна в трёх моментах:
+
+- **Прежде чем принять вердикт**, который вы не видели заработанным.
+  Один вызов, на вашей машине.
+- **Когда зона приходит со стороны**: клон после передачи, слияние
+  двух зон, восстановление из копии. Один вызов; и в CI тоже, если
+  зона живёт в репозитории.
+- **В CI**, при каждом push в основную ветку и перед релизом.
+
+#### Локальная проверка перед каждым push
+
+Git может запустить проверку за вас. Положите две строки в файл
+`.git/hooks/pre-push` вашего репозитория и сделайте его исполняемым:
+
+```sh
+#!/bin/sh
+punchtape --verify
+```
+
+С этого момента push уходит с вашей машины, только когда зона
+доказана. Красный ряд удержит его дома, со строками проверки на
+экране:
+
+```text
+red hello/say/0 — stdout: want "hello\n", got "goodbye\n"
+verdict: not yet — drift unresolved: a submission must come after run 1
+verdict: not yet — behaviors without a green pinned row: hello/say
+verdict: not yet — a row is red or stale
+punchtape: verify — not proven — 0 of 1 words marked not-a-requirement, 0 % of the tree excluded
+error: failed to push some refs to '/tmp/pt-measure/remote.git'
+```
+
+Хуку нужна зона внутри репозитория: без зоны `punchtape --verify`
+отвечает «no zone here» и отклоняет push. `git push --no-verify`
+пропускает хук, как и любой другой.
+
+#### Та же проверка в CI
+
+CI — единственное место, куда агент не может писать. Проверка там —
+три шага: получить репозиторий, поставить выпускной бинарник по
+контрольной сумме, запустить `punchtape --verify`; работа падает по
+коду выхода:
+
+```yaml
+name: verify
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          curl -fsSL https://github.com/neurophant/punchtape/releases/latest/download/get-punchtape.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: punchtape --verify
+```
 
 ### Конфликты и их рецепты
 
@@ -252,7 +345,7 @@ punchtape: zone damaged: the demand stream's past changed
 и машина сама говорит весь рецепт:
 
 ```
-punchtape: zone born by machine 9.9.9 — this machine is 0.5.1; archive it (cp -r .punchtape .punchtape-archive) and start fresh
+punchtape: zone born by machine 9.9.9 — this machine is 0.6.0; archive it (cp -r .punchtape .punchtape-archive) and start fresh
 ```
 
 **В дереве сидит мусорная или полумёртвая зона.** Папка

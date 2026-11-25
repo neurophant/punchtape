@@ -24,11 +24,14 @@ ceremony.
 
 **AGENTS block** — the machine's discovery hook: a marked block
 inside the working root's `AGENTS.md`, bounded by `<!-- punchtape -->`
-and `<!-- /punchtape -->`, ensured whole on every run. Identical
-content touches nothing; changed content replaces itself; a
-foreign file without markers gains the block at its end. Bytes
-outside the markers are never touched; a lone marker or an
-inverted pair is damage the machine refuses loudly. Analogy: a
+and `<!-- /punchtape -->`, ensured whole on every run as the file's
+first lines. Identical content touches nothing; changed content
+replaces itself; a foreign file without markers gains the block as its
+first lines, and a block found lower moves there. The words outside the
+markers keep their bytes and stand below the block, behind one empty
+line — the machine's own line; only the empty lines at their edges go.
+A lone marker, an inverted pair or more than one pair is damage the
+machine refuses loudly. Analogy: a
 library book's plate — glued inside the cover, the pages are not
 the librarian's. → working tree.
 
@@ -86,10 +89,11 @@ build's artifacts are work — they may legally move the tree.
 
 C
 
-**The call** — the machine's entire interface: `punchtape`, no
+**The call** — the agent's entire interface: `punchtape`, no
 arguments, anywhere at or below the working root. Every answer
 beyond the terminal's one line is a file of the → zone.
-→ terminal line, → exit code.
+→ terminal line, → exit code. Two flags serve the human alone:
+`--version` and the → verify call.
 
 **Candor** — `law:candor`, the law of the loud record: nothing the
 work skips, permits or sets aside may pass in silence. The loud
@@ -222,7 +226,11 @@ different digest with overwhelming certainty. Digests reconcile
 the machine's world: line-range digests, claims digests, proofs,
 object addresses, the tree digest, the verdict's signature.
 Human-facing spellings cut it to the first twelve characters —
-the → token. Analogy: a fingerprint — not the finger, but enough
+the verdict's signature and a behavior's claims digest on the
+state page, a claimed range's digest and a row's proof on the
+spec page: the eye compares them, the machine compares the whole
+digests; the short spelling is for reading, the full digest is
+the identity. Analogy: a fingerprint — not the finger, but enough
 to name it. → object store, → proof.
 
 **Done** — `done: true`: the two-word completion act, exactly this
@@ -267,7 +275,10 @@ foreign machine version, arguments on the line).
 uncovered line range, marked with a reason that cites a demand
 line or a law, and references that resolve. An exclusion marking
 no uncovered line is refused — a mark that marks nothing is noise;
-an empty reason is refused the same way. Merged by range;
+an empty reason is refused the same way. A file that does not
+stand yet is judged as spelled — the submission's own rows may
+create it — and once the tree stands, the exclusion holds only the
+lines the file really carries. Merged by range;
 removable by the range key. The loud exclusions complete the
 tree-equals-claims arithmetic of the verdict. → holes,
 → exclusions proposal.
@@ -397,13 +408,16 @@ bound to the law the contract prints, and every cited law one the
 contract prints. What is enforced is printed; what is printed is
 enforced.
 
-**Lesson** — one red turned green, fixed as pure data: the reason class,
-the row key, the broken facts, the row's bytes before and after
-(answered by the journal's row-bytes index), and the two run
-numbers. Written by the run record itself — zero tokens of any
-model. The lessons land on the knowledge page, grouped by reason.
-Example: a row red on `exit: got 1, want 0` at run 4, green at
-run 5 — the lesson carries both rows and both numbers.
+**Lesson** — a row whose own bytes changed from red to green, fixed
+as pure data: the reason class, the row key, the broken facts, the
+row's bytes before and after (answered by the journal's row-bytes
+index), and the two run numbers. A row that stood while the code
+was fixed is no lesson and is not recorded. Written by the run
+record itself — zero tokens of any model. The lessons land on the
+knowledge page, grouped by reason.
+Example: a row red on `exit: got 1, want 0` at run 4, its
+expectation corrected, green at run 5 — the lesson carries both
+rows and both numbers.
 
 M
 
@@ -611,8 +625,9 @@ a run that changed nothing and closed nothing leaves the previous
 report standing. → refusal, → verdict, → views.
 
 **Requirement** — one demand made specific: an id (`R` plus
-letters, digits and dots, say `R1`), the stream lines it occupies
-(D ranges), the unwinding in prose, an optional `refines` parent.
+letters, digits and dots, say `R1`), the demand lines it takes
+(D ranges), a prose statement of exactly what they ask, an
+optional `refines` parent.
 Merges by id; retires only through an explicit `remove` that also
 clears every cover of it. The stream is resolved whole when every
 line carries its outcome and its carrier.
@@ -702,13 +717,6 @@ line. The exceptions: first contact prints the whole contract;
 the unborn zone prints its one instruction line; a call that
 cannot happen answers its single error line instead — exit 1.
 Everything else the machine has to say lives in the zone's files.
-
-**Token** — the human-facing short spelling of a → digest: its
-first twelve hex characters. The state page's verdict signatures
-and row proofs, the spec pages' behavior tokens, the trace's
-claims tokens — all tokens; the eye compares them, the machine
-compares the whole digests. The token is for reading; the full
-digest is the identity. → digest.
 
 **Torn tail** — a journal record cut mid-write (a crash, a lost
 power). It does not blind the machine: the intact records load,
@@ -811,9 +819,17 @@ row keys); every heal (the first later run with no red row). The
 recent ten events, the elision counting the rest. What the journal
 does not carry, the history does not say.
 
+**Verify call** — `punchtape --verify`: the re-proof of a → zone
+where the agent cannot write. The build and every row of the
+standing → corpus run again, the journal's green facts do not
+count, nothing is written, the inbox is not read. The last line
+answers proven or not proven and counts the words marked
+not-a-requirement and the share of the tree excluded — the agent's
+judgments. The → exit code is 0 only on proven.
+
 **Version flag** — `punchtape --version`, exactly this spelling
 and alone on the line: prints `punchtape <version>` and exits 0
-before any state is touched — the one human affordance; the
+before any state is touched — a human affordance; the
 contract never mentions it. → the call, → exit code.
 
 **Views** — the zone's generated files: `state.md`, `report.md`,

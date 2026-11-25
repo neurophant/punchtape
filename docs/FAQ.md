@@ -251,7 +251,7 @@ Proof: the chain and digest laws —
 The writing is the agent's; the running, the pinning, and the
 verdict are the machine's, and the sight of each check beside its
 claim is yours. Self-certification is split across sides; it is
-not claimed solved — it is made visible and expensive to fake.
+not claimed solved, and faking it is cheap for an agent that reads the source (see Trust and security).
 Proof: the execution and verdict laws —
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -363,10 +363,12 @@ Proof: the document and execution laws —
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
 **The agent can edit .punchtape/ files directly.**
-It can touch them; the machine then refuses: the chain recomputes
-over the bytes, records re-compose or the zone is damaged — loud,
-named, exit 1. Tampering is detectable by design, not prevented
-by permissions.
+It can. An edit that breaks the record is loud: the chain recomputes
+over the bytes, records re-compose or the zone is damaged — named,
+exit 1. An edit that recomputes every fingerprint is not: the
+journal holds no secret, and the machine checks that its records
+agree with each other, not who wrote them. A verdict is therefore
+trusted where it was re-proven, in a place the agent cannot write.
 Proof: the chain law — [ARCHITECTURE.md](ARCHITECTURE.md); live
 refusal lines — [USAGE.md](USAGE.md).
 
@@ -437,19 +439,41 @@ Proof: the journal and the views —
 ## Trust and security
 
 **A hostile agent can sabotage the zone.**
-True — an agent with file access can burn the film. What it
-cannot do is fake a standing verdict: the chain and the records
-recompute, and sabotage shows up as loud damage, named by file.
-Keep the zone in git and even sabotage is revertible.
-Proof: the chain law — [ARCHITECTURE.md](ARCHITECTURE.md).
+True — an agent with file access can burn the film, and that is the
+loud case: the chain and the records recompute, and the damage
+shows up named by file. The quiet case is a forger that reads the
+source and recomputes every hash: its journal passes as the
+machine's own, because the machine verifies consistency, not
+authorship. Keep the zone in git and sabotage is revertible. Trust
+a verdict only where it was re-proven — the answers below say how.
+Proof: the chain law — [ARCHITECTURE.md](ARCHITECTURE.md); the
+proof law — a green row is not run again while its fingerprint
+stands.
 
 **Can the film be forged after the fact?**
-Each verdict's signature is sha256 over canonical record bytes;
-change anything and the sums stop matching on the next run. A
-forger must recompute every hash consistently — the machine will
-do that check for the reader.
+Yes, by a forger that recomputes every hash consistently. Change
+one value without recomputing and the sums stop matching on the
+next run. Recompute them all and the journal passes: no key and no
+witness lives inside the zone, and the zone is within the agent's
+reach.
 Proof: the fold and signature laws —
 [ARCHITECTURE.md](ARCHITECTURE.md).
+
+**How do I check a verdict the agent handed me?**
+Re-prove the zone where the agent cannot write: run
+`punchtape --verify`. It runs the build and every row again without
+trusting the journal, writes nothing, and answers 0 only when every
+verdict gate stood after that run. A forged journal turns red
+there. Three moments call for it: before you accept a verdict you
+did not watch being earned; when a zone reaches you from elsewhere —
+a clone after a handover, a merge of two zones, a restore from a
+backup; and in CI, where the same call runs on every push and
+before a release. On your own machine the call exposes a forged
+journal, but an agent that shares your account can also replace the
+tools the rows call — a clean CI machine closes that. The meaning of
+the checks stays yours: the commands are the agent's.
+Proof: the verify call — [ARCHITECTURE.md](ARCHITECTURE.md); the
+recipes — [USAGE.md](USAGE.md).
 
 **A replaced binary could lie about verdicts.**
 Yes — trust the binary or build it from source; the release
@@ -459,10 +483,12 @@ Proof: the release checksums; [BOOTSTRAP.md](BOOTSTRAP.md).
 
 **Why trust this machine at all?**
 Because it asks for the smallest trust available: read the film —
-plain files — and rerun the replay; everything it claims is
-bytes you can check. The demos do exactly that, from scratch, on
-your machine.
-Proof: [demos/](../demos/) — each with a `replay.sh`.
+plain files — and re-prove it: `punchtape --verify` on any zone,
+or a demo's `replay.sh` from scratch. Everything it claims is bytes
+you can check, and what it cannot check it names in the honest
+limits.
+Proof: [demos/](../demos/) — each with a `replay.sh`; the verify
+call — [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## The product
 
@@ -493,10 +519,11 @@ Proof: the design law — [ARCHITECTURE.md](ARCHITECTURE.md).
 
 **Integrations with my editor/CI/agent?**
 The machine is agnostic by law — any agent that can run a shell
-command drives it; CI can replay a zone after push. Demos show
-four stacks; your harness is the fifth.
+command drives it; CI can re-prove a zone after a push with
+`punchtape --verify`, by its exit code. Demos show four stacks;
+your harness is the fifth.
 Proof: the agnosticity law — AGENTS.md of this repository; the
-[demos](../demos/).
+[demos](../demos/); the recipes — [USAGE.md](USAGE.md).
 
 **The harnesses will build this in — why won't you be absorbed?**
 Features get absorbed; that is how software goes. The property

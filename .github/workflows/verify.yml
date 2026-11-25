@@ -1,0 +1,45 @@
+name: verify
+
+on: [push, pull_request]
+
+jobs:
+  demo:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+      - name: build the machine of this commit
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          go build -trimpath -buildvcs=false -o "$HOME/.local/bin/punchtape" ./cmd/punchtape
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: a copy of the recorded demo is proven
+        run: |
+          rm -rf /tmp/demo && cp -r demos/notes/project /tmp/demo
+          cd /tmp/demo && punchtape --verify
+      - name: a broken copy is not proven
+        run: |
+          rm -rf /tmp/broken && cp -r demos/notes/project /tmp/broken
+          : > /tmp/broken/notes.js
+          cd /tmp/broken
+          code=0
+          punchtape --verify > /tmp/verify.out 2>&1 || code=$?
+          cat /tmp/verify.out
+          test "$code" -eq 1 && tail -n 1 /tmp/verify.out | grep -q 'not proven'
+      - name: the rjq demo replays twice on a copy, the two films byte-identical
+        run: |
+          rm -rf /tmp/rjq && cp -r demos/rjq /tmp/rjq
+          film() { (cd /tmp/rjq/project && find .punchtape AGENTS.md -type f -not -path '.punchtape/cache/*' | LC_ALL=C sort | xargs shasum -a 256 | shasum -a 256); }
+          /tmp/rjq/replay.sh punchtape
+          first=$(film)
+          /tmp/rjq/replay.sh punchtape
+          second=$(film)
+          test -n "$first"
+          test "$first" = "$second"
+          grep -q '^verdict: #1 .* standing' /tmp/rjq/project/.punchtape/state.md

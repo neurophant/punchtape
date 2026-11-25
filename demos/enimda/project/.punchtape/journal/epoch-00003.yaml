@@ -3,19 +3,19 @@ kind: submission
 submission:
   corpus-version: 2
   intents:
-  - lines:
-    - D3
-    outcome: work
-    prose: the CLI prints the four borders
+    - lines:
+        - D3
+      outcome: work
+      prose: the CLI prints the four borders
   requirements:
-  - id: R3
-    lines:
-    - D3
-    prose: the CLI prints the four borders of an image
+    - id: R3
+      lines:
+        - D3
+      prose: the CLI prints the four borders of an image
   added:
-  - id: cli/borders
-    addr: 9873889633b8cb60a7581660d0e4d38db5ecc032aba5e491870cf8f050b13ea6
-  doc-addr: 21cfe49ddcdc91d08a61f72ac06eaa0df27e56698cd58827dc7d063a915a1426
+    - id: cli/borders
+      addr: 6c045f7399c7eb4a903ff5d3733b5ffef72a8a255c826a98a2fb583173feb635
+  doc-addr: 45c052425d9b1963bd5593e3752bf076cb56ab0dd50bf22b5daabda5c5d5094b
 ---
 kind: demand-append
 demand-append:
@@ -26,30 +26,30 @@ kind: run
 run:
   "n": 2
   rows:
-  - key: cli/borders/0
-    row: 79459d447b8bd18b854f75614264aa65b668a64a4bcd1d36263e2f0b70cb6391
-    status: green
-    exit: 0
-    proof: 279bc085d81a5db71a906a550b370823e1837aa8648aa22faddcd577b94d8c26
-  - key: cli/borders/1
-    row: d5bcdf75ca9f4170b63486942609535991862d5fa632394db1da89fc206f5240
-    status: green
-    exit: 0
-    proof: 7a03bac042667943509905fddc1add42160e6b5607085901ab612083c64124e5
+    - key: cli/borders/0
+      row: 79459d447b8bd18b854f75614264aa65b668a64a4bcd1d36263e2f0b70cb6391
+      status: green
+      exit: 0
+      proof: 561736ddde694a7c9c0240aa45445c03d42d7c7a8248116bc7484dec17aae6ea
+    - key: cli/borders/1
+      row: d5bcdf75ca9f4170b63486942609535991862d5fa632394db1da89fc206f5240
+      status: green
+      exit: 0
+      proof: b750dbb84b09a5540f7d05c83b13f51cc6b71f80b10930f50a26ee7428a1f56c
 ---
 kind: verdict
 verdict:
   "n": 2
   corpus-version: 2
-  signature: c987b51fd4ce95eb171ecc57e1d75584b28897552b6e19cced74b0dedaa2b6d6
-  registry-digest: 1fff5a1c7a4cce97b641c324b0f4b2a8851b7ea5242a3120c80e06603f4614fc
+  signature: aaf8f4bcb3322990018ec2c1d2cf5bf7672b651139a53c8efc8166c265fc09f5
+  registry-digest: f1bb80afd5c46fb0982f754ac2166967d7b4ffb63d5f15f6e29da3e38dee5e0c
   scopes:
-  - id: cli/borders
-    pointer: f4657a24ebe97311ff04f12142b3124f93b1174033942885cda64639fca1dc71
-  - id: lib/scan
-    pointer: 67821d943546179eb14694a2fb1b0c7b136f19e8098a0d0cbbf9d55db533fcd5
-  - id: lib/version
-    pointer: 963fa7269ac23b7b3615587c16574c8cbe2343e134144a2a77edb20407e1b169
+    - id: cli/borders
+      pointer: f4657a24ebe97311ff04f12142b3124f93b1174033942885cda64639fca1dc71
+    - id: lib/scan
+      pointer: 67821d943546179eb14694a2fb1b0c7b136f19e8098a0d0cbbf9d55db533fcd5
+    - id: lib/version
+      pointer: 963fa7269ac23b7b3615587c16574c8cbe2343e134144a2a77edb20407e1b169
   run: 2
 ---
 kind: completion

@@ -40,9 +40,13 @@ func TestSourceParsesStrictly(t *testing.T) {
 
 func TestContractStructuralParity(t *testing.T) {
 	s := Load()
+	duties := map[string]string{"base": "YOUR HANDS", "ru": "ТВОИ РУКИ", "zh": "你的双手"}
 	for name, text := range map[string]string{
 		"base": s.Contract, "ru": s.ContractRU, "zh": s.ContractZH,
 	} {
+		if strings.Count(text, duties[name]) != 1 {
+			t.Fatalf("%s mirror: the agent's duties must appear exactly once", name)
+		}
 		for _, law := range []string{
 			"law:document", "law:paths", "law:demand", "law:claims", "law:proof", "law:candor", "law:done", "law:your-tree",
 		} {
@@ -208,20 +212,24 @@ func TestMirrorsCarryTheRegistry(t *testing.T) {
 	}
 }
 
-// TestTeachingLimits — the teaching faces stay lean: the contract is
-// one page, the template and the example are short — bloat is
-// measured, not argued, and a canon that grows must say so here.
+// TestTeachingLimits — the teaching faces stay lean — bloat is
+// measured, not argued, and a canon that grows must say so here. A
+// unit of a face is one line, so lines no longer measure the
+// contract: its bytes do. The template, the reference and the example
+// are counted by their lines.
 func TestTeachingLimits(t *testing.T) {
 	s := Load()
+	if size := len(s.Contract); size > 5406 {
+		t.Fatalf("the contract carries %d bytes, the limit is 5406", size)
+	}
 	for _, face := range []struct {
 		name  string
 		text  string
 		limit int
 	}{
-		{"contract", s.Contract, 95},
-		{"template", s.Template, 45},
-		{"reference", s.Reference, 85},
-		{"example", s.Example, 30},
+		{"template", s.Template, 43},
+		{"reference", s.Reference, 18},
+		{"example", s.Example, 25},
 	} {
 		if lines := strings.Count(strings.TrimSuffix(face.text, "\n"), "\n") + 1; lines > face.limit {
 			t.Fatalf("the %s carries %d lines, the limit is %d", face.name, lines, face.limit)

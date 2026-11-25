@@ -5,9 +5,17 @@
 BINARY := punchtape
 COV := /tmp/punchtape-check
 COVERPKG := ./cmd/...,./internal/...
-# Demo project slices (demos/*/project/), not machine code: their
-# style is their authors', the machine never runs them.
-PYFILES := $(shell git ls-files '*.py' | grep -v '^demos/')
+# The files the battery reads are listed off the disk, never off git:
+# a file counts the moment it exists, tracked or not. The machine's
+# Go trees are cmd and internal; the repository's Python lives in
+# tools and campaigns. The demo project slices (demos/*/project/)
+# are not machine code: their style is their authors', the machine
+# never runs them.
+GODIRS := cmd internal
+GOFILES := $(shell find $(GODIRS) -name '*.go' -type f | LC_ALL=C sort)
+GOSRC := $(filter-out %_test.go,$(GOFILES))
+PYDIRS := tools campaigns
+PYFILES := $(shell find $(PYDIRS) -name '*.py' -type f | LC_ALL=C sort)
 GOPKGS := ./cmd/... ./internal/...
 MYPYCACHE := /tmp/punchtape-mypy
 # The battery's speed ceiling. Its ONLY job is to catch an accidental
@@ -54,13 +62,13 @@ python-lint:
 # two coverage sources merge by the block's maximum count: the same
 # block seen by several test binaries counts once, as executed.
 check: docs-parity python-lint
-	test -z "$$(gofmt -l $(shell git ls-files '*.go' | grep -v '^demos/'))"
+	test -z "$$(gofmt -l $(GOFILES))"
 	go vet $(GOPKGS)
 	staticcheck $(GOPKGS)
 	diag=$$(golint $(GOPKGS)); test -z "$$diag" || { echo "$$diag"; exit 1; }
 	diag=$$(unparam $(GOPKGS)); test -z "$$diag" || { echo "$$diag"; exit 1; }
-	diag=$$(gopls check $$(git ls-files '*.go' | grep -v '^demos/')); test -z "$$diag" || { echo "$$diag"; exit 1; }
-	dupl -threshold 100 $$(git ls-files '*.go' | grep -v '^demos/' | grep -v '_test\.go$$') | grep -q '^Found total 0 clone' || { echo 'duplicate code found'; exit 1; }
+	diag=$$(gopls check $(GOFILES)); test -z "$$diag" || { echo "$$diag"; exit 1; }
+	dupl -threshold 100 $(GOSRC) | grep -q '^Found total 0 clone' || { echo 'duplicate code found'; exit 1; }
 	start=$$(date +%s); \
 	go test -count=1 $(GOPKGS) -coverpkg=$(COVERPKG) -coverprofile=$(COV).test.out || exit 1; \
 	elapsed=$$(($$(date +%s) - start)); \
@@ -86,7 +94,7 @@ check: docs-parity python-lint
 			echo "coverage: $$n function(s) below 100% — gate open, the strict reference platform is linux"; \
 		fi; \
 	fi
-	@total=$$(git ls-files '*.go' | grep -v '_test\.go$$' | xargs wc -l | tail -1 | awk '{print $$1}'); \
+	@total=$$(cat $(GOSRC) | wc -l); \
 	echo "check: green (coverage 100%, $$total non-test lines, battery $$(cat $(COV).elapsed) s of $(BATTERY_LIMIT))"
 
 build:
@@ -99,7 +107,7 @@ vet:
 	go vet $(GOPKGS)
 
 fmt:
-	gofmt -l -w $(shell git ls-files '*.go' | grep -v '^demos/')
+	gofmt -l -w $(GOFILES)
 
 clean:
 	rm -f $(BINARY)

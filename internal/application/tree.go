@@ -307,22 +307,39 @@ func (m *machine) FileLines(rel string) (int, bool) {
 	return fprint.CountLines(data), true
 }
 
-// Hole — whether a range names at least one line no post-merge
-// behavior claims: the loud exclusion's own gate. A mark that marks
-// nothing is refused.
+// Hole — whether a range names at least one line neither a post-merge
+// behavior claims nor the machine itself holds: the loud exclusion's
+// own gate. A file that stands is judged by the lines it really
+// carries — a range past its own lines names nothing there; a file
+// that does not stand yet is judged as spelled, the submission's own
+// rows may create it. A mark that marks nothing is refused.
 func (m *machine) Hole(claims []string, rel string, first, last int) bool {
-	claimed := map[int]bool{}
-	for _, claim := range claims {
-		cRel, cFirst, cLast, err := fprint.ParseLineRange(claim)
-		if err != nil || cRel != rel {
-			continue
+	if lines, stands := m.FileLines(rel); stands {
+		if first > lines {
+			return false
 		}
-		for n := cFirst; n <= cLast; n++ {
-			claimed[n] = true
+		if last > lines {
+			last = lines
 		}
 	}
+	closed := map[int]bool{}
+	shut := func(spelling string) {
+		sRel, sFirst, sLast, err := fprint.ParseLineRange(spelling)
+		if err != nil || sRel != rel {
+			return
+		}
+		for n := sFirst; n <= sLast; n++ {
+			closed[n] = true
+		}
+	}
+	for _, claim := range claims {
+		shut(claim)
+	}
+	for _, own := range m.held {
+		shut(own)
+	}
 	for n := first; n <= last; n++ {
-		if !claimed[n] {
+		if !closed[n] {
 			return true
 		}
 	}

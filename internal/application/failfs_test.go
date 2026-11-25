@@ -263,10 +263,17 @@ func TestAgentsBlockDamageIsLoud(t *testing.T) {
 		t.Fatalf("an unpaired marker must leave the file alone")
 	}
 	// The file cannot be read: the run names it instead of skipping
-	// the hook in silence.
+	// the hook in silence — at the open, where the machine reads its
+	// own lines, and again ahead of the block's own ensuring, should
+	// the file turn unreadable only after the open.
 	code, term = runCode(t, root, map[string]bool{"read:AGENTS.md": true})
 	if code != 1 || !strings.Contains(term, "punchtape:") {
 		t.Fatalf("the unreadable hook must refuse loudly: code %d term %q", code, term)
+	}
+	writeZone(t, root, zone.InboxSlot, "work: a document ahead of an unreadable hook\n")
+	code, term = runCode(t, root, map[string]bool{"read:AGENTS.md!after-write": true})
+	if code != 1 || !strings.Contains(term, "punchtape: ") || strings.Contains(term, "punchtape: run ") {
+		t.Fatalf("a hook unreadable ahead of its ensuring must refuse loudly: code %d term %q", code, term)
 	}
 	// A missing block that cannot land its write: the same loudness.
 	root = newBornRoot(t)
@@ -453,7 +460,6 @@ behaviors:
 work: the second cycle's new row
 mandate: [{line: D1, target: tool/copy}]
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
     - {range: "out2.txt:1-1", reason: the row's own output, refs: [D1]}
 behaviors:

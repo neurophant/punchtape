@@ -1,6 +1,6 @@
 [project]
 name = "punchtape"
-version = "0.5.1"
+version = "0.6.0"
 requires-python = "==3.12.*"
 dependencies = [
     "mypy==2.4.1",

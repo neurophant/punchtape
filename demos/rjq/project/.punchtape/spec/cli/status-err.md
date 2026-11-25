@@ -14,17 +14,15 @@ the ask goes through status to the queue; a refused connection and an unparsable
 ## Claims
 
 - src/bin/rjq-cli.rs:1-24 — 9d9f7d31bd10
-token: 2af98c7a21cd
 
 ## Rows
 
-## row 0 — PROOF
+## row 0
 
 command: ./target/debug/rjq-cli redis://127.0.0.1:1/ q x
 exit: 1
-stdout: err Connection refused (os error 111)
-
-proof: green (9aab0bb6cfb6)
+stdout: contains: err Connection refused
+proof: green (0defcaca6454)
 
 ## row 1 — PROOF
 
@@ -32,7 +30,7 @@ command: ./target/debug/rjq-cli garbage q x
 exit: 1
 stdout: err Redis URL did not parse
 
-proof: green (44a3c458af57)
+proof: green (e517292b4df8)
 
 ## Verify
 

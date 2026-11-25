@@ -1,6 +1,6 @@
 # notes/list — list prints notes oldest first
 
-run: 2
+run: 3
 
 ## Story
 
@@ -13,7 +13,6 @@ two adds then list prints alpha then beta, oldest first
 ## Claims
 
 - notes.js:20-21 — 373f31b26286
-token: 46832763864d
 
 ## Rows
 
@@ -26,7 +25,7 @@ stdout: 1
 alpha
 beta
 
-proof: green (b8b064cb3c7b)
+proof: green (9738508382f7)
 
 ## Verify
 

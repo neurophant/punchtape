@@ -60,8 +60,6 @@ requirements:
     - id: R1
       lines: [D1]
       prose: the tool and its check
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: tool/probe
       name: The probe
@@ -105,8 +103,6 @@ requirements:
     - id: R1
       lines: [D1]
       prose: the tool and its check
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: tool/probe
       name: The probe
@@ -170,7 +166,6 @@ requirements:
       prose: the tool and its check
 uncovered-lines:
     - {range: "src/built.tmp:1-1", reason: the build's own artifact, refs: [D2]}
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: tool/probe
       name: The probe
@@ -231,8 +226,6 @@ requirements:
     - id: R1
       lines: [D1]
       prose: the tool and its check
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: tool/probe
       name: The probe
@@ -258,7 +251,6 @@ requirements:
       lines: [D2]
       prose: the probe stays as work
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "kept.txt:1-1", reason: the row's own output, refs: [D2]}
 behaviors:
     - id: tool/keep
@@ -305,8 +297,6 @@ requirements:
     - id: R1
       lines: [D1]
       prose: the tool and its check
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: tool/probe
       name: The probe
@@ -455,8 +445,6 @@ requirements:
     - id: R1
       lines: [D1]
       prose: the tool and its check
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: tool/probe
       name: The probe
@@ -548,7 +536,6 @@ requirements:
       lines: [D1]
       prose: the tool and its check
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "src/in.txt:1-1", reason: the described input itself, refs: [D1]}
 `
 }

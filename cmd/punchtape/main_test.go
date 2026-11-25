@@ -1,6 +1,6 @@
 // The entry point's battery: the mounted call answers the machine's
-// own codes over a real zone, and the launch's argument law — the
-// call, the version ask, the loud refusal.
+// own codes over a real zone, the launch's argument law — the
+// call, the version ask, the loud refusal — and the verify ask.
 package main
 
 import (
@@ -62,12 +62,34 @@ func TestLaunchIsTheVersionAsk(t *testing.T) {
 	}
 }
 
+// TestLaunchIsTheVerifyAskWithoutAZone — the verify ask outside any
+// zone: one line, exit 1, nothing created.
+func TestLaunchIsTheVerifyAskWithoutAZone(t *testing.T) {
+	dir := t.TempDir()
+	wd, _ := os.Getwd()
+	defer os.Chdir(wd)
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if code := launch([]string{"--verify"}, &out); code != 1 {
+		t.Fatalf("the verify ask without a zone answers one, got %d", code)
+	}
+	if !strings.Contains(out.String(), "nothing to verify") {
+		t.Fatalf("the verify ask must say there is nothing to verify, got %q", out.String())
+	}
+	if _, err := os.Stat(filepath.Join(dir, ".punchtape")); !os.IsNotExist(err) {
+		t.Fatalf("the verify ask creates nothing")
+	}
+}
+
 // TestLaunchRefusesArguments — the contract's own law, enforced: a
 // call that carries arguments is refused with one line quoting the
 // law, before any machine state is touched.
 func TestLaunchRefusesArguments(t *testing.T) {
 	for _, args := range [][]string{
 		{"run"}, {"submit", "file"}, {"--version", "extra"}, {"-version"}, {""},
+		{"--verify", "extra"}, {"-verify"}, {"--verify=1"},
 	} {
 		var out bytes.Buffer
 		if code := launch(args, &out); code != 1 {

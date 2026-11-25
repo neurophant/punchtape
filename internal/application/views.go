@@ -18,6 +18,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/neurophant/punchtape/internal/domain/doc"
 	"github.com/neurophant/punchtape/internal/domain/fprint"
@@ -67,7 +68,7 @@ func historyEvents(records []journal.Record) []historyEvent {
 			verdictSeen = true
 			out = append(out, historyEvent{run: rec.Verdict.Run, kind: "verdict",
 				text: fmt.Sprintf("run %d: verdict #%d on v%d recorded — %s",
-					rec.Verdict.Run, rec.Verdict.N, rec.Verdict.CorpusVersion, shortDigest(rec.Verdict.Signature))})
+					rec.Verdict.Run, rec.Verdict.N, rec.Verdict.CorpusVersion, fprint.ShortDigest(rec.Verdict.Signature))})
 		case rec.Kind == journal.KindRun && rec.Run != nil:
 			reds := 0
 			var keys []string
@@ -173,7 +174,7 @@ func (m *machine) writeState(corpus doc.Document, claims map[string]claimsFacts,
 	// created it — the run's gate has already refused any other.
 	fmt.Fprintf(&b, "machine at birth: %s\n", m.standing.BirthVersion)
 	if v := m.standing.Verdict; v != nil {
-		fmt.Fprintf(&b, "verdict: #%d on v%d, run %d, signature %s", v.N, v.CorpusVersion, v.Run, shortDigest(v.Signature))
+		fmt.Fprintf(&b, "verdict: #%d on v%d, run %d, signature %s", v.N, v.CorpusVersion, v.Run, fprint.ShortDigest(v.Signature))
 		since := driftSince(v, claims, EnvHash(m.pins), m.standing.RunNumber, m.records, m.rowBytesOf)
 		switch {
 		case since > 0:
@@ -214,7 +215,7 @@ func (m *machine) writeState(corpus doc.Document, claims map[string]claimsFacts,
 	for _, beh := range corpus.Behaviors {
 		green, stale, red := m.behaviorRows(beh)
 		files, lines := claimsShape(beh)
-		shape := fmt.Sprintf("(claims %d files / %d lines; proof %s)", files, lines, shortDigest(claims[beh.ID].digest))
+		shape := fmt.Sprintf("(claims %d files / %d lines; digest %s)", files, lines, fprint.ShortDigest(claims[beh.ID].digest))
 		switch {
 		case red > 0:
 			fmt.Fprintf(&b, "- %s: %d rows %s — %d green, %d stale, %d RED\n",
@@ -258,12 +259,8 @@ func (m *machine) writeState(corpus doc.Document, claims map[string]claimsFacts,
 				fmt.Fprintf(&b, "- %s — %s\n", ex.Path, ex.Reason)
 			}
 		}
-		share := 0
-		if cov.Total > 0 {
-			share = 100 * cov.ExcludedLines / cov.Total
-		}
 		fmt.Fprintf(&b, "excluded lines: %d ranges (%d %% of tree)\n",
-			len(m.standing.Registry.Exclusions), share)
+			len(m.standing.Registry.Exclusions), excludedShare(cov))
 		if m.tree.declared() {
 			fmt.Fprintf(&b, "outside the universe: %d files\n", m.tree.lastFacts.outside)
 			fmt.Fprintf(&b, "universe: %d of %d files\n",
@@ -278,6 +275,16 @@ func (m *machine) writeState(corpus doc.Document, claims map[string]claimsFacts,
 		}
 	}
 	return m.writeIfChanged(filepath.Join(m.zoneDir, zone.StateFile), b.Bytes())
+}
+
+// excludedShare — the excluded lines' share of the tree in whole
+// percent, the one arithmetic behind the state's page and the lines
+// that name the agent's judgments; an empty tree answers zero.
+func excludedShare(cov fprint.Coverage) int {
+	if cov.Total == 0 {
+		return 0
+	}
+	return 100 * cov.ExcludedLines / cov.Total
 }
 
 // treeHoles — the tree's open line count of the run's coverage fact.
@@ -352,7 +359,7 @@ func (m *machine) writeExclusionsProposal(corpus doc.Document) error {
 // other, then the carrier, the requirements, the behaviors with
 // their claims and the proof rows with their standings. Nothing is
 // judged here; everything is placed for the eye.
-func (m *machine) writeTrace(corpus doc.Document, claims map[string]claimsFacts) error {
+func (m *machine) writeTrace(corpus doc.Document) error {
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "# punchtape trace — run %d\n\n", m.standing.RunNumber)
 	reqSpan := map[int][]string{}
@@ -393,8 +400,8 @@ func (m *machine) writeTrace(corpus doc.Document, claims map[string]claimsFacts)
 				fmt.Fprintf(&b, "│  └─ %s (span %s)\n", id, strings.Join(m.standing.Registry.Requirements[id].Lines, ", "))
 				for _, beh := range behaviorsOf(id) {
 					fmt.Fprintf(&b, "│     └─ %s (covers %s)\n", beh.ID, id)
-					fmt.Fprintf(&b, "│        claims: %s — token %s\n",
-						strings.Join(beh.Claims, ", "), fprint.Token12(claims[beh.ID].digest))
+					spelled := strings.Join(beh.Claims, ", ")
+					fmt.Fprintf(&b, "│        claims: %s\n", spelled)
 					for i, row := range beh.Rows {
 						if !doc.Pinned(row.Expect) {
 							continue
@@ -411,7 +418,7 @@ func (m *machine) writeTrace(corpus doc.Document, claims map[string]claimsFacts)
 			fmt.Fprintf(&b, "│  └─ answer: %s\n", m.standing.Answers[n])
 		case doc.OutcomeExecute:
 			if e := m.standing.LastExecution; e != nil && slices.Contains(e.Lines, doc.DemandID(n)) {
-				fmt.Fprintf(&b, "│  └─ execution (last): exit %d — %s\n", e.Exit, fprint.Token12(e.StdoutDigest))
+				fmt.Fprintf(&b, "│  └─ execution (last): exit %d — %s\n", e.Exit, fprint.ShortDigest(e.StdoutDigest))
 				continue
 			}
 			fmt.Fprintf(&b, "│  └─ (execute pending)\n")
@@ -548,7 +555,8 @@ func (m *machine) writeReport(n int, build *journal.Build, rows []rowReport, not
 		fmt.Fprintf(&b, "\n")
 	}
 	if len(m.execFacts) > 0 {
-		fmt.Fprintf(&b, "\nexecutions:\n")
+		gap(&b)
+		fmt.Fprintf(&b, "executions:\n")
 		for _, e := range m.execFacts {
 			fmt.Fprintf(&b, "- %s — %s — exit %d\n", strings.Join(e.Lines, ", "), commandOf(e.Run), e.Exit)
 			if e.StdoutAddr != "" {
@@ -580,13 +588,15 @@ func (m *machine) writeReport(n int, build *journal.Build, rows []rowReport, not
 		fmt.Fprintf(&b, "green: %d\n", green)
 	}
 	for _, reason := range order {
-		fmt.Fprintf(&b, "\n%s\n", reason)
+		gap(&b)
+		fmt.Fprintf(&b, "%s\n", reason)
 		for _, key := range byReason[reason] {
 			fmt.Fprintf(&b, "- %s\n", key)
 		}
 	}
 	for _, note := range notes {
-		fmt.Fprintf(&b, "\n%s\n", note)
+		gap(&b)
+		fmt.Fprintf(&b, "%s\n", note)
 	}
 	return m.writeIfChanged(filepath.Join(m.zoneDir, zone.ReportFile), b.Bytes())
 }
@@ -637,10 +647,11 @@ func (m *machine) writeKnowledge() error {
 	}
 	sort.Strings(reasons)
 	for _, reason := range reasons {
-		fmt.Fprintf(&b, "\n## lesson: %s\n", reason)
+		gap(&b)
+		fmt.Fprintf(&b, "## lesson: %s\n", reason)
 		for _, l := range byReason[reason] {
-			fmt.Fprintf(&b, "- %s: runs %d→%d\n  before: %s\n  after:  %s\n",
-				l.Key, l.RedRun, l.GreenRun, oneLine(l.RedRow), oneLine(l.GreenRow))
+			fmt.Fprintf(&b, "- %s: runs %d→%d\n  before:\n%s\n  after:\n%s\n",
+				l.Key, l.RedRun, l.GreenRun, indented(l.RedRow), indented(l.GreenRow))
 		}
 	}
 	return m.writeIfChanged(filepath.Join(m.zoneDir, zone.KnowledgeFile), b.Bytes())
@@ -677,11 +688,11 @@ func (m *machine) writeSpec(corpus doc.Document, claims map[string]claimsFacts) 
 			}
 			fmt.Fprintf(&page, "- %s (lines %s): %s\n", cover, strings.Join(req.Lines, ", "), req.Prose)
 		}
-		fmt.Fprintf(&page, "\n## Claims\n\n")
+		gap(&page)
+		fmt.Fprintf(&page, "## Claims\n\n")
 		for _, r := range claims[b.ID].ranges {
 			fmt.Fprintf(&page, "- %s — %s\n", r.Claim, r.Digest12)
 		}
-		fmt.Fprintf(&page, "token: %s\n", fprint.Token12(claims[b.ID].digest))
 		fmt.Fprintf(&page, "\n## Rows\n\n")
 		for i, row := range b.Rows {
 			if doc.Pinned(row.Expect) {
@@ -767,7 +778,7 @@ func proofShort(m *machine, id string, i int) string {
 	if !ok {
 		return "none"
 	}
-	return shortDigest(fact.Proof)
+	return fprint.ShortDigest(fact.Proof)
 }
 
 // commandOf — the row's command as a human reads it.
@@ -798,13 +809,56 @@ func expectOf(e doc.Expect) string {
 	return strings.Join(lines, "\n")
 }
 
-// oneLine — a row's bytes as one line for the lesson's story.
-func oneLine(rowBytes string) string {
-	s := strings.Join(strings.Fields(rowBytes), " ")
-	if len(s) > 100 {
-		s = s[:100] + "…"
+// gap — one empty line before the block that follows, never two: a
+// page that already stands on an empty line gets none.
+func gap(b *bytes.Buffer) {
+	if bytes.HasSuffix(b.Bytes(), []byte("\n\n")) {
+		return
 	}
-	return s
+	b.WriteByte('\n')
+}
+
+// indented — a row's bytes as the lesson's story: every line of the
+// row on its own line under the lesson, whole lines while they fit
+// the lesson's bound of a hundred bytes. The first line past the
+// bound is shown cut only when more than half of it fits; otherwise
+// the row ends with the ellipsis on its last whole line — a line is
+// never shown as a fragment mostly hidden. The cut falls on a
+// letter's edge.
+func indented(rowBytes string) string {
+	const bound = 100
+	lines := strings.Split(strings.TrimSuffix(rowBytes, "\n"), "\n")
+	var shown []string
+	used, cut := 0, false
+	for i, line := range lines {
+		ahead := 0
+		if i > 0 {
+			ahead = 1 // the newline before the line
+		}
+		if len(line)+ahead <= bound-used {
+			shown = append(shown, line)
+			used += len(line) + ahead
+			continue
+		}
+		room := bound - used - ahead
+		if i > 0 && room*2 <= len(line) {
+			cut = true
+			break
+		}
+		for !utf8.ValidString(line[:room]) {
+			room--
+		}
+		shown = append(shown, line[:room])
+		cut = true
+		break
+	}
+	for i, line := range shown {
+		shown[i] = "    " + line
+	}
+	if cut {
+		shown[len(shown)-1] += "…"
+	}
+	return strings.Join(shown, "\n")
 }
 
 // writeIfChanged — the view's whole content, only when it differs.
@@ -815,10 +869,4 @@ func (m *machine) writeIfChanged(path string, data []byte) error {
 		return nil
 	}
 	return ports.FSBind.WriteAtomic(path, data)
-}
-
-// shortDigest — the human-facing 12 characters of a digest: the
-// protocol's own token spelling.
-func shortDigest(d string) string {
-	return fprint.Token12(d)
 }

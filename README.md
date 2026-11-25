@@ -69,6 +69,25 @@ Bring this repo under punchtape: read the code, write checks for the behavior th
 That's it. The assistant and the machine do the work; you read
 the result.
 
+### As a skill
+
+The start from step 2 also ships as a skill,
+[skills/punchtape/SKILL.md](skills/punchtape/SKILL.md), listed in the
+[agentic-awesome-skills](https://github.com/sickn33/agentic-awesome-skills)
+catalog. Install it once, and the skill tells your assistant to step in
+whenever a project has a `.punchtape/` folder or you mention punchtape.
+
+```bash
+npx skills add neurophant/punchtape
+```
+
+The installer is Vercel's `skills` CLI (Node.js 22.20 or later). It
+finds the agents on your machine and asks which of them get the skill,
+in the current project or, with `-g`, in every project. The CLI
+collects anonymous usage data, and `DISABLE_TELEMETRY=1` switches that
+off. Or skip the installer and copy the file into your agent's skills
+folder by hand.
+
 ### Manual installation
 
 **Homebrew** (macOS and Linux):
@@ -81,7 +100,7 @@ brew install neurophant/tap/punchtape
 [releases page](https://github.com/neurophant/punchtape/releases/latest):
 
 ```bash
-sudo dpkg -i punchtape_0.5.1_amd64.deb
+sudo dpkg -i punchtape_0.6.0_amd64.deb
 ```
 
 **Any unix, with nothing installed**. One command in a terminal:
@@ -137,7 +156,7 @@ end until it is genuinely finished.
   expected, what actually happened. The assistant reads it, fixes
   the code or the checks. Repeat.
 - When everything passes, the assistant sends one line,
-  `done: true`, and the machine re-checks everything and records
+  `done: true`, and the machine checks every gate again and records
   the finish with a checksum, in files inside your project.
 - Words, checks, results, finishes. All of it is written into
   `.punchtape/`, the zone: the machine's own folder inside your
@@ -182,10 +201,10 @@ on your machine:
 
 | case | stack | what happens | verdict |
 |---|---|---|---|
-| [notes](demos/notes/) | Node.js | a new project from zero: a broken build caught red, fixed, every file accounted for, the finish sealed | #1 · 2cb5bbe8a1f6 |
-| [tapsum](demos/tapsum/) | Go | an existing repo brought under the machine: 1 of 7 files claimed, the rest openly excluded | #1 · 8f087e3b7fbb |
-| [enimda](demos/enimda/) | Python | a new feature on finished work: the library untouched, a CLI added, a second finish sealed | #2 · c987b51fd4ce |
-| [rjq](demos/rjq/) | Rust | a bug caught and fixed: a silent failure pinned down, guarded forever | #1 · d9c1f6eb10c7 |
+| [notes](demos/notes/) | Node.js | a new project from zero: a broken build caught red, fixed, every file accounted for, the finish sealed | #1 · a5faaa6aabe3 |
+| [tapsum](demos/tapsum/) | Go | an existing repo brought under the machine: 1 of 7 files claimed, the rest openly excluded | #1 · cd00c6fb84cc |
+| [enimda](demos/enimda/) | Python | a new feature on finished work: the library untouched, a CLI added, a second finish sealed | #2 · aaf8f4bcb332 |
+| [rjq](demos/rjq/) | Rust | a bug caught and fixed: a silent failure pinned down, guarded forever | #1 · 6045010d2a45 |
 
 ## What you get
 
@@ -206,8 +225,8 @@ on your machine:
 - **The machine remembers, mechanically.** Steps, failures,
   fixes. All of it lands in plain files as pure data, no model
   in between. New session, new AI model, next month. The work
-  continues exactly where it stopped. The past cannot be edited,
-  and the record is yours. No account, no cloud.
+  continues exactly where it stopped. A damaged record of the past
+  is refused by name, and the record is yours. No account, no cloud.
 - **Strictly deterministic.** Same task, same code, same
   conditions: the same answer, on your laptop, on the server,
   next year.
@@ -259,6 +278,11 @@ claim and the check side by side for exactly this).
 - The machine never sees your chat. It takes your words from
   `.punchtape/demands.md` and checks the record on every run,
   but it cannot know a word that was never written down.
+- The zone is within your agent's reach. The machine checks that
+  the journal agrees with itself, not who wrote it. A verdict you did
+  not watch being earned is re-proved with `punchtape --verify`,
+  where the agent cannot write: in CI or on another machine, every
+  row runs again.
 - The agent's submission is YAML, and YAML has sharp edges:
   quoting rules, no tabs. In the latest field rehearsal this was
   the most common refusal. Each one names its exact place, and
@@ -300,8 +324,12 @@ chain of plain files.
 
 A finish is sealed with a checksum over exactly what passed. The
 journal underneath is verified by the machine on every run, and a
-hand-edited record is rejected, not trusted. Nothing recorded can
-be quietly rewritten. What stands, stands.
+damaged record is rejected, not trusted. That check proves the
+journal agrees with itself, not who wrote it: an agent that
+recomputes every hash can rewrite it consistently. A verdict you did
+not watch being earned is re-proved where the agent cannot write, in
+CI or on another machine — every row runs again there. What stands
+there, stands.
 
 ## Documentation
 
@@ -350,7 +378,9 @@ it cannot declare "done": the act is one bare line the machine
 re-checks, the verdict comes from commands the machine runs
 itself, and any hole (an unclaimed line, an unresolved word, an
 unpinned check) holds it. What the machine cannot do is read
-meaning; see Honest limits above.
+meaning. It also cannot tell its own journal from a consistent rewrite:
+run `punchtape --verify` before you accept a verdict you did not
+watch. See Honest limits above.
 
 **Where do the numbers come from?**
 Three rounds of field tests with blind judges, published as a

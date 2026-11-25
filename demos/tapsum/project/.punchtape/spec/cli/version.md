@@ -13,7 +13,6 @@ version prints the exact line and exits zero
 ## Claims
 
 - cmd/tapsum/main.go:1-37 — 8689e88a17b9
-token: 281bab05363d
 
 ## Rows
 
@@ -23,7 +22,7 @@ command: ./tapsum-demo version
 exit: 0
 stdout: tapsum version 1.1.0
 
-proof: green (7ae73af69ef6)
+proof: green (c272c4dfab3b)
 
 ## Verify
 

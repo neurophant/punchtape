@@ -13,7 +13,6 @@ two fixtures through the CLI, offsets pinned
 ## Claims
 
 - enimda/cli.py:1-17 — e9e621853062
-token: f4657a24ebe9
 
 ## Rows
 
@@ -23,7 +22,7 @@ command: python3 -m enimda.cli tests/fixed/bordered.jpg
 exit: 0
 stdout: 4 3 3 4
 
-proof: green (279bc085d81a)
+proof: green (561736ddde69)
 
 ## row 1 — PROOF
 
@@ -31,7 +30,7 @@ command: python3 -m enimda.cli tests/fixed/clear.jpg
 exit: 0
 stdout: 0 0 0 0
 
-proof: green (7a03bac04266)
+proof: green (b750dbb84b09)
 
 ## Verify
 

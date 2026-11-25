@@ -9,15 +9,13 @@ import "github.com/goccy/go-yaml"
 
 // MarshalBehavior — one behavior's canonical bytes.
 func MarshalBehavior(b Behavior) []byte {
-	out, _ := yaml.MarshalWithOptions(b, yaml.Indent(2))
-	return out
+	return Canonical(b)
 }
 
 // MarshalRow — one row's canonical bytes: the row's own identity in
 // every proof fingerprint.
 func MarshalRow(r Row) []byte {
-	out, _ := yaml.MarshalWithOptions(r, yaml.Indent(2))
-	return out
+	return Canonical(r)
 }
 
 // DecodeBehavior — one behavior from its canonical bytes, strict.

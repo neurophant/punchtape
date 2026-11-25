@@ -1,6 +1,6 @@
 # notes/add — add saves a note and prints its number
 
-run: 2
+run: 3
 
 ## Story
 
@@ -13,7 +13,6 @@ two adds number 1 then 2
 ## Claims
 
 - notes.js:1-19 — a8c7c173d884
-token: e89f52e44429
 
 ## Rows
 
@@ -24,7 +23,7 @@ exit: 0
 stdout: 1
 2
 
-proof: green (d9d59e12b2f7)
+proof: green (ca166c3f34ac)
 
 ## Verify
 

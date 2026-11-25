@@ -3,8 +3,9 @@
 # the defective CLI stands (it prints the error and exits zero).
 # The build compiles the project slice (the crates download on first
 # run); every row runs the built binary.
-# The refusal bytes are Linux's (os error 111); see README.
-work: the command-line asker; the error contract pinned byte for byte
+# The refused port is pinned by the words of its error line: the error
+# number in it belongs to the operating system.
+work: the command-line asker; the error contract pinned
 build: cargo build
 intents:
   - {lines: [D1], outcome: work, prose: the CLI reaches the queue through status}
@@ -25,6 +26,6 @@ behaviors:
     covers: [R1, R2]
     rows:
       - run: ./target/debug/rjq-cli redis://127.0.0.1:1/ q x
-        expect: {rc: 1, out: "err Connection refused (os error 111)\n"}
+        expect: {rc: 1, out: "contains: err Connection refused"}
       - run: ./target/debug/rjq-cli garbage q x
         expect: {rc: 1, out: "err Redis URL did not parse\n"}

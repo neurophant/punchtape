@@ -12,13 +12,12 @@ import (
 	"strings"
 
 	"github.com/goccy/go-yaml"
+	"github.com/neurophant/punchtape/internal/domain/doc"
 )
 
 // MarshalRecord — one record's canonical bytes.
 func MarshalRecord(rec Record) []byte {
-	// Records are plain scalar/slice/map data: marshal cannot fail.
-	out, _ := yaml.MarshalWithOptions(rec, yaml.Indent(2))
-	return out
+	return doc.Canonical(rec)
 }
 
 // DecodeRecord — one record from its bytes, strict and round-trip

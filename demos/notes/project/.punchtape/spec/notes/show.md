@@ -1,6 +1,6 @@
 # notes/show — show prints one note and refuses a missing one
 
-run: 2
+run: 3
 
 ## Story
 
@@ -13,7 +13,6 @@ show 1 prints the note; show 9 exits non-zero
 ## Claims
 
 - notes.js:22-29 — 1fe0e7e3d3a9
-token: 128de6075a9a
 
 ## Rows
 
@@ -24,13 +23,13 @@ exit: 0
 stdout: 1
 first
 
-proof: green (3d5cf57dea82)
+proof: green (b79b509b8342)
 
 ## row 1
 
 command: node notes.js show 9
 exit: 3
-proof: green (57d66e2d9fa3)
+proof: green (55b763d5ad36)
 
 ## Verify
 

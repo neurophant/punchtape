@@ -101,6 +101,21 @@ func demandClaims(r doc.Registry) []string {
 	return out
 }
 
+// markedSet — the stream's lines under the registry's markers, one
+// entry a line, never one a record: two markers on one line mark one
+// word, and one marker may hold several.
+func markedSet(r doc.Registry) map[int]bool {
+	marked := map[int]bool{}
+	for _, marker := range r.Markers {
+		if nums, err := doc.ParseRanges(marker.Lines); err == nil {
+			for _, n := range nums {
+				marked[n] = true
+			}
+		}
+	}
+	return marked
+}
+
 // unresolvedLines — the stream's lines without a declared outcome
 // or without the standing carrier of their declared outcome, each
 // with its reason: "no outcome" or "<outcome> pending". Answer,
@@ -117,14 +132,7 @@ func (m *machine) unresolvedLines() []string {
 			}
 		}
 	}
-	markerSpan := map[int]bool{}
-	for _, marker := range m.standing.Registry.Markers {
-		if nums, err := doc.ParseRanges(marker.Lines); err == nil {
-			for _, n := range nums {
-				markerSpan[n] = true
-			}
-		}
-	}
+	markerSpan := markedSet(m.standing.Registry)
 	var out []string
 	for n := 1; n <= len(m.universe); n++ {
 		lo, ok := m.standing.LineOutcomes[n]

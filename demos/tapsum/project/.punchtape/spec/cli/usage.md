@@ -13,7 +13,6 @@ help prints the whole usage page to stdout and exits zero
 ## Claims
 
 - cmd/tapsum/main.go:38-55 — c031e07dc82c
-token: 2fb63c70f69f
 
 ## Rows
 
@@ -35,7 +34,7 @@ Examples:
   tapsum version
   tapsum watch server.log
 
-proof: green (df77a806a395)
+proof: green (1e891786c4bf)
 
 ## Verify
 

@@ -1,4 +1,4 @@
-# punchtape spec — run 2
+# punchtape spec — run 3
 
 - notes/add — add saves a note and prints its number — green
 - notes/list — list prints notes oldest first — green

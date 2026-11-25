@@ -13,7 +13,6 @@ three fixtures scanned fast, offsets pinned
 ## Claims
 
 - enimda/__init__.py:13-134 — a8e8b947c8d1
-token: 67821d943546
 
 ## Rows
 
@@ -23,7 +22,7 @@ command: python3 -c "from enimda import ENIMDA; print(ENIMDA(fp='tests/fixed/bor
 exit: 0
 stdout: (4, 3, 3, 4)
 
-proof: green (6e95a81b3165)
+proof: green (168fa6e89c87)
 
 ## row 1 — PROOF
 
@@ -31,7 +30,7 @@ command: python3 -c "from enimda import ENIMDA; print(ENIMDA(fp='tests/fixed/cle
 exit: 0
 stdout: (0, 0, 0, 0)
 
-proof: green (6e94f1435749)
+proof: green (d7b79f629bda)
 
 ## row 2 — PROOF
 
@@ -39,7 +38,7 @@ command: python3 -c "from enimda import ENIMDA; print(ENIMDA(fp='tests/fixed/out
 exit: 0
 stdout: (4, 2, 4, 4)
 
-proof: green (88dc08218a2e)
+proof: green (08eaaa2d261d)
 
 ## Verify
 

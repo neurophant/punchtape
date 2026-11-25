@@ -3,11 +3,11 @@ kind: submission
 submission:
   corpus-version: 2
   uncovered-lines:
-  - range: cmd/tapsum/main.go:56-82
-    reason: the watch loop; every logged pass carries a wall clock, so no exact-bytes pin exists yet; a future document claims it with fixtures
-    refs:
-    - law:proof
-  doc-addr: 68d4f05395c0dd9a1945f238459421de416b60c6f7a39fe156a8e95cd22380ff
+    - range: cmd/tapsum/main.go:56-82
+      reason: the watch loop; every logged pass carries a wall clock, so no exact-bytes pin exists yet; a future document claims it with fixtures
+      refs:
+        - law:proof
+  doc-addr: e2e97c3a91977617eda42aabf9e2cdd9f9e823392302ecfd37d5eef91828fcb8
 ---
 kind: no-new-demands
 no-new-demands:
@@ -30,13 +30,13 @@ kind: verdict
 verdict:
   "n": 1
   corpus-version: 2
-  signature: 8f087e3b7fbb242292f177809011fb5b7bd2e9a0c81ad8bd5dacf6bdc067caa2
-  registry-digest: 08f6033d94a21d61209dc750998ab6a428889409bac17b861ac665ff8deb2177
+  signature: cd00c6fb84cca3f5a00c8b74b459d7d48857c45bfac1d847da5bbcf6ac3b16e3
+  registry-digest: 37a33bcc157bb03faacc0e39742004e1adff289f45a8e5690b4fdf91c5ee2622
   scopes:
-  - id: cli/usage
-    pointer: 2fb63c70f69f8265ce31f15ea45a587dc7ae7216b752d833e9fa5ee5a3069778
-  - id: cli/version
-    pointer: 281bab05363d993e6960dcdc53ccbaeb0e52155102a188a980bda13aabb3c422
+    - id: cli/usage
+      pointer: 2fb63c70f69f8265ce31f15ea45a587dc7ae7216b752d833e9fa5ee5a3069778
+    - id: cli/version
+      pointer: 281bab05363d993e6960dcdc53ccbaeb0e52155102a188a980bda13aabb3c422
   run: 3
 ---
 kind: completion

@@ -37,7 +37,6 @@ requirements:
       lines: [D1]
       prose: the tool and its check
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
 behaviors:
     - id: tool/copy
@@ -331,15 +330,16 @@ func TestRegressionEditedOutsideTheMachine(t *testing.T) {
 	if !strings.Contains(report, `want "ok"`) {
 		t.Fatalf("the regression must show its red fact, report:\n%s", report)
 	}
-	// The fix lands in the tree: the row goes green again, and the
-	// lesson of the pass is recorded with both byte spellings.
+	// The fix lands in the tree: the row goes green again with its
+	// own bytes unchanged — a row that stood while the code was
+	// fixed leaves no lesson.
 	if err := os.WriteFile(filepath.Join(root, "src", "in.txt"), []byte("ok"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	runIn(t, root)
 	knowledge := zoneFile(t, root, zone.KnowledgeFile)
-	if !strings.Contains(knowledge, "lesson:") {
-		t.Fatalf("the fixed red must leave its lesson, knowledge:\n%s", knowledge)
+	if strings.Contains(knowledge, "lesson:") {
+		t.Fatalf("a row that stood while the code was fixed leaves no lesson, knowledge:\n%s", knowledge)
 	}
 }
 

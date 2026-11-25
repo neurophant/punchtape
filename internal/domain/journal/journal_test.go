@@ -202,7 +202,9 @@ func TestBirthCarriesTheVersion(t *testing.T) {
 
 // TestFoldChainsTheStream — the chain's ledger grows link by link,
 // the past lines accumulate, and the standing signature holds only
-// until the next demand-append clears it.
+// until the next demand-append clears it. The signature is a run's
+// own fact: its number raises the run count, and an older number
+// never lowers it.
 func TestFoldChainsTheStream(t *testing.T) {
 	records := []Record{
 		{Kind: KindBirth, Birth: &Birth{Version: "9.9.9"}},
@@ -216,6 +218,9 @@ func TestFoldChainsTheStream(t *testing.T) {
 	if len(st.ChainAppends) != 1 || st.ChainHead != "c1" || st.PastLines != 2 || st.LastNoNewDemands != 3 {
 		t.Fatalf("the chain and the signature must stand: %+v", st)
 	}
+	if st.RunNumber != 3 {
+		t.Fatalf("the signing run must have taken its number: run-number %d", st.RunNumber)
+	}
 	records = append(records, Record{Kind: KindDemandAppend, DemandAppend: &DemandAppend{Lines: 1, Chain: "c2"}})
 	st, err = Fold(records, objReader(map[string][]byte{}))
 	if err != nil {
@@ -223,6 +228,14 @@ func TestFoldChainsTheStream(t *testing.T) {
 	}
 	if len(st.ChainAppends) != 2 || st.ChainHead != "c2" || st.PastLines != 3 || st.LastNoNewDemands != 0 {
 		t.Fatalf("a demand-append must grow the chain and clear the signature: %+v", st)
+	}
+	records = append(records, Record{Kind: KindNoNewDemands, NoNewDemands: &NoNewDemands{Lines: 3, Run: 1}})
+	st, err = Fold(records, objReader(map[string][]byte{}))
+	if err != nil {
+		t.Fatalf("fold: %v", err)
+	}
+	if st.RunNumber != 3 {
+		t.Fatalf("an older signing run must not lower the run count: run-number %d", st.RunNumber)
 	}
 }
 

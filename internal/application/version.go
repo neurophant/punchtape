@@ -4,4 +4,4 @@ package application
 // new machine invalidates the old proofs honestly.
 
 // Version — the version the proofs carry.
-const Version = "0.5.1"
+const Version = "0.6.0"

@@ -119,7 +119,7 @@ split the work between agents - who does what is the human's call.
 ## Example
 
 A real zone, start to verdict (machine one-liners quoted from a live
-v0.5.1 session):
+v0.6.0 session):
 
 1. `demands.md` holds one line: `say hello and nothing else`.
 2. The agent writes `hello` (prints exactly `hello`) and submits the
@@ -146,20 +146,22 @@ behaviors:
 3. The machine answers, one line per run:
 
 ```text
-punchtape: run 1 - 9 uncovered lines - submit their claims or loud exclusions to .punchtape/inbox.yaml
-punchtape: run 1 - all green - write done: true to .punchtape/inbox.yaml and run to record the verdict
-punchtape: run 1 - verdict #1 standing - show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
+punchtape: run 1 — all green — write done: true to .punchtape/inbox.yaml and run to record the verdict
+punchtape: run 1 — verdict #1 standing — 0 of 1 words marked not-a-requirement, 0 % of the tree excluded — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
 ```
 
-Expected result: the uncovered lines (the machine's own AGENTS.md
-block) are excluded loudly with a citing reason, the check runs green
-with a proof hash, and `done: true` lands a standing verdict with a
+Expected result: no line of the tree stands uncovered - the machine
+does not count its own AGENTS.md block - the check runs green with a
+proof hash, and `done: true` lands a standing verdict with a
 signature. The agent never announces done - the machine does.
 
 ## Limitations
 
 - Offline and local: the machine makes no network calls, has no
   account, no telemetry.
+- The zone is a folder the agent can write: the machine checks that its
+  journal agrees with itself, not who wrote it. The human can re-prove it
+  with `punchtape --verify`.
 - The machine compares real output byte by byte. It never reads
   meaning. A recorded finish proves the checks passed exactly as
   written - the last look stays with the human.
@@ -194,6 +196,11 @@ signature. The agent never announces done - the machine does.
 - Green, red, stale, verdict - those words mean what
   `.punchtape/state.md` and `.punchtape/report.md` record, nothing
   else.
+- A row runs the code its behavior claims. mark, exclusion and reason are
+  your judgments and are read as yours: give the true reason, and never
+  exclude a line a check could reach.
+- `punchtape --verify` is the human's check and re-runs every row - you
+  never call it.
 
 ## Sources
 

@@ -96,7 +96,7 @@ of this version):
    names the remaining holes:
 
    ```
-   punchtape: run 2 — 10 uncovered lines — submit their claims or loud exclusions to .punchtape/inbox.yaml
+   punchtape: run 2 — 1 uncovered lines — submit their claims or loud exclusions to .punchtape/inbox.yaml
    ```
 
    Files the work does not cover get loud exclusions — openly,
@@ -106,16 +106,16 @@ of this version):
    the sign-off — nothing to retype, nothing to format.
 
    ```
-   punchtape: run 2 — all green — write done: true to .punchtape/inbox.yaml and run to record the verdict
+   punchtape: run 3 — all green — write done: true to .punchtape/inbox.yaml and run to record the verdict
    ```
 
-6. The machine re-checks everything — every row green with a
-   pinned proof, your words resolved whole, every requirement
-   covered, the tree equal to its claims plus loud exclusions, no
-   open question — and records the verdict:
+6. The machine checks every gate — every row green with a pinned
+   proof, your words resolved whole, every requirement covered, the
+   tree equal to its claims plus loud exclusions, no open question —
+   and records the verdict:
 
    ```
-   punchtape: run 2 — verdict #1 standing — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
+   punchtape: run 3 — verdict #1 standing — 0 of 4 words marked not-a-requirement, 3 % of the tree excluded — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
    ```
 
    From now on `.punchtape/state.md` shows: `verdict: #1 … —
@@ -204,10 +204,100 @@ Nothing forces the zone into git. With `.punchtape/` in your
 the truth, and each stays whole. What each developer (and your
 CI) sees is the plain tree. What transfers on a task handover is
 the folder, not a branch. When zones diverge, the machine's own
-record is where the truth lives: the journal, which cannot be
-edited without the machine naming it. The cost is plain too: a
+record is where the truth lives: the journal, whose damaged
+records the machine names on load — and which a consistent rewrite
+can pass, so re-prove it with `punchtape --verify` where the agent
+cannot write. The cost is plain too: a
 clone without the zone starts empty, so this shape fits a solo
 owner or an explicit hand-over more than a crowd.
+
+### Check a verdict yourself
+
+The agent runs the machine, and the zone is a folder the agent can
+write. `punchtape --verify` is the call that trusts none of it: it
+runs the build and every row again, writes nothing, and its exit
+code is 0 only when every verdict gate stood after that run:
+
+```bash
+punchtape --verify
+```
+
+The last line answers. On a zone whose journal was rewritten
+consistently:
+
+```text
+red hello/say/0 — stdout: want "hello\n", got "goodbye\n"
+verdict: not yet — behaviors without a green pinned row: hello/say
+verdict: not yet — a row is red or stale
+punchtape: verify — not proven — 0 of 1 words marked not-a-requirement, 0 % of the tree excluded
+```
+
+On an honest zone:
+
+```text
+punchtape: verify — proven — 1 rows run green — 0 of 1 words marked not-a-requirement, 0 % of the tree excluded
+```
+
+Read the last line twice: it counts the words the agent marked
+not-a-requirement and the share of the tree it excluded. The reasons
+sit in `trace.md` and `holes.md`, and each row's command sits on its
+spec page beside the lines it claims.
+
+Three moments call for the check:
+
+- **Before you accept a verdict** you did not watch being earned. One
+  call, on your machine.
+- **When a zone reaches you from elsewhere**: a clone after a
+  handover, a merge of two zones, a restore from a backup. One call;
+  in CI too, when the zone lives in the repository.
+- **In CI**, on every push to the main branch and before a release.
+
+#### A local check before every push
+
+Git can run the check for you. Put two lines into the file
+`.git/hooks/pre-push` of your repository and make it executable:
+
+```sh
+#!/bin/sh
+punchtape --verify
+```
+
+From then on a push leaves your machine only when the zone is proven.
+A red row keeps it home, with the verify lines on the screen:
+
+```text
+red hello/say/0 — stdout: want "hello\n", got "goodbye\n"
+verdict: not yet — drift unresolved: a submission must come after run 1
+verdict: not yet — behaviors without a green pinned row: hello/say
+verdict: not yet — a row is red or stale
+punchtape: verify — not proven — 0 of 1 words marked not-a-requirement, 0 % of the tree excluded
+error: failed to push some refs to '/tmp/pt-measure/remote.git'
+```
+
+The hook needs the zone inside the repository: with no zone,
+`punchtape --verify` answers "no zone here" and refuses the push.
+`git push --no-verify` skips the hook, as it skips any hook.
+
+#### The same check in CI
+
+CI is the one place the agent cannot write. The check there is three
+steps — check the repository out, install the release binary by its
+checksum, run `punchtape --verify` — and the job fails on the exit
+code:
+
+```yaml
+name: verify
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          curl -fsSL https://github.com/neurophant/punchtape/releases/latest/download/get-punchtape.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: punchtape --verify
+```
 
 ### Conflicts and their recipes
 
@@ -257,7 +347,7 @@ back. With the zone in git, that restore is one checkout:
 and the machine says the whole recipe itself:
 
 ```
-punchtape: zone born by machine 9.9.9 — this machine is 0.5.1; archive it (cp -r .punchtape .punchtape-archive) and start fresh
+punchtape: zone born by machine 9.9.9 — this machine is 0.6.0; archive it (cp -r .punchtape .punchtape-archive) and start fresh
 ```
 
 **A junk or half-dead zone sits in the tree.** A `.punchtape`

@@ -132,15 +132,19 @@ func TestCloseOnlyMarkerRefusesLoudly(t *testing.T) {
 
 func TestLessonWithUnfindableRowBytes(t *testing.T) {
 	root := newBornRoot(t)
-	// The replacement row under its mandate pair — the pin grown by
-	// its exit, the genesis intent already declared — its objects
-	// land with its first acceptance.
+	// Two replacement rows under their mandate pair — the pin grown
+	// by its exit, then by its output; the genesis intent already
+	// declared — their objects land with their first acceptances.
 	heal := strings.Replace(bornDocFor(t, root),
 		"intents:\n    - {lines: [D1], outcome: work, prose: \"the tool and its check, told again\"}\n", "", 1)
 	heal = strings.Replace(heal,
 		"work: the first document of the copy\n",
 		"work: the first document of the copy\nmandate: [{line: D1, target: tool/copy}]\n", 1)
 	heal = strings.Replace(heal, "          expect:\n", "          expect:\n            rc: 0\n", 1)
+	healed := strings.Replace(heal, "            rc: 0\n",
+		"            rc: 0\n            out: \"contains: "+claimsTokenOf(t, root, "src/in.txt:1-1")+"\"\n", 1)
+	writeZone(t, root, zone.InboxSlot, healed)
+	runIn(t, root)
 	writeZone(t, root, zone.InboxSlot, heal)
 	runIn(t, root)
 	// A deferred order moves the standing past the replacement's own
@@ -158,18 +162,19 @@ open:
 		t.Fatal(err)
 	}
 	runIn(t, root)
-	// The heal restores the bytes and resubmits with the objects
-	// unreadable: the lesson's red spelling falls back to the
-	// digest's name, the green still lands. The heal document's own
-	// bytes were journaled by its first submission — every object it
-	// names already stands.
+	// The heal restores the bytes and resubmits the row changed — a
+	// lesson stands only for a row that itself moved. The healed
+	// document's own bytes were journaled by its first submission —
+	// every object it names already stands, no object is written —
+	// and the objects are unreadable after a write: both spellings
+	// come from the row-bytes index, the green still lands.
 	if err := os.WriteFile(filepath.Join(root, "src", "in.txt"), []byte("ok"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	writeZone(t, root, zone.InboxSlot, heal)
-	code, _ := runCode(t, root, map[string]bool{"read:objects!after-write": true})
+	writeZone(t, root, zone.InboxSlot, healed)
+	code, term := runCode(t, root, map[string]bool{"read:objects!after-write": true})
 	if code != 0 {
-		t.Fatalf("the heal must still answer: %d", code)
+		t.Fatalf("the heal must still answer: %d\nterminal:\n%s\nreport:\n%s", code, term, zoneFile(t, root, zone.ReportFile))
 	}
 	knowledge := zoneFile(t, root, zone.KnowledgeFile)
 	// The fold's own row bytes index answers the lesson without one
@@ -190,7 +195,7 @@ func TestSmallHelpersWhole(t *testing.T) {
 		t.Fatalf("one line per refusal: %q", msg)
 	}
 	// The short digest of a short string.
-	if shortDigest("abc") != "abc" {
+	if fprint.ShortDigest("abc") != "abc" {
 		t.Fatal("a short digest stands whole")
 	}
 	// A noteless instance counts zero.
@@ -202,10 +207,28 @@ func TestSmallHelpersWhole(t *testing.T) {
 	if commandOf(doc.Cmd{Argv: []string{"./tool", "x"}}) != "./tool x" {
 		t.Fatal("an argv spells its words")
 	}
-	// The long row's bounded line.
-	long := strings.Join(strings.Fields(strings.Repeat("a ", 100)), " ")
-	if got := oneLine(long); got != long[:100]+"…" {
-		t.Fatalf("the bounded line: %q", got)
+	// The lesson's row: its own lines, indented, cut at the bound.
+	row := "run: x\nexpect:\n  out: y\n"
+	if got := indented(row); got != "    run: x\n    expect:\n      out: y" {
+		t.Fatalf("the row's lines: %q", got)
+	}
+	if got := indented(strings.Repeat("a", 101) + "\n"); got != "    "+strings.Repeat("a", 100)+"…" {
+		t.Fatalf("the bounded row: %q", got)
+	}
+	// A line mostly past the bound never starts: the ellipsis closes
+	// the last whole line.
+	head := strings.Repeat("a", 96)
+	if got := indented(head + "\nexpect:\n  rc: 0\n"); got != "    "+head+"…" {
+		t.Fatalf("a mostly hidden line must not stand as a line: %q", got)
+	}
+	// A line more than half inside the bound is shown cut.
+	tail := strings.Repeat("b", 30)
+	if got := indented(strings.Repeat("c", 80) + "\n" + tail + "\nlast\n"); got != "    "+strings.Repeat("c", 80)+"\n    "+strings.Repeat("b", 19)+"…" {
+		t.Fatalf("a mostly shown line must stand cut: %q", got)
+	}
+	// The cut falls on a letter's edge, never inside one.
+	if got := indented(strings.Repeat("d", 99) + "яяя\n"); got != "    "+strings.Repeat("d", 99)+"…" {
+		t.Fatalf("the cut must spare a letter: %q", got)
 	}
 	// A universe the run never numbered answers no line.
 	m2 := &machine{standing: &journal.Standing{}}
@@ -228,7 +251,7 @@ func TestDefensiveSpellsAreTotal(t *testing.T) {
 	if n := orderLine(doc.OpenOrder{Demand: "junk"}); n != 0 {
 		t.Fatalf("an unparsable order line answers zero, got %d", n)
 	}
-	cov := fprint.LineCoverage(nil, []string{"junk"}, []fprint.FileLineCount{{Path: "f", Lines: 10}})
+	cov := fprint.LineCoverage(nil, []string{"junk"}, nil, []fprint.FileLineCount{{Path: "f", Lines: 10}})
 	if cov.ExcludedLines != 0 || cov.Total != 10 {
 		t.Fatalf("an unparsable exclusion holds no lines, got %d of %d", cov.ExcludedLines, cov.Total)
 	}

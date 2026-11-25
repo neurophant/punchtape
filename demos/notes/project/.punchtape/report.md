@@ -1,4 +1,3 @@
-# punchtape report — run 2
+# punchtape report — run 3
 
-
-verdict: #1 on v2, run 2 recorded — signature 2cb5bbe8a1f6
+verdict: #1 on v2, run 3 recorded — signature a5faaa6aabe3

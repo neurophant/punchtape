@@ -1,0 +1,6 @@
+work: a loud exclusion for the uncovered file, then the completion act
+uncovered-lines:
+  - range: notes.json:1-1
+    reason: runtime state of the notes utility, rows recreate it
+    refs:
+      - D4

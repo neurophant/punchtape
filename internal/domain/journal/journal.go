@@ -288,7 +288,11 @@ func Fold(records []Record, readObj func(addr string) ([]byte, error)) (*Standin
 			st.PastLines += rec.DemandAppend.Lines
 			st.LastNoNewDemands = 0
 		case rec.Kind == KindNoNewDemands && rec.NoNewDemands != nil:
+			// The signature is the run's own fact: its run took its number.
 			st.LastNoNewDemands = rec.NoNewDemands.Run
+			if rec.NoNewDemands.Run > st.RunNumber {
+				st.RunNumber = rec.NoNewDemands.Run
+			}
 		case rec.Kind == KindSubmission && rec.Submission != nil:
 			s := rec.Submission
 			st.CorpusVersion = s.CorpusVersion

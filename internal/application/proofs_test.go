@@ -29,12 +29,12 @@ import (
 func claimsTokenOf(t *testing.T, root string, claims ...string) string {
 	t.Helper()
 	m := &machine{root: root}
-	return fprint.Token12(m.claimsFactsOf(doc.Behavior{Claims: claims}).digest)
+	return fprint.ShortDigest(m.claimsFactsOf(doc.Behavior{Claims: claims}).digest)
 }
 
 // demandTokenOf — the requirement's quote token.
 func demandTokenOf(quote string) string {
-	return fprint.Token12(domain.Digest([]byte(quote)))
+	return fprint.ShortDigest(domain.Digest([]byte(quote)))
 }
 
 // proofRoot — a born zone over one checked input line.
@@ -65,7 +65,6 @@ requirements:
       lines: [D1]
       prose: the tool and its check
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
 behaviors:
     - id: tool/first
@@ -224,7 +223,6 @@ requirements:
       lines: [D1]
       prose: the tool and its check
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "one.txt:1-1", reason: the row's own output, refs: [D1]}
 behaviors:
     - id: tool/one
@@ -264,7 +262,6 @@ work: the retirement frees the command
 mandate: [{line: D1, target: tool/one}]
 remove: [tool/one]
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "one.txt:1-1", reason: the row's own output, refs: [D1]}
 `)
 	runIn(t, root)
@@ -335,8 +332,6 @@ requirements:
     - id: R1
       lines: [D1]
       prose: the counter prints three and the pin holds its bytes
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: tool/three
       name: The counter

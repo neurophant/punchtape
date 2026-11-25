@@ -4,6 +4,7 @@
 package store
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -102,6 +103,42 @@ func TestStreamTornTailAndDamage(t *testing.T) {
 	damaged, _ := OpenStream(dir)
 	if _, err := damaged.Records(); err == nil {
 		t.Fatalf("mid-file damage must refuse")
+	}
+}
+
+// TestReadOnlyStreamDoesNotQuarantine — a read-only stream answers a
+// torn tail as damage: the named refusal, the epoch's bytes as they
+// stood, no sidecar.
+func TestReadOnlyStreamDoesNotQuarantine(t *testing.T) {
+	ports.FSBind = fsys.OS{}
+	dir := filepath.Join(t.TempDir(), "journal")
+	s, _ := OpenStream(dir)
+	if err := s.Append(birthRec()); err != nil {
+		t.Fatal(err)
+	}
+	live := s.files[len(s.files)-1]
+	f, _ := os.OpenFile(live, os.O_APPEND|os.O_WRONLY, 0o644)
+	_, _ = f.WriteString("---\nkind: run\nn: 9\ncut mid-wri")
+	_ = f.Close()
+	torn, err := os.ReadFile(live)
+	if err != nil {
+		t.Fatal(err)
+	}
+	readonly, _ := OpenStream(dir)
+	readonly.ReadOnly = true
+	recs, err := readonly.Records()
+	if err == nil || !strings.Contains(err.Error(), "does not parse") {
+		t.Fatalf("a read-only stream must refuse the torn tail by name: %v %+v", err, recs)
+	}
+	after, err := os.ReadFile(live)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, torn) {
+		t.Fatal("a read-only stream must leave the epoch's bytes alone")
+	}
+	if _, err := os.Stat(live + ".torn"); !os.IsNotExist(err) {
+		t.Fatalf("a read-only stream must write no quarantine: %v", err)
 	}
 }
 

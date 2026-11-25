@@ -66,7 +66,6 @@ requirements:
       lines: [D1]
       prose: the tool and its check
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
 behaviors:
     - id: tool/copy
@@ -270,7 +269,6 @@ not-a-requirement:
 work: the cover arrives
 mandate: [{line: D1, target: tool/copy}]
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
 behaviors:
     - id: tool/copy
@@ -318,7 +316,6 @@ not-a-requirement:
     - lines: [D3]
       reason: the closing line names no work
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
 behaviors:
     - id: tool/copy
@@ -519,28 +516,38 @@ behaviors:
 func TestAgentsBlockStandsIdempotently(t *testing.T) {
 	root := newRoot(t)
 	path := filepath.Join(root, agentsFile)
-	if _, err := os.Stat(path); err != nil {
+	first, err := os.ReadFile(path)
+	if err != nil {
 		t.Fatalf("the block must stand after a run: %v", err)
 	}
-	first, _ := os.ReadFile(path)
-	if !strings.Contains(string(first), blockOpen) || !strings.Contains(string(first), "state.md") {
-		t.Fatalf("the block must carry the essence and the addresses:\n%s", first)
+	if string(first) != string(agentsBlock()) {
+		t.Fatalf("a fresh root carries the block alone:\n%s", first)
 	}
-	// A foreign line above the block survives; the block's bytes do
-	// not change on a re-run.
+	// A foreign line written above the block stands below it after the
+	// run, behind one empty line.
 	foreign := "# the project's own words\n" + string(first)
 	if err := os.WriteFile(path, []byte(foreign), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	runIn(t, root)
 	second, _ := os.ReadFile(path)
-	if !strings.HasPrefix(string(second), "# the project's own words\n") {
-		t.Fatalf("the foreign text must survive:\n%s", second)
+	if string(second) != string(agentsBlock())+"\n# the project's own words\n" {
+		t.Fatalf("the foreign text must stand below the block:\n%s", second)
+	}
+	// A file already in order is not written again: the bytes and the
+	// mtime both stand.
+	before, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
 	}
 	runIn(t, root)
 	third, _ := os.ReadFile(path)
-	if string(second) != string(third) {
-		t.Fatalf("the ensured block must be byte-stable")
+	after, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(second) != string(third) || !after.ModTime().Equal(before.ModTime()) {
+		t.Fatalf("the ensured block must leave an ordered file alone")
 	}
 }
 
@@ -548,28 +555,169 @@ func TestAgentsBlockShapes(t *testing.T) {
 	mountPorts()
 	root := newRoot(t)
 	path := filepath.Join(root, agentsFile)
-	// A foreign file without a trailing newline gains the block
-	// cleanly padded.
+	// A foreign file without a trailing newline: the block, one empty
+	// line, its words, one newline.
 	if err := os.WriteFile(path, []byte("# words without an end"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	runIn(t, root)
 	data, _ := os.ReadFile(path)
-	if !strings.Contains(string(data), "# words without an end\n\n"+blockOpen) {
-		t.Fatalf("the foreign text must be padded:\n%s", data)
+	if string(data) != string(agentsBlock())+"\n# words without an end\n" {
+		t.Fatalf("the foreign words must stand below the block:\n%s", data)
 	}
-	// A changed block with the closing marker at the file's very end:
-	// the replacement clamps to the bytes that exist.
+	// An outdated block at the file's end, empty lines around the
+	// words: the current block takes the first line, the words follow
+	// behind one empty line, the block's old words and the empty edges
+	// are gone.
 	stale := blockOpen + "\nold words\n" + blockClose
-	if err := os.WriteFile(path, []byte("# mine\n"+stale), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("\n\n# mine\n"+stale+"\n\n\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	runIn(t, root)
 	data, _ = os.ReadFile(path)
-	if strings.Contains(string(data), "old words") ||
-		!strings.HasPrefix(string(data), "# mine\n"+blockOpen) ||
-		!strings.HasSuffix(string(data), blockClose+"\n") {
-		t.Fatalf("the changed block must replace itself whole:\n%s", data)
+	if string(data) != string(agentsBlock())+"\n# mine\n" {
+		t.Fatalf("the block must stand first over the words:\n%s", data)
+	}
+	// An outdated block alone: the current block alone.
+	if err := os.WriteFile(path, []byte(stale+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runIn(t, root)
+	data, _ = os.ReadFile(path)
+	if string(data) != string(agentsBlock()) {
+		t.Fatalf("a lone block must carry the current text alone:\n%s", data)
+	}
+}
+
+// TestAgentsBlockRefusesDuplicates — two blocks in one file are damage
+// by hand: one loud line, exit 1, the file's bytes untouched.
+func TestAgentsBlockRefusesDuplicates(t *testing.T) {
+	root := newBornRoot(t)
+	path := filepath.Join(root, agentsFile)
+	twice := string(agentsBlock()) + "\n" + string(agentsBlock())
+	if err := os.WriteFile(path, []byte(twice), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	code, term := runCode(t, root, nil)
+	if code != 1 || !strings.Contains(term, "more than one pair") {
+		t.Fatalf("two blocks must refuse loudly: code %d term %q", code, term)
+	}
+	data, _ := os.ReadFile(path)
+	if string(data) != twice {
+		t.Fatal("two blocks must leave the file alone")
+	}
+}
+
+// TestAgentsBlockIsTheMachinesOwn — the lines between the markers, and
+// the one empty line the machine sets under the block, are the
+// machine's: they open no hole, the verdict closes without any
+// exclusion of them, and an exclusion naming only them marks nothing
+// and is refused. The project's own words below the block stay the
+// project's: open until the agent excludes them on a reason.
+func TestAgentsBlockIsTheMachinesOwn(t *testing.T) {
+	root := newBornRoot(t)
+	if state := zoneFile(t, root, zone.StateFile); strings.Contains(state, "AGENTS.md") {
+		t.Fatalf("the machine's own block must open no hole, state:\n%s", state)
+	}
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
+	runIn(t, root)
+	if state := zoneFile(t, root, zone.StateFile); !strings.Contains(state, "verdict: #1") {
+		t.Fatalf("no exclusion of the block may be asked of the verdict, state:\n%s", state)
+	}
+	// An exclusion of the block alone marks nothing — by its exact
+	// lines or by a range past the file's end alike.
+	for _, spelling := range []string{"AGENTS.md:1-3", "AGENTS.md:1-9"} {
+		writeZone(t, root, zone.InboxSlot, fmt.Sprintf(`
+work: an exclusion of the machine's own block
+uncovered-lines:
+    - {range: "%s", reason: the machine's own marked block, refs: [D1]}
+`, spelling))
+		runIn(t, root)
+		if got := zoneFile(t, root, zone.ReportFile); !strings.Contains(got,
+			"the range names no uncovered line — a mark that marks nothing is refused") {
+			t.Fatalf("an exclusion %s of the block alone must be refused:\n%s", spelling, got)
+		}
+	}
+	// A refused document stands in the slot, as every refusal does: it
+	// leaves before the next step.
+	if err := os.Remove(filepath.Join(root, zone.Dirname, zone.InboxSlot)); err != nil {
+		t.Fatal(err)
+	}
+	// The project's words below the block: the project's own hole — one
+	// line, the fifth; the empty line the machine sets under its block
+	// is the machine's and opens none.
+	path := filepath.Join(root, agentsFile)
+	if err := os.WriteFile(path, append(agentsBlock(), "\n# the project's own words\n"...), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runIn(t, root)
+	if got := zoneFile(t, root, zone.StateFile); !strings.Contains(got, "- AGENTS.md: 1 (5)") {
+		t.Fatalf("the project's words below the block must stand as the project's one hole, state:\n%s", got)
+	}
+	// An exclusion of that empty line alone marks nothing.
+	writeZone(t, root, zone.InboxSlot, `
+work: an exclusion of the empty line under the block
+uncovered-lines:
+    - {range: "AGENTS.md:4-4", reason: the machine's own separator, refs: [D1]}
+`)
+	runIn(t, root)
+	if got := zoneFile(t, root, zone.ReportFile); !strings.Contains(got,
+		"the range names no uncovered line — a mark that marks nothing is refused") {
+		t.Fatalf("an exclusion of the machine's separator alone must be refused:\n%s", got)
+	}
+	if err := os.Remove(filepath.Join(root, zone.Dirname, zone.InboxSlot)); err != nil {
+		t.Fatal(err)
+	}
+	writeZone(t, root, zone.InboxSlot, `
+work: the project's own words stand excluded
+uncovered-lines:
+    - {range: "AGENTS.md:5-5", reason: the project's own heading, refs: [D1]}
+`)
+	runIn(t, root)
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
+	runIn(t, root)
+	if got := zoneFile(t, root, zone.StateFile); !strings.Contains(got, "verdict: #2") {
+		t.Fatalf("the project's excluded words must let the verdict land, state:\n%s", got)
+	}
+}
+
+// TestExclusionGateNamesRealLines — a loud exclusion marks a line the
+// file really carries: on a file that stands, a range starting past
+// its last line or naming an empty file marks nothing and is refused,
+// while a wide spelling over real open lines is cut to the file and
+// heard. A file that does not stand yet is the first document's own
+// case: it excludes the output its row is about to create.
+func TestExclusionGateNamesRealLines(t *testing.T) {
+	root := newBornRoot(t)
+	if err := os.WriteFile(filepath.Join(root, "loose.txt"), []byte("one\ntwo\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "empty.txt"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, spelling := range []string{"loose.txt:5-9", "empty.txt:1-1"} {
+		writeZone(t, root, zone.InboxSlot, fmt.Sprintf(`
+work: an exclusion naming no line the file carries
+uncovered-lines:
+    - {range: "%s", reason: lines the file does not carry, refs: [D1]}
+`, spelling))
+		runIn(t, root)
+		if got := zoneFile(t, root, zone.ReportFile); !strings.Contains(got,
+			"the range names no uncovered line — a mark that marks nothing is refused") {
+			t.Fatalf("an exclusion %s names no real line and must be refused:\n%s", spelling, got)
+		}
+	}
+	writeZone(t, root, zone.InboxSlot, `
+work: the loose lines stand excluded
+uncovered-lines:
+    - {range: "loose.txt:1-1000", reason: the project's loose note, refs: [D1]}
+`)
+	runIn(t, root)
+	writeZone(t, root, zone.InboxSlot, "done: true\n")
+	runIn(t, root)
+	if got := zoneFile(t, root, zone.StateFile); !strings.Contains(got, "verdict: #1") ||
+		!strings.Contains(got, "submissions: 2 accepted, 2 refused, 1 completed") {
+		t.Fatalf("a wide spelling over real open lines must be heard and close the tree, state:\n%s", got)
 	}
 }
 
@@ -666,8 +814,6 @@ requirements:
     - id: R1
       lines: [D1]
       prose: the tool and its check
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: tool/write
       name: The writer
@@ -885,7 +1031,7 @@ behaviors:
 	writeZone(t, root, zone.InboxSlot, "done: true\n")
 	runIn(t, root)
 	report := zoneFile(t, root, zone.ReportFile)
-	if !strings.Contains(report, "verdict: not yet — uncovered lines: AGENTS.md 9 (1-9), out.txt 1 (1)") {
+	if !strings.Contains(report, "verdict: not yet — uncovered lines: out.txt 1 (1)") {
 		t.Fatalf("the unclaimed output must hold the verdict by name:\n%s", report)
 	}
 	// The loud exclusions of the open lines close the holes — the
@@ -893,7 +1039,6 @@ behaviors:
 	writeZone(t, root, zone.InboxSlot, `
 work: the open lines stand excluded, loudly
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
 `)
 	runIn(t, root)
@@ -933,7 +1078,7 @@ behaviors:
 	runIn(t, fresh)
 	writeZone(t, fresh, zone.InboxSlot, "done: true\n")
 	runIn(t, fresh)
-	if report = zoneFile(t, fresh, zone.ReportFile); !strings.Contains(report, "verdict: not yet — uncovered lines: AGENTS.md 9 (1-9), src/in.txt 1 (1)") {
+	if report = zoneFile(t, fresh, zone.ReportFile); !strings.Contains(report, "verdict: not yet — uncovered lines: src/in.txt 1 (1)") {
 		t.Fatalf("a claims-less corpus must leave the tree open by name:\n%s", report)
 	}
 }
@@ -998,11 +1143,11 @@ behaviors:
 	writeZone(t, fresh, zone.InboxSlot, "done: true\n")
 	runIn(t, fresh)
 	report := zoneFile(t, fresh, zone.ReportFile)
-	if !strings.Contains(report, "verdict: not yet — uncovered lines: AGENTS.md 9 (1-9), junk/j00.txt 1 (1)") {
+	if !strings.Contains(report, "verdict: not yet — uncovered lines: junk/j00.txt 1 (1)") {
 		t.Fatalf("the open files must be named in path order:\n%s", report)
 	}
-	if !strings.Contains(report, ", and 3 more files") {
-		t.Fatalf("the twelfth open file must be counted, not printed:\n%s", report)
+	if !strings.Contains(report, ", and 2 more files") {
+		t.Fatalf("the eleventh open file must be counted, not printed:\n%s", report)
 	}
 }
 
@@ -1149,7 +1294,6 @@ func TestDriftSinceNamesTheFirstWitness(t *testing.T) {
 	writeZone(t, root, zone.InboxSlot, fmt.Sprintf(`
 work: the second behavior
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
     - {range: "b_out.txt:1-1", reason: the row's own output, refs: [D1]}
 behaviors:
@@ -1248,7 +1392,6 @@ func TestRetiredScopeNeverDrifts(t *testing.T) {
 work: the copy retires
 mandate: [{line: D1, target: tool/copy}]
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
 remove: [tool/copy]
 `)
@@ -1346,8 +1489,6 @@ requirements:
     - id: R1
       lines: [D1]
       prose: the counter and its check
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: tool/count
       name: Count
@@ -1461,7 +1602,6 @@ behaviors:
 	writeZone(t, root, zone.InboxSlot, `
 work: the loose line stands excluded, loudly
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "extra.txt:1-1", reason: a stray note of the project, refs: [D1]}
 `)
 	runIn(t, root)
@@ -1521,7 +1661,7 @@ behaviors:
 	runIn(t, root)
 	writeZone(t, root, zone.InboxSlot, "done: true\n")
 	runIn(t, root)
-	if got := zoneFile(t, root, zone.StateFile); !strings.Contains(got, "verdict: #1 on v5, run 2") {
+	if got := zoneFile(t, root, zone.StateFile); !strings.Contains(got, "verdict: #1 on v5, run 5") {
 		t.Fatalf("step 10 must record the verdict over the closed chain, state:\n%s", got)
 	}
 
@@ -1572,10 +1712,10 @@ notes:
 		t.Fatal(err)
 	}
 	term := runIn(t, root)
-	if !strings.Contains(term, "verdict drifted since run 3 — re-earn it: submit after that run, then write done: true") {
+	if !strings.Contains(term, "verdict drifted since run 6 — re-earn it: submit after that run, then write done: true") {
 		t.Fatalf("step 14 must name the witness run and instruct the re-earn, got: %q", term)
 	}
-	if got := zoneFile(t, root, zone.StateFile); !strings.Contains(got, "open (drift since run 3)") {
+	if got := zoneFile(t, root, zone.StateFile); !strings.Contains(got, "open (drift since run 6)") {
 		t.Fatalf("step 14 must open the verdict by its run, state:\n%s", got)
 	}
 	if err := os.WriteFile(filepath.Join(root, "count.txt"), []byte("one\ntwo\nthree\n"), 0o644); err != nil {
@@ -1662,10 +1802,10 @@ notes:
 		"corpus: v7, 2 behaviors",
 		"submissions: 7 accepted, 11 refused, 1 completed",
 		"machine at birth: " + Version,
-		"verdict: #1 on v5, run 2, signature ",
-		"- tool/count: 1 rows — 1 green (claims 1 files / 3 lines; proof ",
-		"- tool/print: 1 rows — 1 green (claims 1 files / 1 lines; proof ",
-		"excluded lines: 2 ranges",
+		"verdict: #1 on v5, run 5, signature ",
+		"- tool/count: 1 rows — 1 green (claims 1 files / 3 lines; digest ",
+		"- tool/print: 1 rows — 1 green (claims 1 files / 1 lines; digest ",
+		"excluded lines: 1 ranges",
 		"knowledge: 2 notes, ",
 		"\nnext: ",
 	} {
@@ -1860,12 +2000,12 @@ work: meeting words that came with no intent
 	writeZone(t, root, zone.InboxSlot, "done: true\n")
 	runIn(t, root)
 	if got := zoneFile(t, root, zone.ReportFile); !strings.Contains(got,
-		"verdict: not yet — drift unresolved: a submission must come after run 7") {
+		"verdict: not yet — drift unresolved: a submission must come after run 13") {
 		t.Fatalf("step 24's act must stay held by the witness run:\n%s", got)
 	}
 	writeZone(t, root, zone.InboxSlot, "done: true\n")
 	runIn(t, root)
-	if got := zoneFile(t, root, zone.ReportFile); !strings.Contains(got, "drift unresolved: a submission must come after run 7") {
+	if got := zoneFile(t, root, zone.ReportFile); !strings.Contains(got, "drift unresolved: a submission must come after run 13") {
 		t.Fatalf("step 24's repeated act without a submission must stay held by the same run:\n%s", got)
 	}
 	if err = os.WriteFile(filepath.Join(root, "count.txt"), []byte("one\ntwo\nthree\n"), 0o644); err != nil {
@@ -2149,8 +2289,6 @@ requirements:
     - id: R1
       lines: [D1]
       prose: the tool and its check
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: tool/pin
       name: The pin
@@ -2229,8 +2367,6 @@ requirements:
     - id: R1
       lines: [D1]
       prose: the tool and its check
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: tool/pin
       name: The pin
@@ -2379,8 +2515,6 @@ intents:
     - {lines: [D1], outcome: work, prose: the line is declared as work}
 requirements:
     - {id: R1, lines: [D1], prose: the one line}
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: b/one
       name: one line
@@ -2433,8 +2567,6 @@ intents:
     - {lines: [D1], outcome: work, prose: the line is declared as work}
 requirements:
     - {id: R1, lines: [D1], prose: the one line}
-uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
 behaviors:
     - id: b/one
       name: one line

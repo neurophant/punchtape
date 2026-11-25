@@ -6,9 +6,8 @@ rjq is a real, finished Rust library — a Redis job queue
 one every maintainer knows by heart: **a bug, a check that
 catches it, a fix, and the check standing guard ever after** —
 no live Redis anywhere. The pins ride the library's own
-connection errors: a refused port and an unparsable URL, both
-byte-exact. Every terminal line below is real output of
-[`replay.sh`](replay.sh).
+connection errors: a refused port and an unparsable URL. Every
+terminal line below is real output of [`replay.sh`](replay.sh).
 
 ## The task, in the human's words
 
@@ -23,9 +22,8 @@ a failed ask is loud: the exact error line on stdout, and the exit code is one.
 top of the standing library — and it looks done: on a failure it
 prints the error line. But it exits zero. A script would call it
 and march on; the silent failure is the bug. The first document
-pins the contract byte for byte — the exact error line **and**
-exit code one — and the machine runs the rows against the
-defective build:
+pins the contract — the error line **and** exit code one — and the
+machine runs the rows against the defective build:
 
 ```text
 # punchtape report — run 1
@@ -61,7 +59,7 @@ punchtape: run 3 — all green — write done: true to .punchtape/inbox.yaml and
 **The completion act.**
 
 ```text
-punchtape: run 4 — verdict #1 standing — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
+punchtape: run 4 — verdict #1 standing — 0 of 2 words marked not-a-requirement, 92 % of the tree excluded — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
 ```
 
 ## The film
@@ -73,24 +71,25 @@ demands: 2/2 lines; requirements 2 standing, 2 covered; markers: 0
 queue: empty
 corpus: v2, 1 behaviors
 submissions: 2 accepted, 0 refused, 1 completed
-machine at birth: 0.5.1
-verdict: #1 on v2, run 4, signature d9c1f6eb10c7 — standing
-- cli/status-err: 2 rows — 2 green (claims 1 files / 24 lines; proof 2af98c7a21cd)
+machine at birth: 0.6.0
+verdict: #1 on v2, run 4, signature 6045010d2a45 — standing
+- cli/status-err: 2 rows — 2 green (claims 1 files / 24 lines; digest 2af98c7a21cd)
 excluded lines: 1 ranges (92 % of tree)
 ```
 
-Two lessons sit in `knowledge.md` — the machine recorded both
-red→green transitions as data. From now on, if anyone rebuilds
-this CLI and the exit code goes quiet again, the row goes red the
-same hour: that is the "forever" part.
+The fix was in the code and the rows stood as written, so
+`knowledge.md` holds no lesson: the machine records one only for a
+row that itself changed. From now on, if anyone rebuilds this CLI
+and the exit code goes quiet again, the row goes red the same hour:
+that is the "forever" part.
 
 ## Replay it yourself
 
-Needs `punchtape` on PATH (0.5.1) and `cargo`. The crates download
-from crates.io on the first build (network needed once). One
-platform note: the refusal line pins
-Linux's `os error 111`; on macOS the os error number differs, so
-the pinned row expects the local text; verified on Linux.
+Needs `punchtape` on PATH (0.6.0) and `cargo`. The crates download
+from crates.io on the first build (network needed once). The pins
+carry nothing of one operating system: the unparsable URL is pinned
+byte for byte, the refused port by the words of its error line —
+the error number in it belongs to the system it runs on.
 
 ```bash
 ./replay.sh

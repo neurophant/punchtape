@@ -232,7 +232,6 @@ requirements:
       lines: [D1]
       prose: the tool and its check
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "first.txt:1-1", reason: the row's own output, refs: [D1]}
 behaviors:
     - id: tool/first
@@ -374,7 +373,6 @@ not-a-requirement:
     - lines: [D3]
       reason: the closing line names no work
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
 behaviors:
     - id: tool/copy
@@ -426,7 +424,6 @@ not-a-requirement:
     - lines: [D2]
       reason: the human's answer, not new work
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
 open:
     - {demand: D2, question: which color, state: deferred, reason: the human said later}
@@ -459,12 +456,12 @@ verdict history:
 - run 1: verdict #1 on v1 recorded — DIGEST
 deferred orders:
 - D2 — which color — the human said later
-- tool/copy: 1 rows — 1 green (claims 1 files / 1 lines; proof DIGEST)
-excluded lines: 2 ranges (90 % of tree)
+- tool/copy: 1 rows — 1 green (claims 1 files / 1 lines; digest DIGEST)
+excluded lines: 1 ranges (50 % of tree)
 
 knowledge: 0 notes, 0 lessons
 
-next: verdict #1 standing — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
+next: verdict #1 standing — 1 of 2 words marked not-a-requirement, 50 % of the tree excluded — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
 `
 	state := zoneFile(t, root, zone.StateFile)
 	if masked := maskDigests(state); masked != golden {
@@ -494,7 +491,6 @@ func TestSpecPageSections(t *testing.T) {
 		"- R1 (lines D1): the tool and its check\n",
 		"## Claims\n",
 		"- src/in.txt:1-1 — ",
-		"\ntoken: ",
 		"## Rows\n",
 		"## row 0 — PROOF\n",
 		"## Verify\n",
@@ -526,7 +522,6 @@ requirements:
       lines: [D1]
       prose: the tool and its check
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "big.txt:11-40", reason: generated tail, refs: [D1]}
     - {range: "head.txt:1-10", reason: the row's own output, refs: [D1]}
 behaviors:
@@ -543,10 +538,11 @@ behaviors:
                 head.txt: %s
 `, claimsTokenOf(t, root, "big.txt:1-10"), demandTokenOf("a checked tool"), strconv.Quote(strings.Repeat("line\n", 10))))
 	runIn(t, root)
-	// The tree: AGENTS.md 9 + big.txt 40 + head.txt 10 = 59 lines; the
-	// exclusions hold all three's open parts: 49 of 59 = 83 %.
+	// The tree: big.txt 40 + head.txt 10 = 50 lines — the machine's own
+	// block counts nowhere; the exclusions hold both files' open parts:
+	// 40 of 50 = 80 %.
 	state := zoneFile(t, root, zone.StateFile)
-	if !strings.Contains(state, "excluded lines: 3 ranges (83 % of tree)") {
+	if !strings.Contains(state, "excluded lines: 2 ranges (80 % of tree)") {
 		t.Fatalf("the exclusions' share must be shown whole, state:\n%s", state)
 	}
 	for _, banned := range []string{"island", "verdict on an island"} {
@@ -618,7 +614,7 @@ func TestHolesFileComplete(t *testing.T) {
 
 // TestTraceRendersIntentChain — the trace places the stream's every
 // line with its quote, its intent's retelling beside it, the carrier,
-// the behaviors, the claims tokens and the proof row's standing.
+// the behaviors, the claims and the proof row's standing.
 func TestTraceRendersIntentChain(t *testing.T) {
 	root := newBornRoot(t)
 	writeZone(t, root, zone.DemandsSlot, "a checked tool\nwhat does the check read?\nrun the echo\nthanks\nwhich unit?\nrun it again\nand the tool itself?\n")
@@ -638,12 +634,11 @@ open:
 `)
 	runIn(t, root)
 	trace := zoneFile(t, root, zone.TraceFile)
-	claims := claimsTokenOf(t, root, "src/in.txt:1-1")
 	for _, want := range []string{
 		"D1 «a checked tool»\n├─ intent: work — «the tool and its check, told again»",
 		"│  └─ R1 (span D1)",
 		"│     └─ tool/copy (covers R1)",
-		fmt.Sprintf("│        claims: src/in.txt:1-1 — token %s", claims),
+		"│        claims: src/in.txt:1-1",
 		"│        row 0 PROOF: ",
 		"D2 «what does the check read?»\n├─ intent: answer — «the question of the input answered»",
 		"│  └─ answer: the check reads the input's own bytes",
@@ -782,7 +777,6 @@ requirements:
       lines: [D1]
       prose: the checked work
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "f.txt:1-1000", reason: the whole small file, refs: [D1]}
 behaviors:
     - id: b/one
@@ -797,7 +791,7 @@ behaviors:
 `)
 	runIn(t, root)
 	state := zoneFile(t, root, zone.StateFile)
-	if !strings.Contains(state, "excluded lines: 2 ranges (100 % of tree)") {
+	if !strings.Contains(state, "excluded lines: 1 ranges (100 % of tree)") {
 		t.Fatalf("the share must be measured over real lines, state:\n%s", state)
 	}
 }

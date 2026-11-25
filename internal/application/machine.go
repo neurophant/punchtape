@@ -42,20 +42,11 @@ func Run(cwd string, terminal io.Writer) int {
 		return 0
 	}
 	zoneDir := filepath.Join(root, zone.Dirname)
-	// One zone, one run at a time: the lock serializes every pass —
-	// the birth included — and the kernel frees it when a holder
-	// dies mid-run. A parallel caller waits its turn; local
-	// filesystems only.
-	release, err := ports.FSBind.Flock(filepath.Join(zoneDir, zone.RunLockFile))
-	if err != nil {
-		fmt.Fprintf(terminal, "punchtape: zone lock: %v\n", err)
+	unlock, ok := lockZone(zoneDir, terminal)
+	if !ok {
 		return 1
 	}
-	defer func() {
-		if rerr := release(); rerr != nil {
-			fmt.Fprintf(terminal, "punchtape: zone lock release: %v\n", rerr)
-		}
-	}()
+	defer unlock()
 	if _, err := ports.FSBind.Stat(filepath.Join(zoneDir, zone.JournalDir)); err != nil {
 		if !os.IsNotExist(err) {
 			fmt.Fprintf(terminal, "punchtape: zone damaged: %v\n", err)
@@ -83,30 +74,53 @@ func Run(cwd string, terminal io.Writer) int {
 		}
 	}
 
-	stream, err := store.OpenStream(filepath.Join(zoneDir, zone.JournalDir))
-	if err != nil {
-		fmt.Fprintf(terminal, "punchtape: %v\n", err)
-		return 1
-	}
-	// The zone's own creator, named before any record folds: an
-	// instance born by another machine version is not this machine's
-	// to read — the owner archives it and starts fresh.
-	first, err := stream.FirstRecord()
-	if err != nil {
-		fmt.Fprintf(terminal, "punchtape: %v\n", err)
-		return 1
-	}
-	if first.Kind == journal.KindBirth && first.Birth != nil && first.Birth.Version != Version {
-		fmt.Fprintf(terminal, "punchtape: zone born by machine %s — this machine is %s; archive it (cp -r .punchtape .punchtape-archive) and start fresh\n",
-			first.Birth.Version, Version)
-		return 1
-	}
-	m, err := open(cwd, root, zoneDir, stream)
+	m, err := openBorn(cwd, root, zoneDir, false)
 	if err != nil {
 		fmt.Fprintf(terminal, "punchtape: %v\n", err)
 		return 1
 	}
 	return m.run(terminal)
+}
+
+// lockZone — the zone's run lock: one zone, one run at a time — the
+// birth, the run and the verify all serialize on it — and the kernel
+// frees it when a holder dies mid-run. A parallel caller waits its
+// turn; local filesystems only. The returned closure releases the
+// lock and names a release that failed; false when the lock never
+// came.
+func lockZone(zoneDir string, terminal io.Writer) (func(), bool) {
+	release, err := ports.FSBind.Flock(filepath.Join(zoneDir, zone.RunLockFile))
+	if err != nil {
+		fmt.Fprintf(terminal, "punchtape: zone lock: %v\n", err)
+		return nil, false
+	}
+	return func() {
+		if rerr := release(); rerr != nil {
+			fmt.Fprintf(terminal, "punchtape: zone lock release: %v\n", rerr)
+		}
+	}, true
+}
+
+// openBorn — the instance over its zone and its journal: the stream,
+// read only for a caller that must leave the zone as it found it, the
+// zone's own creator named before any record folds — an instance born
+// by another machine version is not this machine's to read, the owner
+// archives it and starts fresh — and the open itself.
+func openBorn(cwd, root, zoneDir string, readonly bool) (*machine, error) {
+	stream, err := store.OpenStream(filepath.Join(zoneDir, zone.JournalDir))
+	if err != nil {
+		return nil, err
+	}
+	stream.ReadOnly = readonly
+	first, err := stream.FirstRecord()
+	if err != nil {
+		return nil, err
+	}
+	if first.Kind == journal.KindBirth && first.Birth != nil && first.Birth.Version != Version {
+		return nil, fmt.Errorf("zone born by machine %s — this machine is %s; archive it (cp -r .punchtape .punchtape-archive) and start fresh",
+			first.Birth.Version, Version)
+	}
+	return open(cwd, root, zoneDir, stream)
 }
 
 // slotFrom — a zone file's name as the caller sees it from the
@@ -147,8 +161,9 @@ func findZone(dir string) (string, bool) {
 // machine — one open instance: the journal stream, the object store,
 // the standing rebuilt from the journal, the demand stream's
 // numbered universe (loaded once by the run's chain check) and the
-// run's one coverage fact over the tree. The journal's records,
-// read once at the open, ride the whole run.
+// run's one coverage fact over the tree. The journal's records, the
+// tree's lines the machine itself holds and the number this run
+// records under are read once at the open and ride the whole run.
 type machine struct {
 	root        string
 	cwd         string // the caller's working directory: the instructions' paths name the zone from here
@@ -164,12 +179,15 @@ type machine struct {
 	spent       time.Duration // the budget already spent on this run's own commands
 	completed   bool          // the completion act rode this run
 	buildFailed bool          // the declared build stood red this run
+	verify      bool          // the re-proof: every row runs again, the journal's green facts do not count
 	records     []journal.Record
 	submitted   *doc.Document // the accepted submission, when one rode
 	execFacts   []journal.ExecutionFact
 	treeBefore  string // the tree's digest ahead of a locked submission
 	warnings    []string
 	tree        *treeScope // the run's walk scope: the declared universe and the verified cache
+	held        []string   // the tree's lines the machine itself holds, as line ranges — its AGENTS block; coverage counts them nowhere
+	runNumber   int        // the number this run records under: the standing's last run, plus one
 }
 
 // open — the instance over its zone and its already-open journal.
@@ -199,6 +217,10 @@ func open(cwd, root, zoneDir string, stream *store.Stream) (*machine, error) {
 	if err != nil {
 		return nil, err
 	}
+	held, err := machineHeld(root)
+	if err != nil {
+		return nil, err
+	}
 	m := &machine{
 		root:       root,
 		cwd:        cwd,
@@ -211,6 +233,8 @@ func open(cwd, root, zoneDir string, stream *store.Stream) (*machine, error) {
 		runBudget:  runBudget,
 		records:    records,
 		tree:       tree,
+		held:       held,
+		runNumber:  standing.RunNumber + 1,
 	}
 	return m, nil
 }
@@ -330,17 +354,7 @@ func (m *machine) run(terminal io.Writer) int {
 
 	// The build: the run's first step when declared.
 	corpus := m.corpusDoc()
-	var buildFact *journal.Build
-	if corpus.BuildCmd() != "" {
-		res := RunCommand(Argv(doc.Cmd{Line: corpus.BuildCmd()}), m.root, RunEnv(m.pins), m.rowTimeout)
-		if res.Err != nil {
-			buildFact = &journal.Build{Exit: -1, Reason: "launch: " + res.Err.Error()}
-		} else {
-			buildFact = &journal.Build{Exit: res.Exit, TimedOut: res.TimedOut}
-		}
-	}
-	buildFailed := buildFact != nil && (buildFact.Exit != 0 || buildFact.TimedOut)
-	m.buildFailed = buildFailed
+	buildFact := m.runBuild(corpus)
 
 	// The fingerprints: the claims once ahead of the execution —
 	// every behavior's digest once, the proofs' own measurement.
@@ -350,7 +364,7 @@ func (m *machine) run(terminal io.Writer) int {
 	// Staleness by fingerprints; execution of the stale rows.
 	var executed []journal.RowFact
 	var rowReports []rowReport
-	if !buildFailed {
+	if !m.buildFailed {
 		executed, rowReports = m.executeStale(corpus, claimsBefore, envHash)
 	}
 
@@ -378,7 +392,7 @@ func (m *machine) run(terminal io.Writer) int {
 	// The journal's run record, with the lessons the run fixed.
 	changed := buildFact != nil || len(executed) > 0 || len(m.execFacts) > 0
 	if changed {
-		run := journal.Run{N: m.standing.RunNumber + 1, Build: buildFact, Rows: executed}
+		run := journal.Run{N: m.runNumber, Build: buildFact, Rows: executed}
 		run.Lessons = m.lessons(executed, run.N)
 		if err := m.append(journal.Record{Kind: journal.KindRun, Run: &run}); err != nil {
 			fmt.Fprintf(terminal, "punchtape: %v\n", err)
@@ -451,7 +465,7 @@ func (m *machine) run(terminal io.Writer) int {
 		fmt.Fprintf(terminal, "punchtape: state view: %v\n", err)
 		return 1
 	}
-	if err := m.writeTrace(corpus, claimsAfter); err != nil {
+	if err := m.writeTrace(corpus); err != nil {
 		fmt.Fprintf(terminal, "punchtape: trace view: %v\n", err)
 		return 1
 	}
@@ -942,11 +956,14 @@ func (m *machine) accept(d doc.Document, canonical []byte, registry doc.Registry
 		m.standing.PastLines += link.Lines
 		m.standing.LastNoNewDemands = 0
 	} else {
-		signed := journal.NoNewDemands{Lines: len(m.universe), Run: m.standing.RunNumber + 1}
+		// The signature is a fact of this run: the run takes its number
+		// here, and every later record of the run carries the same one.
+		signed := journal.NoNewDemands{Lines: len(m.universe), Run: m.runNumber}
 		if err := m.append(journal.Record{Kind: journal.KindNoNewDemands, NoNewDemands: &signed}); err != nil {
 			return err
 		}
 		m.standing.LastNoNewDemands = signed.Run
+		m.standing.RunNumber = signed.Run
 	}
 	m.standing.CorpusVersion = sub.CorpusVersion
 	journal.ApplyCarriers(m.standing, &sub)
@@ -1001,7 +1018,7 @@ func (m *machine) runExecutions() error {
 		res := RunCommand(Argv(in.Run), m.root, RunEnv(m.pins), m.rowTimeout)
 		m.spent += time.Since(start)
 		fact := journal.ExecutionFact{
-			At:           m.standing.RunNumber + 1,
+			At:           m.runNumber,
 			Lines:        in.Lines,
 			Run:          in.Run,
 			StdoutDigest: domain.Digest([]byte(res.Stdout)),
@@ -1072,7 +1089,7 @@ func (m *machine) claimsFactsOf(b doc.Behavior) claimsFacts {
 			}
 		}
 		entries = append(entries, claim+"="+digest)
-		ranges = append(ranges, claimRange{Claim: claim, Digest12: fprint.Token12(digest)})
+		ranges = append(ranges, claimRange{Claim: claim, Digest12: fprint.ShortDigest(digest)})
 	}
 	sort.Strings(entries)
 	return claimsFacts{digest: domain.Digest([]byte(strings.Join(entries, "\n"))), ranges: ranges}
@@ -1086,6 +1103,22 @@ func (m *machine) claimsMap(corpus doc.Document) map[string]claimsFacts {
 		out[b.ID] = m.claimsFactsOf(b)
 	}
 	return out
+}
+
+// runBuild — the declared build, the run's first step: its fact, and
+// the red flag every verdict gate reads; no build declared, no fact.
+func (m *machine) runBuild(corpus doc.Document) *journal.Build {
+	var fact *journal.Build
+	if corpus.BuildCmd() != "" {
+		res := RunCommand(Argv(doc.Cmd{Line: corpus.BuildCmd()}), m.root, RunEnv(m.pins), m.rowTimeout)
+		if res.Err != nil {
+			fact = &journal.Build{Exit: -1, Reason: "launch: " + res.Err.Error()}
+		} else {
+			fact = &journal.Build{Exit: res.Exit, TimedOut: res.TimedOut}
+		}
+	}
+	m.buildFailed = fact != nil && (fact.Exit != 0 || fact.TimedOut)
+	return fact
 }
 
 // executeStale — the fingerprints' verdict per row, the execution of
@@ -1106,9 +1139,11 @@ func (m *machine) executeStale(corpus doc.Document, claims map[string]claimsFact
 			rowBytes := doc.MarshalRow(row)
 			proof := fprint.Proof(rowBytes, behFacts.digest, envHash)
 			// A behavior with rows and no claims stands on nothing it
-			// names: its rows are honestly always stale.
+			// names: its rows are honestly always stale — and under the
+			// re-proof every row is, the journal's green facts do not
+			// count.
 			fact, ok := m.standing.Rows[key]
-			stale := !ok || fact.Proof != proof || len(b.Claims) == 0
+			stale := !ok || fact.Proof != proof || len(b.Claims) == 0 || m.verify
 			if stale {
 				queue = append(queue, pending{key: key, row: row, rowBytes: rowBytes, proof: proof})
 			}
@@ -1234,10 +1269,12 @@ func (m *machine) proven(corpus doc.Document, claims map[string]claimsFacts, env
 	return true
 }
 
-// lessons — the red→green transitions of this run, fixed as data:
-// the reason, the broken facts, the row's bytes before and after,
-// the two run numbers. Zero tokens of any model — the machine
-// measured the fix itself.
+// lessons — the red→green transitions of this run whose row itself
+// changed, fixed as data: the reason, the broken facts, the row's
+// bytes before and after, the two run numbers. A row that stood
+// while the code was fixed is no lesson: its before and after would
+// be the same bytes, and nothing is recorded. Zero tokens of any
+// model — the machine measured the fix itself.
 func (m *machine) lessons(executed []journal.RowFact, greenRun int) []journal.Lesson {
 	var out []journal.Lesson
 	for _, rf := range executed {
@@ -1245,7 +1282,7 @@ func (m *machine) lessons(executed []journal.RowFact, greenRun int) []journal.Le
 			continue
 		}
 		prev, ok := m.standing.Rows[rf.Key]
-		if !ok || prev.Status != journal.StatusRed || len(prev.Facts) == 0 {
+		if !ok || prev.Status != journal.StatusRed || len(prev.Facts) == 0 || prev.Row == rf.Row {
 			continue
 		}
 		out = append(out, journal.Lesson{
@@ -1254,7 +1291,7 @@ func (m *machine) lessons(executed []journal.RowFact, greenRun int) []journal.Le
 			Facts:    prev.Facts,
 			RedRow:   string(m.rowBytesOf(prev.Row)),
 			GreenRow: string(m.rowBytesOf(rf.Row)),
-			RedRun:   m.standing.RunNumber, // the red stood at the previous run
+			RedRun:   m.runNumber - 1, // the red stood at the run before this one
 			GreenRun: greenRun,
 		})
 	}
@@ -1425,7 +1462,7 @@ func (m *machine) closeVerdict(corpus doc.Document, claims, claimsAfter map[stri
 	}
 	m.standing.Completions++
 	m.standing.Verdict = &v
-	return []string{fmt.Sprintf("verdict: #%d on v%d, run %d recorded — signature %s", v.N, v.CorpusVersion, v.Run, shortDigest(v.Signature))}, nil
+	return []string{fmt.Sprintf("verdict: #%d on v%d, run %d recorded — signature %s", v.N, v.CorpusVersion, v.Run, fprint.ShortDigest(v.Signature))}, nil
 }
 
 // orphanRequirements — the standing requirements no standing
@@ -1452,8 +1489,9 @@ func (m *machine) orphanRequirements(corpus doc.Document) []string {
 }
 
 // coverage — the run's one fact of the tree against the standing
-// claims and the loud exclusions: computed once from one walk,
-// shared by the verdict's totality gate and the state's faces.
+// claims, the loud exclusions and the lines the machine itself
+// holds: computed once from one walk, shared by the verdict's
+// totality gate and the state's faces.
 func (m *machine) coverage(corpus doc.Document) (fprint.Coverage, error) {
 	if m.covered != nil {
 		return *m.covered, nil
@@ -1470,7 +1508,7 @@ func (m *machine) coverage(corpus doc.Document) (fprint.Coverage, error) {
 	for _, ex := range m.standing.Registry.Exclusions {
 		excl = append(excl, ex.Range)
 	}
-	cov := fprint.LineCoverage(claims, excl, files)
+	cov := fprint.LineCoverage(claims, excl, m.held, files)
 	m.covered = &cov
 	return cov, nil
 }
@@ -1582,7 +1620,7 @@ func (m *machine) finish(terminal io.Writer, instruction string) int {
 		fmt.Fprintf(terminal, "punchtape: reference view: %v\n", err)
 		return 1
 	}
-	if err := ports.FSBind.RemoveAll(filepath.Join(m.zoneDir, zone.TmpDir)); err != nil {
+	if err := m.clearTmp(); err != nil {
 		fmt.Fprintf(terminal, "punchtape: tmp clear: %v\n", err)
 		return 1
 	}
@@ -1590,10 +1628,30 @@ func (m *machine) finish(terminal io.Writer, instruction string) int {
 	return 0
 }
 
+// clearTmp — the zone's scratch, gone whole: what a row left there
+// never outlives the run or the re-proof that executed it.
+func (m *machine) clearTmp() error {
+	return ports.FSBind.RemoveAll(filepath.Join(m.zoneDir, zone.TmpDir))
+}
+
 // buildRedInstruction — the red build's own imperative, the one
 // voice of the terminal line and the verdict's first blocker.
 func (m *machine) buildRedInstruction() string {
 	return "build red — read " + m.slot(zone.ReportFile) + ", fix the build, run again"
+}
+
+// judgments — the agent's two judgments in one phrase for the lines the
+// human reads: the words marked not-a-requirement against the stream's
+// size, and the share of the tree the exclusions hold. Both are counted
+// always, zeros included; a tree that will not walk is named, never
+// guessed.
+func (m *machine) judgments(corpus doc.Document) string {
+	words := fmt.Sprintf("%d of %d words marked not-a-requirement", len(markedSet(m.standing.Registry)), len(m.universe))
+	cov, err := m.coverage(corpus)
+	if err != nil {
+		return words + ", the tree unreadable"
+	}
+	return fmt.Sprintf("%s, %d %% of the tree excluded", words, excludedShare(cov))
 }
 
 // nextInstruction — the one imperative that answers "what do I do
@@ -1618,8 +1676,8 @@ func (m *machine) nextInstruction(corpus doc.Document, claims, claimsAfter map[s
 		return blockers[0].instruction
 	}
 	if m.standing.Verdict != nil && m.standing.Verdict.CorpusVersion == m.standing.CorpusVersion {
-		return fmt.Sprintf("verdict #%d standing — show %s to the human; new work goes to %s as a document",
-			m.standing.Verdict.N, m.slot(zone.StateFile), m.slot(zone.InboxSlot))
+		return fmt.Sprintf("verdict #%d standing — %s — show %s to the human; new work goes to %s as a document",
+			m.standing.Verdict.N, m.judgments(corpus), m.slot(zone.StateFile), m.slot(zone.InboxSlot))
 	}
 	return "all green — write done: true to " + m.slot(zone.InboxSlot) + " and run to record the verdict"
 }

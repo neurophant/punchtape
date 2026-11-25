@@ -188,7 +188,6 @@ mandate: [{line: D1, target: tool/copy}]
 intents:
     - {lines: [D1], outcome: work, prose: "the instance's one wish, told again"}
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
 requirements:
     - id: R1

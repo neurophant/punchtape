@@ -8,7 +8,7 @@
 # Usage: demos/rjq/replay.sh [path-to-punchtape]
 #   binary defaults to punchtape from PATH; cargo (rustc 1.x) on PATH.
 # The crates download from crates.io on the first build (network
-# needed once). The refusal bytes are Linux's (os error 111).
+# needed once).
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"

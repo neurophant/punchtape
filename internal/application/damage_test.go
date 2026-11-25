@@ -215,7 +215,7 @@ func TestSpecSkipsADanglingCover(t *testing.T) {
 	if strings.Contains(page, "- R9:") {
 		t.Fatalf("a dangling cover must not print, page:\n%s", page)
 	}
-	if !strings.Contains(page, "## Demands\n\n\n## Claims") {
+	if !strings.Contains(page, "## Demands\n\n## Claims") {
 		t.Fatalf("the demands section must stand empty in its order, page:\n%s", page)
 	}
 }

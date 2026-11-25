@@ -107,7 +107,7 @@ func TestLineCoverageArithmetic(t *testing.T) {
 	}
 	// The whole universe claimed: no holes, the outside files never
 	// enter the arithmetic.
-	cov := LineCoverage([]string{"a.txt:1-5", "b.txt:1-3"}, nil, files)
+	cov := LineCoverage([]string{"a.txt:1-5", "b.txt:1-3"}, nil, nil, files)
 	if cov.Total != 8 || cov.Claimed != 8 || len(cov.Holes) != 0 {
 		t.Fatalf("the claimed universe must close: %+v", cov)
 	}
@@ -116,7 +116,7 @@ func TestLineCoverageArithmetic(t *testing.T) {
 	}
 	// Holes aggregate to maximal ranges: one open line inside the
 	// claims, and the open edges of a partial claim.
-	cov = LineCoverage([]string{"a.txt:2-4", "b.txt:2-3"}, nil, files)
+	cov = LineCoverage([]string{"a.txt:2-4", "b.txt:2-3"}, nil, nil, files)
 	if cov.Total != 8 || cov.Claimed != 5 {
 		t.Fatalf("the partial claims count their own lines: %+v", cov)
 	}
@@ -129,24 +129,45 @@ func TestLineCoverageArithmetic(t *testing.T) {
 		t.Fatalf("holes must aggregate per file: %+v", cov.Holes)
 	}
 	// Adjacent holes merge into one maximal range.
-	cov = LineCoverage([]string{"a.txt:1-1", "a.txt:5-5"}, nil, files)
+	cov = LineCoverage([]string{"a.txt:1-1", "a.txt:5-5"}, nil, nil, files)
 	if len(cov.Holes["a.txt"]) != 1 || cov.Holes["a.txt"][0] != (Range{First: 2, Last: 4}) {
 		t.Fatalf("adjacent holes must merge: %+v", cov.Holes)
 	}
 	// Loud exclusions cover like claims; claims past a file's own
 	// lines, broken spellings and claims on outside or absent files
 	// count nothing.
-	cov = LineCoverage([]string{"a.txt:1-1"}, []string{"a.txt:2-5"}, files)
+	cov = LineCoverage([]string{"a.txt:1-1"}, []string{"a.txt:2-5"}, nil, files)
 	if cov.Claimed != 5 || len(cov.Holes) != 1 || len(cov.Holes["b.txt"]) != 1 {
 		t.Fatalf("exclusions must cover like claims: %+v", cov)
 	}
-	if cov = LineCoverage([]string{"b.txt:1-9", "nul.bin:1-1", "gone.txt:1-1", "junk"}, nil, files); cov.Claimed != 3 {
+	if cov = LineCoverage([]string{"b.txt:1-9", "nul.bin:1-1", "gone.txt:1-1", "junk"}, nil, nil, files); cov.Claimed != 3 {
 		t.Fatalf("unreal claims count nothing: %+v", cov)
 	}
 	// No claims at all: the whole universe is holes.
-	cov = LineCoverage(nil, nil, files)
+	cov = LineCoverage(nil, nil, nil, files)
 	if cov.Total != 8 || cov.Claimed != 0 || len(cov.Holes) != 2 {
 		t.Fatalf("a bare tree is whole open: %+v", cov)
+	}
+}
+
+// TestMachineLinesCountNowhere — a line the machine itself holds is
+// no part of the universe: it adds to no count and opens no hole,
+// whatever a claim or an exclusion names on it; the file's other
+// lines count as they always did.
+func TestMachineLinesCountNowhere(t *testing.T) {
+	files := []FileLineCount{{Path: "f.md", Lines: 5}}
+	cov := LineCoverage([]string{"f.md:2-2"}, []string{"f.md:3-3"}, []string{"f.md:1-1"}, files)
+	if cov.Total != 4 || cov.Claimed != 2 || cov.ExcludedLines != 1 || len(cov.Holes) != 1 {
+		t.Fatalf("the machine's own line must count nowhere: %+v", cov)
+	}
+	if cov.Holes["f.md"][0] != (Range{First: 4, Last: 5}) {
+		t.Fatalf("the file's other lines stay as they were: %+v", cov.Holes)
+	}
+	// Held ahead of every claim: a claim or an exclusion naming the
+	// machine's line holds nothing there.
+	cov = LineCoverage([]string{"f.md:1-1"}, []string{"f.md:1-5"}, []string{"f.md:1-1"}, files)
+	if cov.Total != 4 || cov.Claimed != 4 || cov.ExcludedLines != 4 || len(cov.Holes) != 0 {
+		t.Fatalf("a claim or an exclusion on the machine's line counts nothing for it: %+v", cov)
 	}
 }
 
@@ -155,7 +176,7 @@ func TestLineCoverageArithmetic(t *testing.T) {
 // runs past the real count, whatever the spelling says.
 func TestHoldClipsToRealLines(t *testing.T) {
 	start := time.Now()
-	cov := LineCoverage(nil, []string{"f.txt:1-9000000000"}, []FileLineCount{{Path: "f.txt", Lines: 3}})
+	cov := LineCoverage(nil, []string{"f.txt:1-9000000000"}, nil, []FileLineCount{{Path: "f.txt", Lines: 3}})
 	if elapsed := time.Since(start); elapsed > time.Second {
 		t.Fatalf("the clip must be immediate, took %s", elapsed)
 	}
@@ -168,7 +189,7 @@ func TestHoldClipsToRealLines(t *testing.T) {
 // measured over the file's real lines: one file of three lines
 // excluded by a wide spelling closes whole, no hole.
 func TestExcludedLinesClipToRealLines(t *testing.T) {
-	cov := LineCoverage(nil, []string{"f.txt:1-1000"}, []FileLineCount{{Path: "f.txt", Lines: 3}})
+	cov := LineCoverage(nil, []string{"f.txt:1-1000"}, nil, []FileLineCount{{Path: "f.txt", Lines: 3}})
 	if cov.ExcludedLines != 3 || cov.Total != 3 || len(cov.Holes) != 0 {
 		t.Fatalf("a wide exclusion of three real lines: %+v", cov)
 	}
@@ -178,7 +199,7 @@ func TestExcludedLinesClipToRealLines(t *testing.T) {
 // neighboring lines each count their own line: the claimed counter
 // carries both, the excluded counter the exclusion's alone.
 func TestClaimedCountsClaimsAndExclusions(t *testing.T) {
-	cov := LineCoverage([]string{"f.txt:1-1"}, []string{"f.txt:2-2"}, []FileLineCount{{Path: "f.txt", Lines: 3}})
+	cov := LineCoverage([]string{"f.txt:1-1"}, []string{"f.txt:2-2"}, nil, []FileLineCount{{Path: "f.txt", Lines: 3}})
 	if cov.Claimed != 2 || cov.ExcludedLines != 1 || len(cov.Holes) != 1 {
 		t.Fatalf("claims and exclusions each count their line: %+v", cov)
 	}

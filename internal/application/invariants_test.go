@@ -243,8 +243,8 @@ func TestViewsCarryTheFingerprints(t *testing.T) {
 	mountPorts()
 	root := newBornRoot(t)
 	state := zoneFile(t, root, zone.StateFile)
-	if !strings.Contains(state, "(claims 1 files / 1 lines; proof ") {
-		t.Fatalf("the state must carry the claims shape and proof, state:\n%s", state)
+	if !strings.Contains(state, "(claims 1 files / 1 lines; digest ") {
+		t.Fatalf("the state must carry the claims shape and digest, state:\n%s", state)
 	}
 	page := zoneFile(t, root, filepath.Join(zone.SpecDir, "tool", "copy.md"))
 	if !strings.Contains(page, "proof: green (") {

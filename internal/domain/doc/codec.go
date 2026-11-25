@@ -31,13 +31,20 @@ func Decode(data []byte) (Document, error) {
 	return d, nil
 }
 
-// Marshal — the document's canonical bytes: two-space indent, map
-// keys sorted, struct fields in declaration order. The same document
-// always marshals to the same bytes.
-func Marshal(d Document) []byte {
+// Canonical — the one canonical spelling of the machine's YAML:
+// two-space indent, a list under its key like every other nested
+// value, map keys sorted, struct fields in declaration order. The
+// same value always marshals to the same bytes; a document, a
+// behavior, a row, a command and a journal record all share it.
+func Canonical(v any) []byte {
 	// The model is plain scalar/slice/map data: marshal cannot fail.
-	out, _ := yaml.MarshalWithOptions(d, yaml.Indent(2))
+	out, _ := yaml.MarshalWithOptions(v, yaml.Indent(2), yaml.IndentSequence(true))
 	return out
+}
+
+// Marshal — the document's canonical bytes.
+func Marshal(d Document) []byte {
+	return Canonical(d)
 }
 
 // Normalize — a submission's bytes to its canonical spelling and
@@ -79,19 +86,20 @@ func (c *Cmd) UnmarshalYAML(u func(interface{}) error) error {
 }
 
 // MarshalYAML — the command's canonical spelling: the author's own
-// form rides unchanged.
-func (c Cmd) MarshalYAML() ([]byte, error) {
+// form rides unchanged — an argv list as a list, a shell line as a
+// line. The value is the library's to lay out.
+func (c Cmd) MarshalYAML() (any, error) {
 	if c.Argv != nil {
-		return yaml.Marshal(c.Argv)
+		return c.Argv, nil
 	}
-	return yaml.Marshal(c.Line)
+	return c.Line, nil
 }
 
 // Key — the command's identity as a row's merge key: its canonical
 // bytes. A re-spelled run is a new run — the standing one stands.
 func (c Cmd) Key() string {
-	b, _ := c.MarshalYAML()
-	return string(b)
+	// A string or a list of strings always marshals.
+	return string(Canonical(c))
 }
 
 // armor — the pre-decode walk: exactly one document, no anchors,

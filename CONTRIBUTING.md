@@ -22,11 +22,11 @@ make venv && make check
 `uv.lock` (needs [uv](https://docs.astral.sh/uv/)). `make check` then
 drives the whole battery: the documentation mirrors' parity gate (every
 Russian and Chinese mirror structurally exact against its English
-base), ruff and mypy --strict over every tracked Python file, gofmt,
-go vet, staticcheck, golint, unparam, gopls and dupl over the Go code,
-and the test suite with 100% coverage of non-test lines under a
-120-second ceiling. A change that leaves any of this red does not go
-in.
+base), ruff and mypy --strict over every Python file of `tools/` and
+`campaigns/`, gofmt, go vet, staticcheck, golint, unparam, gopls and
+dupl over every Go file of `cmd/` and `internal/`, and the test suite
+with 100% coverage of non-test lines under a 120-second ceiling. A
+change that leaves any of this red does not go in.
 
 ## Style
 

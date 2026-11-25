@@ -8,6 +8,7 @@
 - [The call, from launch to exit](#the-call-from-launch-to-exit)
 - [Opening the instance](#opening-the-instance)
 - [The run](#the-run)
+- [The verify call](#the-verify-call)
 - [The demand stream](#the-demand-stream)
 - [The submission slot](#the-submission-slot)
 - [The document — the one input format](#the-document--the-one-input-format)
@@ -80,6 +81,11 @@ Everything an agent or a human can ever meet:
   spelling, alone on the line — prints `punchtape <version>` and
   exits 0 before any state is touched. It is a human affordance;
   the contract never mentions it and no machine path reads it.
+- **The verify flag.** `punchtape --verify` — exactly this
+  spelling, alone on the line — runs the build and every row of the
+  standing corpus again, writes nothing, and exits 0 when the zone
+  is proven and 1 otherwise. It is the human's affordance as well;
+  the agent never calls it.
 - **The argument refusal.** Any other arguments produce one line —
   ``punchtape: the call takes no arguments — run `punchtape` alone;
   this refusal is the whole action of this launch`` — and exit 1,
@@ -117,7 +123,12 @@ Everything an agent or a human can ever meet:
 
 - **The AGENTS block** — the one record outside the zone: a marked
   block in the working root's `AGENTS.md`, ensured idempotently on
-  every run. Bytes outside the markers are never touched.
+  every run. The block stands as the first lines of the file, and
+  one empty line — the machine's own — follows it wherever the file
+  carries other text. The words outside the markers keep their bytes
+  and stand below the block; only the empty lines at their edges go.
+  The block's lines and that empty line are the machine's in the
+  coverage arithmetic: counted nowhere.
 - **The working tree** — everything else in the working root: the
   agent's free territory. The machine never reads its content as
   code; it walks it for line counts and digests, executes the
@@ -138,7 +149,9 @@ flowchart TD
     L["punchtape launched"] --> ARGS{"arguments on the line?"}
     ARGS -- "yes" --> VER{"exactly --version, alone?"}
     VER -- "yes — the version ask" --> VOUT["print the version, exit 0"]
-    VER -- "no" --> REF["one refusal line, exit 1 — no state touched"]
+    VER -- "no" --> VFY{"exactly --verify, alone?"}
+    VFY -- "yes — the human's check" --> THEV["THE VERIFY — every row runs again, nothing is written, exit 0 or 1"]
+    VFY -- "no" --> REF["one refusal line, exit 1 — no state touched"]
     ARGS -- "no — the call itself" --> CALL["THE CALL"]
     CALL --> ZONE{"a .punchtape directory at or above the working directory?"}
     ZONE -- "not found" --> FIRST["FIRST CONTACT — print the whole contract, exit 0; nothing is created"]
@@ -277,6 +290,62 @@ Every machine-owned write that cannot land (a journal append, a
 view, the corpus heal, the AGENTS block, the tmp clear) is a loud
 failure: the run prints the error and exits 1 — the machine never
 quietly leaves an old page standing.
+
+## The verify call
+
+`punchtape --verify` is the human's re-proof of a zone the agent may
+have written. The ordinary call checks that the journal agrees with
+itself, not who wrote it — an agent that recomputes every fingerprint
+consistently passes it. The verify call trusts none of that. Its
+algorithm, as the code implements it:
+
+1. No zone at or above the working directory: the line
+   `punchtape: no zone here — nothing to verify`, exit 1, nothing
+   created.
+2. A zone without `journal/`: the line
+   `punchtape: no instance here yet — nothing to verify`, exit 1; no
+   birth, and not even the lock file is left.
+3. The zone's lock is taken as the ordinary call takes it; a lock
+   that never came is the ordinary call's own refusal, exit 1.
+4. Damage at the opening — a record that does not parse, a torn
+   tail, a foreign machine version — answers the ordinary call's own
+   lines, exit 1; nothing is repaired: no quarantine is written, the
+   epochs' bytes stand.
+5. A chain that does not recompose is `punchtape: zone damaged: …`,
+   exit 1.
+6. The inbox is never read: a document standing in the slot stays
+   where it is, byte for byte.
+7. The declared build runs; a red build stops the rows, as in the
+   ordinary run.
+8. Every row of the standing corpus runs again, in corpus order,
+   under the run budget and the row deadline; the journal's green
+   facts do not count.
+9. The executed facts live in memory alone and take the journal's
+   place in the verdict's gates. Not a record, not a view, not the
+   corpus image, not the walk cache, not the `AGENTS.md` block, not
+   a teaching page is written: a check run in another environment
+   must not age the fingerprints of the zone at home. The commands
+   of the rows write to the tree as in any run — that is the work's
+   own writing, not the machine's.
+10. An empty corpus proves nothing.
+11. The terminal carries the whole answer: one line per red row, one
+    line per verdict blocker, the budget's warning when it stands,
+    and the last line — proven or not proven, then the agent's
+    judgments: the words marked not-a-requirement over the stream's
+    size and the share of the tree excluded.
+12. The exit code is 0 only when the corpus is not empty, no row is
+    red, no blocker stands and no warning stands; otherwise 1. The
+    verdict's own gates judge, drift included: a tree that moved
+    after the verdict without a submission is not proven.
+13. The scratch clears under the same lock, as after a run; a
+    scratch that will not clear is named, exit 1.
+
+A demonstration rides in the repository's automated check:
+`.github/workflows/verify.yml` builds the machine of the pushed
+commit and proves a copy of the recorded notes demo. A broken copy of
+the same demo must answer not proven with exit 1 — the job fails
+otherwise. The job runs on ubuntu and macos, and also replays the
+recorded rjq demo twice, requiring the two films byte-identical.
 
 ## The demand stream
 
@@ -590,11 +659,13 @@ the proof it stands on), and the lessons. The counter starts at
 zero: before the first fact-changing run the terminal line and
 the page headers all say run 0.
 
-A **lesson** is a red→green transition of this run, fixed as pure
-data: the previous fact's first broken reason, all its broken
-facts, the row's bytes before and after (answered by the journal's
-own row-bytes index, by digest), and the two run numbers. The
-lessons land on the knowledge page, grouped by reason.
+A **lesson** is a red→green transition of this run whose row itself
+changed, fixed as pure data: the previous fact's first broken
+reason, all its broken facts, the row's bytes before and after
+(answered by the journal's own row-bytes index, by digest), and the
+two run numbers. A row that stood while the code was fixed is no
+lesson and is not recorded. The lessons land on the knowledge page,
+grouped by reason.
 
 ## The verdict
 
@@ -714,7 +785,7 @@ does not (byte-compare first, atomic write only on difference).
   rest);
 - the deferred orders with their questions and reasons;
 - one line per behavior — `- <id>: <n> rows (claims F files /
-  L lines; proof <12 hex>) — <g> green, <s> stale[, <r> RED]`;
+  L lines; digest <12 hex>) — <g> green, <s> stale[, <r> RED]`;
 - the uncovered lines (the first ten files, the elision pointing
   to the holes ledger);
 - the excluded files with their reasons; `excluded lines: N
@@ -753,8 +824,8 @@ characters).
 (nested ids create their directories): the header `# <id> —
 <name>`, the run number, the Story (the prose verbatim), the
 Demands (each covered requirement with its lines and prose), the
-Claims (each range with its own 12-hex digest, the behavior's
-token below), the Rows (each row's index — the PROOF rows marked
+Claims (each range with its own 12-hex digest), the Rows (each
+row's index — the PROOF rows marked
 — the command as a human reads it, the expectation in human
 lines, the proof standing with its recorded short digest, `none`
 for a row that never ran), and the Verify list (the commands that
@@ -774,11 +845,11 @@ read.
 ```mermaid
 flowchart TD
     R["read AGENTS.md at the working root — unreadable is a loud error"] --> M{"which markers does it carry?"}
-    M -- "neither" --> APP["the block lands at the file's end — behind one separating blank line"]
-    M -- "both, in order" --> EQ{"the bytes between them equal the current block?"}
+    M -- "neither" --> APP["the block lands as the file's first lines — one empty line, then the previous text verbatim"]
+    M -- "exactly one pair, in order" --> EQ{"the block's text is the current one, and it already stands first?"}
     EQ -- "yes" --> NOP["nothing is touched"]
-    EQ -- "no" --> REP["the block replaces itself whole — everything outside the markers stays byte for byte"]
-    M -- "one without its pair, or the pair out of order" --> ERR["damage by hand — a loud error, exit 1; the machine never guesses"]
+    EQ -- "no" --> REP["the block stands first with the current text — the words outside the markers keep their bytes, below the block"]
+    M -- "any other count: one without its pair, the pair out of order, more than one pair" --> ERR["damage by hand — a loud error, exit 1; the machine never guesses"]
 ```
 
 The block's fixed content, between `<!-- punchtape -->` and
@@ -787,8 +858,9 @@ The block's fixed content, between `<!-- punchtape -->` and
 in `.punchtape/contract.md`; the document's shape in
 `.punchtape/template.yaml`; submissions to `.punchtape/inbox.yaml`;
 the last run's facts in `.punchtape/report.md`. Outside the
-markers not one byte belongs to the machine and not one byte is
-ever touched.
+markers not one byte belongs to the machine: the words there keep
+their bytes and stand below the block; only the empty lines at their
+edges go.
 
 **The teaching refresh** — `contract.md`, `template.yaml` and
 `reference.md` are rewritten only when the canon's own bytes
@@ -811,7 +883,7 @@ the file to touch:
 | corpus empty (no registry part, no build) | `corpus empty — submit the first document as .punchtape/inbox.yaml (copy .punchtape/template.yaml)` |
 | registry stands, no behaviors | `no behaviors stand — submit to .punchtape/inbox.yaml a behavior with a pinned row` |
 | any verdict blocker | the first blocker's instruction, in the order above |
-| a verdict stands on the current corpus version | `verdict #<N> standing — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document` |
+| a verdict stands on the current corpus version | `verdict #<N> standing — <M> of <L> words marked not-a-requirement, <S> % of the tree excluded — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document` |
 | all green, no standing verdict on this version | `all green — write done: true to .punchtape/inbox.yaml and run to record the verdict` |
 
 ```mermaid
@@ -907,6 +979,14 @@ counts; the lessons; the standing tree-lock hold; the last
 submission's record place. Everything the machine decides, it
 decides on the standing — and the standing is always derivable
 from the records alone.
+
+**What the fold checks — and what it does not.** The fold checks
+each record's shape, the digest of its object, the chain of the
+words and the match of every fingerprint. A record that fails any of
+them is refused by name. A rewrite that recomputes every hash
+consistently fails none of them and passes: the journal holds no
+key and no witness. The ordinary call cannot tell the machine's own
+journal from such a rewrite; the answer to it is the verify call.
 
 ## The object store
 
@@ -1018,7 +1098,14 @@ the real machine in a fresh fixture and close its verdict whole —
 checked in the build's test battery, so a lying canon fails the
 build. The law map binds every enforced rule to a law the
 contract prints and every cited law to one the contract prints —
-what is enforced is printed, what is printed is enforced.
+what is enforced is printed, what is printed is enforced. The
+contract's last block names the agent's duties — a row runs the code
+its behavior claims, the words are the human's alone, mark and
+exclusion are the agent's judgments, the journal is the machine's —
+and says itself that the machine enforces none of these lines: the
+block is prose, not a law. It stands in all three contracts, and
+each mirror is checked to carry its heading, as it is checked for
+the laws.
 
 ## Determinism and integrity
 
@@ -1059,4 +1146,9 @@ battery and check target:
   ceiling; and complete function coverage — the test binaries'
   profile merged with the profile of the instrumented binary
   launched itself (the entry points a unit test cannot reach),
-  every function at 100% or the build fails.
+  every function at 100% or the build fails. The battery holds the
+  verify call's own tests — nothing is written on an honest zone, a
+  forged journal turns red, a broken row is named, a partial run and
+  every refusal are not proven, the inbox stays unread, every row
+  really runs, the scratch clears — and the standing line and the
+  verify line name the agent's judgments.

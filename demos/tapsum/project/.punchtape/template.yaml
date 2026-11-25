@@ -1,7 +1,4 @@
-# The document: copy me, edit, submit as .punchtape/inbox.yaml.
-# The machine merges by id — unlisted parts stand, a listed behavior
-# carries its whole head; the human's words enter .punchtape/demands.md,
-# the machine takes them itself.
+# The document: copy me, edit, submit as .punchtape/inbox.yaml. The machine merges by id — unlisted parts stand, a listed behavior carries its whole head; the human's words enter .punchtape/demands.md, the machine takes them itself.
 work: what broke, what was fixed, what was decided — the narrative of this submission
 # intents:   # every new demand line declares its outcome here, retold in prose
 #   - {lines: [D6], outcome: execute, prose: the retelling, run: "./tool --version"}
@@ -32,9 +29,9 @@ behaviors:
     prose: what the user gets and why
     claims: ["src/tool.go:12-48"]   # the behavior's exact lines of code
     # covers: [R1]   # the requirements this behavior proves
-  rows:   # the run is the row's key — the same run replaces its row, unlisted rows stand
-  # a row retires only with its behavior whole: remove the id under its mandate and re-add it in one document
-    - run: "./tool src out"   # one command: a shell line or an argv list
+    rows:   # the run is the row's key — the same run replaces its row, unlisted rows stand
+    # a row retires only with its behavior whole: remove the id under its mandate and re-add it in one document
+      - run: "./tool src out"   # one command: a shell line or an argv list
         expect:                 # rc absent wants 0; out/files pin exact bytes — rc alone pins nothing
           rc: 0
           out: "the exact bytes"   # "contains: " prefixes a substring; the unprefixed pin proves

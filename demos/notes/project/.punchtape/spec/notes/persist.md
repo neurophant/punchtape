@@ -1,6 +1,6 @@
 # notes/persist — state survives a restart
 
-run: 2
+run: 3
 
 ## Story
 
@@ -13,7 +13,6 @@ a note added in one process is listed by the next one
 ## Claims
 
 - notes.js:30-32 — 6fb2e8700493
-token: db3428fe8d95
 
 ## Rows
 
@@ -24,7 +23,7 @@ exit: 0
 stdout: 1
 pinned
 
-proof: green (17f0c961110d)
+proof: green (631dfe3e315e)
 
 ## Verify
 

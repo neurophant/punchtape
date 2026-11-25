@@ -1,6 +1,0 @@
-work: loud exclusions for the watch loop, then the completion act
-uncovered-lines:
-- range: cmd/tapsum/main.go:56-82
-  reason: the watch loop; every logged pass carries a wall clock, so no exact-bytes pin exists yet; a future document claims it with fixtures
-  refs:
-  - law:proof

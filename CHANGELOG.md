@@ -4,6 +4,51 @@ All notable changes to punchtape. One law applies to this history: one
 zone, one machine — a zone born on one version is refused by another,
 so each entry below also answers "what happens to my zone?".
 
+## [0.6.0] — 2026-11-24
+
+The verdict can be re-proved, and the docs say what the machine
+does not prevent.
+
+### Added
+
+- **The verify call.** `punchtape --verify` runs the build and every
+  row of the standing corpus again without trusting the journal,
+  writes nothing, and exits 0 only when every verdict gate stood
+  after that run. It is the human's and CI's call; the agent's call
+  is unchanged.
+- **The agent's duties in the contract.** The contract states what
+  honest work is: a row runs the code it claims, the words are the
+  human's alone, mark and exclusion are the agent's judgments, the
+  journal is the machine's. The machine enforces none of these
+  lines, and the contract says so.
+- **The standing line names the agent's judgments.** The verdict's
+  line counts the words marked not-a-requirement and the share of
+  the tree excluded.
+- **A demonstration in CI.** `.github/workflows/verify.yml` proves
+  the recorded notes demo and refuses a broken copy, on every push;
+  the job runs on ubuntu and macos and replays the recorded rjq demo
+  twice, requiring the two films byte-identical.
+
+### Changed
+
+- The machine's block in `AGENTS.md` stands as the first lines of the
+  file; a block found elsewhere moves there; two blocks are refused.
+- The reference states both flags and what the verify call does.
+- A lesson is recorded only when the row itself changed; a row that
+  stood while the code was fixed leaves no lesson.
+- The state page prints a behavior's claims digest once, as
+  `digest`; the spec pages and the trace no longer repeat it.
+- The rjq demo's refusal pin carries no operating system's error
+  number.
+- The user docs state the honest limits: the journal can be
+  rewritten consistently by an agent that reads the source, and the
+  zone is within the agent's reach.
+
+### Zone compatibility
+
+A zone born on 0.5.1 is refused by 0.6.0 under the version law:
+archive it and start fresh.
+
 ## [0.5.1] — 2026-11-08
 
 The protocol hardened — documents are bounded, the build is part of

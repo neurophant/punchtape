@@ -13,7 +13,6 @@ the module reports its version
 ## Claims
 
 - enimda/__init__.py:1-12 — 497e92a435e6
-token: 963fa7269ac2
 
 ## Rows
 
@@ -23,7 +22,7 @@ command: python3 -c "import enimda; print(enimda.__version__)"
 exit: 0
 stdout: 2.1.0
 
-proof: green (728eec9f7b0e)
+proof: green (d9b0d82d1132)
 
 ## Verify
 

@@ -173,7 +173,6 @@ requirements:
       lines: [D1]
       prose: the tool and its check
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
 behaviors:
     - id: tool/copy
@@ -287,7 +286,6 @@ requirements:
       lines: [D1]
       prose: the tool and its check
 uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D1]}
     - {range: "out.txt:1-1", reason: the row's own output, refs: [D1]}
 behaviors:
     - id: tool/copy
@@ -395,7 +393,7 @@ func TestRowBytesIndex(t *testing.T) {
 		}
 	}
 	// The lesson path: a red fact healed green reads its two rows
-	// through the index alone.
+	// through the index alone — and only a changed row is a lesson.
 	var green journal.RowFact
 	for digest := range m.standing.Rows {
 		green = m.standing.Rows[digest]
@@ -404,8 +402,15 @@ func TestRowBytesIndex(t *testing.T) {
 	red.Status = journal.StatusRed
 	red.Facts = []string{"the named reason"}
 	m.standing.Rows[red.Key] = red
+	if lessons := m.lessons([]journal.RowFact{green}, 9); len(lessons) != 0 {
+		t.Fatalf("a row that stood while the code was fixed is no lesson, got %d", len(lessons))
+	}
+	moved := domain.Digest([]byte("run: the row before the fix\n"))
+	m.standing.RowBytes[moved] = "run: the row before the fix\n"
+	red.Row = moved
+	m.standing.Rows[red.Key] = red
 	if lessons := m.lessons([]journal.RowFact{green}, 9); len(lessons) != 1 {
-		t.Fatalf("the healed row must fix its lesson, got %d", len(lessons))
+		t.Fatalf("the changed row must fix its lesson, got %d", len(lessons))
 	}
 	if probe.reads != 0 {
 		t.Fatalf("the index must answer without the behavior objects: %d reads", probe.reads)
@@ -460,8 +465,8 @@ func TestClaimsDigestComputedOnce(t *testing.T) {
 		t.Fatalf("the digest must spell the sorted range law: %s", facts.digest)
 	}
 	if len(facts.ranges) != 2 ||
-		facts.ranges[0].Claim != "src/in.txt:1-1" || facts.ranges[0].Digest12 != fprint.Token12(fprint.LineRangeDigest(data, 1, 1)) ||
-		facts.ranges[1].Claim != "src/in.txt:2-3" || facts.ranges[1].Digest12 != fprint.Token12(fprint.LineRangeDigest(data, 2, 3)) {
+		facts.ranges[0].Claim != "src/in.txt:1-1" || facts.ranges[0].Digest12 != fprint.ShortDigest(fprint.LineRangeDigest(data, 1, 1)) ||
+		facts.ranges[1].Claim != "src/in.txt:2-3" || facts.ranges[1].Digest12 != fprint.ShortDigest(fprint.LineRangeDigest(data, 2, 3)) {
 		t.Fatalf("the ranges carry their own digests: %+v", facts.ranges)
 	}
 	// The next computation reads once again — one read per

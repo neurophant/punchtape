@@ -81,7 +81,7 @@ notes list 每行一条、从旧到新打印全部笔记；notes show <编号>
 4. 修复落下；机器只重跑过期的东西，并点名剩下的洞：
 
    ```
-   punchtape: run 2 — 10 uncovered lines — submit their claims or loud exclusions to .punchtape/inbox.yaml
+   punchtape: run 2 — 1 uncovered lines — submit their claims or loud exclusions to .punchtape/inbox.yaml
    ```
 
    工作盖不住的文件得到响亮的豁免——公开、带理由、绝不
@@ -90,15 +90,15 @@ notes list 每行一条、从旧到新打印全部笔记；notes show <编号>
    `done: true`。这就是签收——不用重打，不用排版。
 
    ```
-   punchtape: run 2 — all green — write done: true to .punchtape/inbox.yaml and run to record the verdict
+   punchtape: run 3 — all green — write done: true to .punchtape/inbox.yaml and run to record the verdict
    ```
 
-6. 机器重新检查一切：每条 row 以钉住的 proof 保持绿色、你的
+6. 机器检查每一道关卡：每条 row 以钉住的 proof 保持绿色、你的
    言语整体了结、每条要求被覆盖、树等于 claims 加响亮的豁免、
    没有开放的问题——然后记录裁决：
 
    ```
-   punchtape: run 2 — verdict #1 standing — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
+   punchtape: run 3 — verdict #1 standing — 0 of 4 words marked not-a-requirement, 3 % of the tree excluded — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
    ```
 
    从此 `.punchtape/state.md` 显示：`verdict: #1 … —
@@ -176,9 +176,94 @@ claim 了被改文件的检查重新运行；仍然成立的检查不重跑、�
 没有什么强迫区进 git。`.punchtape/` 进了你的 `.gitignore`：
 仓库携带代码，区携带真相，两边各自完整。每个开发者（和你的
 CI）看到的是纯树。任务交接时转移的是文件夹，不是分支。区们
-分叉时，真相住在机器自己的记录里：日志——改它一下机器就会
-点名。代价同样直白：没有区的克隆从空开始，所以这个形态更
+分叉时，真相住在机器自己的记录里：日志——加载时机器会点名
+它损坏的记录，但一次自洽的重写可以通过它，所以要在 agent
+无法写入的地方用 `punchtape --verify` 重新验证。代价同样直白：
+没有区的克隆从空开始，所以这个形态更
 适合单一主人或明确的交接，而不是一大群人。
+
+### 亲自检查裁决
+
+机器由 agent 运行，而区是一个 agent 可以写入的文件夹。`punchtape --verify`
+是不信任这一切的调用：它重新运行构建和每一行，不写任何东西，
+只有当次运行后每一道裁决关卡都站立时，退出码才为 0：
+
+```bash
+punchtape --verify
+```
+
+最后一行作答。在一个日志被自洽重写的区上：
+
+```text
+red hello/say/0 — stdout: want "hello\n", got "goodbye\n"
+verdict: not yet — behaviors without a green pinned row: hello/say
+verdict: not yet — a row is red or stale
+punchtape: verify — not proven — 0 of 1 words marked not-a-requirement, 0 % of the tree excluded
+```
+
+在一个诚实的区上：
+
+```text
+punchtape: verify — proven — 1 rows run green — 0 of 1 words marked not-a-requirement, 0 % of the tree excluded
+```
+
+把最后一行读两遍：它统计 agent 标记为非需求的词，以及它豁免的
+树的份额。理由在 `trace.md` 和 `holes.md` 里，每一行的命令在它
+自己的 spec 页面上、紧挨着它申报的行。
+
+三个时刻需要这次检查：
+
+- **接受裁决之前**，当你没有亲眼看着它被挣得。一次调用，在你
+  自己的机器上。
+- **区从别处来到你手上时**：交接后的克隆、两个区的合并、从备份
+  的恢复。一次调用；如果区住在仓库里，CI 里也要。
+- **在 CI 里**，每次推送到主分支时和发布之前。
+
+#### 每次推送前的本地检查
+
+Git 可以替你运行检查。把两行放进仓库的 `.git/hooks/pre-push`
+文件，并让它可执行：
+
+```sh
+#!/bin/sh
+punchtape --verify
+```
+
+从此推送只有在区被证明后才离开你的机器。一行红行会把它留在
+家里，屏幕上是 verify 的各行：
+
+```text
+red hello/say/0 — stdout: want "hello\n", got "goodbye\n"
+verdict: not yet — drift unresolved: a submission must come after run 1
+verdict: not yet — behaviors without a green pinned row: hello/say
+verdict: not yet — a row is red or stale
+punchtape: verify — not proven — 0 of 1 words marked not-a-requirement, 0 % of the tree excluded
+error: failed to push some refs to '/tmp/pt-measure/remote.git'
+```
+
+钩子需要区在仓库里：没有区时，`punchtape --verify` 回答
+"no zone here" 并拒绝推送。`git push --no-verify` 跳过这个
+钩子，就像跳过任何钩子一样。
+
+#### CI 里的同一检查
+
+CI 是 agent 无法写入的唯一地方。那里的检查是三步——检出仓库、
+按校验和安装发布版二进制、运行 `punchtape --verify`——作业
+按退出码失败：
+
+```yaml
+name: verify
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          curl -fsSL https://github.com/neurophant/punchtape/releases/latest/download/get-punchtape.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: punchtape --verify
+```
 
 ### 冲突与处方
 
@@ -226,7 +311,7 @@ checkout：
 自己说：
 
 ```
-punchtape: zone born by machine 9.9.9 — this machine is 0.5.1; archive it (cp -r .punchtape .punchtape-archive) and start fresh
+punchtape: zone born by machine 9.9.9 — this machine is 0.6.0; archive it (cp -r .punchtape .punchtape-archive) and start fresh
 ```
 
 **树里坐着一个垃圾或半死的区。**没有日志、也还没有言语的

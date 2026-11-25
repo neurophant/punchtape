@@ -59,23 +59,22 @@ on its own, finds the tree no longer fully covered, and names the
 holes:
 
 ```text
-punchtape: run 2 — 10 uncovered lines — submit their claims or loud exclusions to .punchtape/inbox.yaml
+punchtape: run 2 — 1 uncovered lines — submit their claims or loud exclusions to .punchtape/inbox.yaml
 ```
 
-**Loud exclusions.** Two files in the tree are not the work's
-source: the machine's own AGENTS block and the runtime state file.
-The agent excludes them loudly, each with a reason and a
-reference. The machine answers:
+**Loud exclusion.** One file in the tree is not the work's source:
+the runtime state file. The agent excludes it loudly, with a
+reason and a reference. The machine answers:
 
 ```text
-punchtape: run 2 — all green — write done: true to .punchtape/inbox.yaml and run to record the verdict
+punchtape: run 3 — all green — write done: true to .punchtape/inbox.yaml and run to record the verdict
 ```
 
 **The completion act.** The agent submits `done: true` — nothing
 else. The machine decides:
 
 ```text
-punchtape: run 2 — verdict #1 standing — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
+punchtape: run 3 — verdict #1 standing — 0 of 4 words marked not-a-requirement, 3 % of the tree excluded — show .punchtape/state.md to the human; new work goes to .punchtape/inbox.yaml as a document
 ```
 
 ## The film
@@ -85,29 +84,29 @@ The whole story stands in
 readable without running anything:
 
 ```text
-# punchtape state — run 2
+# punchtape state — run 3
 
 demands: 4/4 lines; requirements 4 standing, 4 covered; markers: 0
 queue: empty
 last no-new-demands: run 3
 corpus: v2, 4 behaviors
 submissions: 2 accepted, 0 refused, 1 completed
-machine at birth: 0.5.1
-verdict: #1 on v2, run 2, signature 2cb5bbe8a1f6 — standing
+machine at birth: 0.6.0
+verdict: #1 on v2, run 3, signature a5faaa6aabe3 — standing
 
-- notes/add: 1 rows — 1 green (claims 1 files / 19 lines; proof e89f52e44429)
-- notes/list: 1 rows — 1 green (claims 1 files / 2 lines; proof 46832763864d)
-- notes/show: 2 rows — 2 green (claims 1 files / 8 lines; proof 128de6075a9a)
-- notes/persist: 1 rows — 1 green (claims 1 files / 3 lines; proof db3428fe8d95)
+- notes/add: 1 rows — 1 green (claims 1 files / 19 lines; digest e89f52e44429)
+- notes/list: 1 rows — 1 green (claims 1 files / 2 lines; digest 46832763864d)
+- notes/show: 2 rows — 2 green (claims 1 files / 8 lines; digest 128de6075a9a)
+- notes/persist: 1 rows — 1 green (claims 1 files / 3 lines; digest db3428fe8d95)
 ```
 
-Two lessons also landed in `knowledge.md` — the machine recorded
-both red→green transitions itself, as pure data: the broken
-reason, the runs, the row bytes before and after.
+The fix was in the code and the rows stood as written, so
+`knowledge.md` holds no lesson: the machine records one only for a
+row that itself changed.
 
 ## Replay it yourself
 
-Needs `punchtape` on PATH (0.5.1) and `node`:
+Needs `punchtape` on PATH (0.6.0) and `node`:
 
 ```bash
 ./replay.sh

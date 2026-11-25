@@ -4,29 +4,29 @@ submission:
   corpus-version: 1
   build: go build -o tapsum-demo ./cmd/tapsum
   intents:
-  - lines:
-    - D1
-    outcome: work
-    prose: the version line prints and holds
-  - lines:
-    - D2
-    outcome: work
-    prose: the usage page prints and holds
+    - lines:
+        - D1
+      outcome: work
+      prose: the version line prints and holds
+    - lines:
+        - D2
+      outcome: work
+      prose: the usage page prints and holds
   requirements:
-  - id: R1
-    lines:
-    - D1
-    prose: the version line prints
-  - id: R2
-    lines:
-    - D2
-    prose: the usage page prints
+    - id: R1
+      lines:
+        - D1
+      prose: the version line prints
+    - id: R2
+      lines:
+        - D2
+      prose: the usage page prints
   added:
-  - id: cli/version
-    addr: 598d298c3d82d7d4af67fdc545d10cb667b7f8cf810ca552dc7f0f0bd454bd93
-  - id: cli/usage
-    addr: b80cbb7edd1d9edd5647ddb477be383f41c15f8c273f78022f736dae533a5c76
-  doc-addr: da0d8b1447cd468ed8e04150f24f25b00f430bf03d495a255c5fbe2fccd44391
+    - id: cli/version
+      addr: 206250fb315fd465917270414802eb5b484406e8b0561f0ab4dcd06f95cac73e
+    - id: cli/usage
+      addr: be862372ff50f15d3c9d6820e127850ea78e0c25b3100cf4a6340a1ade98f635
+  doc-addr: 995c4173c5398a2b9c557f1f975d2e99b7de7d432f6663ed06ea95f2a1b2ac2b
 ---
 kind: no-new-demands
 no-new-demands:
@@ -39,13 +39,13 @@ run:
   build:
     exit: 0
   rows:
-  - key: cli/version/0
-    row: de0177ceadaab2932eb9f3d06e1a328621cfe6ed0a8a0ed85e22c1d282d97aa9
-    status: green
-    exit: 0
-    proof: 7ae73af69ef68b57804ee5dbf6c574c22418c09d23d5d7d333a299c28ec7c223
-  - key: cli/usage/0
-    row: 8162a153f5eb9dec4e8a09ae234647120c28d20544c7489ecfcee86ba245c7d5
-    status: green
-    exit: 0
-    proof: df77a806a3953738280f5db8e324c05bba3859a758a202a8cca273551d26df6d
+    - key: cli/version/0
+      row: de0177ceadaab2932eb9f3d06e1a328621cfe6ed0a8a0ed85e22c1d282d97aa9
+      status: green
+      exit: 0
+      proof: c272c4dfab3b40f84ed2d7265abb42deb53ea4c7a58097bc16b876ea434ef131
+    - key: cli/usage/0
+      row: 8162a153f5eb9dec4e8a09ae234647120c28d20544c7489ecfcee86ba245c7d5
+      status: green
+      exit: 0
+      proof: 1e891786c4bf604a9021d9d661ba22df28ec50817abd248a5bcf2a5965823e78

@@ -1,294 +1,120 @@
-# The machine's canon — the one source of everything the machine
-# prints. The contract's base is English and the English text rules;
-# the Russian and Chinese mirrors are data for the humans who read
-# those languages. The zone's contract.md, template.yaml and
-# reference.md are generated from this file; the parity map binds every enforced
-# validation rule to the law the contract prints; the environment
-# rule names the exact set a command sees. A canon that would lie
-# about the machine fails the build (the self-validation battery
-# runs the example against the real machine).
+# The machine's canon — the one source of everything the machine prints. The contract's base is English and the English text rules; the Russian and Chinese mirrors are data for the humans who read those languages. The zone's contract.md, template.yaml and reference.md are generated from this file; the parity map binds every enforced validation rule to the law the contract prints; the environment rule names the exact set a command sees. A canon that would lie about the machine fails the build (the self-validation battery runs the example against the real machine).
+# The layout law: the model reads these faces, and a unit is one line — a contract paragraph, law or bullet; a reference entry; the text of a law-map rule. A block stands behind one blank line. The template and the example are YAML: a line there is syntax.
+
 contract: |
   punchtape — the contract
 
-  You ran punchtape and it printed this page: no instance here yet,
-  nothing was created. TO START: put the human's words verbatim, one
-  per line, into .punchtape/demands.md and run punchtape again — that
-  run births the zone.
+  You ran punchtape and it printed this page: no instance here yet, nothing was created. TO START: put the human's words verbatim, one per line, into .punchtape/demands.md and run punchtape again — that run births the zone.
 
-  THE CALL, always: `punchtape`, no arguments. The terminal gets one
-  line — the next action with the file to touch. Every other answer is
-  a file of the zone: reference.md (every door — read it first),
-  state.md (standing + next), report.md (last run's facts).
+  THE CALL, always: `punchtape`, no arguments. The terminal gets one line — the next action with the file to touch. Every other answer is a file of the zone: reference.md (every door — read it first), state.md (standing + next), report.md (last run's facts).
 
-  THE CYCLE: the human's words enter demands.md at any moment; the
-  agent appends them verbatim and the machine takes them itself at the
-  next submission. Submit the intent document → the machine runs the
-  rows → fix code or rows until green → submit `done: true` → the
-  machine records the verdict. state.md always says what to do now.
+  THE CYCLE: the human's words enter demands.md at any moment; the agent appends them verbatim and the machine takes them itself at the next submission. Submit the intent document → the machine runs the rows → fix code or rows until green → submit `done: true` → the machine records the verdict. state.md always says what to do now.
 
-  law:demand    The human's words, verbatim, one per line, into
-                .punchtape/demands.md. Numbering D1..Dn never changes;
-                the past is immutable — the journal holds the chain, a
-                touched past line is zone damage. Every new line is
-                declared in the submission that meets it: its outcome
-                (answer, execute, describe, work, mark or ask) and the
-                agent's retelling. A requirement is a demand made
-                specific: the lines it occupies and their unwinding in
-                prose. The tree does not move under answer, execute or
-                describe: the machine digests the declared universe
-                before and after, a declared build's artifacts are
-                work, and a moved tree holds the verdict.
+  law:demand The human's words, verbatim, one per line, into .punchtape/demands.md. Numbering D1..Dn never changes; the past is immutable — the journal holds the chain, a touched past line is zone damage. Every new line is declared in the submission that meets it: its outcome (answer, execute, describe, work, mark or ask) and the agent's retelling. A requirement is a demand made specific: the demand lines it takes and a prose statement of exactly what they ask. The tree does not move under answer, execute or describe: the machine digests the declared universe before and after, a declared build's artifacts are work, and a moved tree holds the verdict.
 
-  law:document  All work is one document (shape in template.yaml),
-                merged by id: requirements and behaviors by their
-                ids, markers by their lines, exclusions by range,
-                orders by demand and question. Removal is the remove
-                list; every key must stand. A done document is
-                exactly `done: true`; an accepted one leaves the
-                inbox, a refused one stays in place to fix. One document
-                is bounded — its bytes, its lists, its behaviors' claims
-                and rows, its expectations' files; the constants name them.
+  law:document All work is one document (shape in template.yaml), merged by id: requirements and behaviors by their ids, markers by their lines, exclusions by range, orders by demand and question. Removal is the remove list; every key must stand. A done document is exactly `done: true`; an accepted one leaves the inbox, a refused one stays in place to fix. One document is bounded — its bytes, its lists, its behaviors' claims and rows, its expectations' files; the constants name them.
 
-  law:paths     Every path is relative to the working root. Absolute,
-                ".." and escaping spellings are refused.
+  law:paths Every path is relative to the working root. Absolute, ".." and escaping spellings are refused.
 
-  law:claims    Coverage is claimed in line ranges of files, never
-                globs; one range names one behavior. The universe is
-                declared in .punchtape/universe — one root-relative
-                path a line, # a comment, no declaration meaning the
-                whole tree; a line no claim and no loud exclusion
-                names holds the verdict; the machine drafts the
-                exclusions, the reason and its references are yours.
+  law:claims Coverage is claimed in line ranges of files, never globs; one range names one behavior. The universe is declared in .punchtape/universe — one root-relative path a line, # a comment, no declaration meaning the whole tree; a line no claim and no loud exclusion names holds the verdict; the machine drafts the exclusions, the reason and its references are yours.
 
-  law:proof     A behavior proves by a row whose expect pins the exact
-                bytes of its output; a behavior without claims re-runs
-                its rows every run. One run proves one behavior. A
-                moved claimed line or a changed environment — pins,
-                shell, machine — makes the proof stale: the machine
-                re-runs and the pin must hold again.
+  law:proof A behavior proves by a row whose expect pins the exact bytes of its output; a behavior without claims re-runs its rows every run. One run proves one behavior. A moved claimed line or a changed environment — pins, shell, machine — makes the proof stale: the machine re-runs and the pin must hold again.
 
-  law:candor    What is skipped is marked, loudly. Replaced standing
-                work carries its mandate: the ordering line and the
-                target. An order awaiting the human holds the verdict;
-                it closes only over a later human line, cited by a
-                decision note; deferral is a visible mark. Notes carry
-                kinds and references that resolve; exclusions carry a
-                reason that cites and references that name demand
-                lines or laws.
+  law:candor What is skipped is marked, loudly. Replaced standing work carries its mandate: the ordering line and the target. An order awaiting the human holds the verdict; it closes only over a later human line, cited by a decision note; deferral is a visible mark. Notes carry kinds and references that resolve; exclusions carry a reason that cites and references that name demand lines or laws.
 
-  law:done      `done: true` records the verdict when: the declared build stands green; every row green
-                with a pinned proof; the stream resolved whole; every requirement covered by a behavior's
-                claims; the tree equal to claims plus loud exclusions; no order awaiting; and no drift left
-                unnamed — a drift is named by a submission that lands after the run that first saw it.
+  law:done `done: true` records the verdict when: the declared build stands green; every row green with a pinned proof; the stream resolved whole; every requirement covered by a behavior's claims; the tree equal to claims plus loud exclusions; no order awaiting; and no drift left unnamed — a drift is named by a submission that lands after the run that first saw it.
 
-  law:your-tree Rows and the build run from the tree root with PATH
-                and HOME plus the zone pins (.punchtape/env — one
-                KEY=VALUE a line, no quotes, no absolute paths;
-                PUNCHTAPE_ROW_TIMEOUT names whole seconds: the
-                deadline of every machine-run command, never the
-                commands' own). The build runs first, on every
-                launch — only rows stand on their proofs. Rows run
-                one at a time, in corpus order. Temporary files go
-                to .punchtape/tmp — cleared at each run's end, so
-                a writer creates the directory itself first;
-                version-control bookkeeping stays out of the tree;
-                anything left in the tree wants a claim or a loud
-                exclusion.
+  law:your-tree Rows and the build run from the tree root with PATH and HOME plus the zone pins (.punchtape/env — one KEY=VALUE a line, no quotes, no absolute paths; PUNCHTAPE_ROW_TIMEOUT names whole seconds: the deadline of every machine-run command, never the commands' own). The build runs first, on every launch — only rows stand on their proofs. Rows run one at a time, in corpus order. Temporary files go to .punchtape/tmp — cleared at each run's end, so a writer creates the directory itself first; version-control bookkeeping stays out of the tree; anything left in the tree wants a claim or a loud exclusion.
 
-  ZONE FILES. contract.md template.yaml reference.md | demands.md inbox.yaml
-  universe — you write | corpus.yaml state.md report.md knowledge.md
-  spec/ holes.md trace.md exclusions-proposal.yaml — the machine's |
-  journal/ — never edit. The working root's AGENTS.md carries the
-  machine's marked block.
+  ZONE FILES. contract.md template.yaml reference.md | demands.md inbox.yaml universe — you write | corpus.yaml state.md report.md knowledge.md spec/ holes.md trace.md exclusions-proposal.yaml — the machine's | journal/ — never edit. The working root's AGENTS.md carries the machine's marked block.
+
+  YOUR HANDS. The machine measures. You build, and you report.
+  - A row runs the code its behavior claims. A row that prints its expected output without touching those lines proves nothing.
+  - demands.md carries the human's words alone, verbatim. Yours never enter it.
+  - mark, exclusion and reason are your judgments and are read as yours: mark a line only if it truly orders nothing, exclude a line only if no check can reach it, and give the true reason.
+  - journal/ is the machine's. You never write it, repair it or re-create it, and you never report a line the machine did not print.
+  - `punchtape --verify` is the human's check and re-runs every row. You never call it.
+  - A row you cannot earn green goes to the human as it stands. That is an honest finish. A hidden hole is not.
+  The machine enforces none of these lines. The human reads them on the spec pages and re-proves the zone with `punchtape --verify`.
 
 contract-ru: |
   Зеркало contract.md; закон — английский текст.
 
   punchtape — контракт
 
-  Ты запустил punchtape — и он напечатал эту страницу: инстанса здесь
-  ещё нет, ничего не создано. ЧТОБЫ НАЧАТЬ: положи слова человека
-  дословно, по одному в строке, в .punchtape/demands.md и запусти
-  punchtape снова — этот запуск родит зону.
+  Ты запустил punchtape — и он напечатал эту страницу: инстанса здесь ещё нет, ничего не создано. ЧТОБЫ НАЧАТЬ: положи слова человека дословно, по одному в строке, в .punchtape/demands.md и запусти punchtape снова — этот запуск родит зону.
 
-  ВЫЗОВ, всегда: `punchtape`, без аргументов. Терминал получает одну
-  строку — следующее действие с именем файла, которого оно касается.
-  Всякий иной ответ — файл зоны: reference.md (все двери — читай
-  первым), state.md (стоящее + next), report.md (факты последнего
-  прогона).
+  ВЫЗОВ, всегда: `punchtape`, без аргументов. Терминал получает одну строку — следующее действие с именем файла, которого оно касается. Всякий иной ответ — файл зоны: reference.md (все двери — читай первым), state.md (стоящее + next), report.md (факты последнего прогона).
 
-  ЦИКЛ: слова человека входят в demands.md в любой момент; агент
-  дописывает их дословно, а машина берёт их сама в следующей подаче.
-  Подай документ намерения → машина исполнит строки → чини код или
-  строки до зелёного → подай `done: true` → машина запишет вердикт.
-  state.md всегда говорит, что делать сейчас.
+  ЦИКЛ: слова человека входят в demands.md в любой момент; агент дописывает их дословно, а машина берёт их сама в следующей подаче. Подай документ намерения → машина исполнит строки → чини код или строки до зелёного → подай `done: true` → машина запишет вердикт. state.md всегда говорит, что делать сейчас.
 
-  law:demand    Слова человека, дословно, по одному в строке, в
-                .punchtape/demands.md. Нумерация D1..Dn не меняется
-                никогда; прошлое неизменно — журнал держит цепочку,
-                тронутая прошлая строка есть повреждение зоны. Каждая
-                новая строка объявляется в подаче, что её встретила:
-                её исход (answer, execute, describe, work, mark или
-                ask) и пересказ агента. Требование — требование,
-                сделанное конкретным: строки, что оно занимает, и их
-                раскрытие прозой. Дерево не движется под answer,
-                execute и describe: машина дайджестирует объявленную
-                вселенную до и после, артефакты заявленной сборки —
-                работа, и двинувшееся дерево держит вердикт.
+  law:demand Слова человека, дословно, по одному в строке, в .punchtape/demands.md. Нумерация D1..Dn не меняется никогда; прошлое неизменно — журнал держит цепочку, тронутая прошлая строка есть повреждение зоны. Каждая новая строка объявляется в подаче, что её встретила: её исход (answer, execute, describe, work, mark или ask) и пересказ агента. Требование — это слова человека, превращённые в точную формулировку: строки человека, которые оно занимает, и их точный пересказ прозой. Дерево не движется под answer, execute и describe: машина дайджестирует объявленную вселенную до и после, артефакты заявленной сборки — работа, и двинувшееся дерево держит вердикт.
 
-  law:document  Вся работа — один документ (форма в template.yaml),
-                сливается по id: требования и поведения — по своим
-                id, маркеры — по строкам, исключения — по диапазону,
-                приказы — по требованию и вопросу. Удаление — список
-                remove; каждый ключ обязан стоять. Документ done —
-                это ровно `done: true`; принятый уходит из inbox,
-                отказанный стоит на месте для правки. Один документ
-                ограничен — свои байты, свои списки, клеймы и ряды
-                поведений, файлы ожиданий; константы печатают потолки.
+  law:document Вся работа — один документ (форма в template.yaml), сливается по id: требования и поведения — по своим id, маркеры — по строкам, исключения — по диапазону, приказы — по строке человека и вопросу. Удаление — список remove; каждый ключ обязан стоять. Документ done — это ровно `done: true`; принятый уходит из inbox, отказанный стоит на месте для правки. Один документ ограничен — свои байты, свои списки, клеймы и ряды поведений, файлы ожиданий; константы печатают потолки.
 
-  law:paths     Каждый путь относителен рабочему корню. Абсолютные,
-                «..» и убегающие написания отвергаются.
+  law:paths Каждый путь относителен рабочему корню. Абсолютные, «..» и убегающие написания отвергаются.
 
-  law:claims    Покрытие заявляется диапазонами строк файлов, никогда
-                глобами; один диапазон именует одно поведение.
-                Вселенная объявляется в .punchtape/universe — один
-                относительный корню путь в строку, # — комментарий,
-                без объявления считается всё дерево; строка, которую
-                не назвал ни один клейм и ни одна громкая оговорка,
-                держит вердикт; машина готовит черновик оговорок,
-                причина и её ссылки — твои.
+  law:claims Покрытие заявляется диапазонами строк файлов, никогда глобами; один диапазон именует одно поведение. Вселенная объявляется в .punchtape/universe — один относительный корню путь в строку, # — комментарий, без объявления считается всё дерево; строка, которую не назвал ни один клейм и ни одна громкая оговорка, держит вердикт; машина готовит черновик оговорок, причина и её ссылки — твои.
 
-  law:proof     Поведение доказывает строкой, чей expect пинит точные
-                байты вывода; поведение без клеймов исполняет свои
-                ряды каждый прогон. Один run доказывает одно
-                поведение. Двинутая заявленная строка или сменившаяся
-                среда — пины, шелл, машина — делает доказательство
-                устаревшим: машина перезапускает, и пин обязан
-                держаться снова.
+  law:proof Поведение доказывает строкой, чей expect пинит точные байты вывода; поведение без клеймов исполняет свои ряды каждый прогон. Один run доказывает одно поведение. Двинутая заявленная строка или сменившаяся среда — пины, шелл, машина — делает доказательство устаревшим: машина перезапускает, и пин обязан держаться снова.
 
-  law:candor    Пропущенное помечается громко. Заменяющая стоячую
-                работа несёт свой мандат: приказавшая строка и цель.
-                Приказ, ожидающий человека, держит вердикт;
-                закрывается он только более поздней строкой человека,
-                названной заметкой-решением; откладывание — видимая
-                метка. Заметки несут виды и разрешающиеся ссылки;
-                оговорки несут причину, которая цитирует, и ссылки,
-                что именуют строки спроса или законы.
+  law:candor Пропущенное помечается громко. Заменяющая стоячую работа несёт свой мандат: приказавшая строка и цель. Приказ, ожидающий человека, держит вердикт; закрывается он только более поздней строкой человека, названной заметкой-решением; откладывание — видимая метка. Заметки несут виды и разрешающиеся ссылки; оговорки несут причину, которая цитирует, и ссылки, что именуют строки человека или законы.
 
-  law:done      `done: true` записывает вердикт, когда: заявленная
-                сборка стоит зелёной; каждая строка
-                зелёная с закреплённым доказательством; поток разобран
-                целиком; каждое требование покрыто клеймами поведения;
-                дерево равно клеймам плюс громким оговоркам; ни одного
-                ожидающего приказа; и нет неименованного дрейфа —
-                дрейф именуется подачей, пришедшей после прогона, что
-                первым его увидел.
+  law:done `done: true` записывает вердикт, когда: заявленная сборка стоит зелёной; каждая строка зелёная с закреплённым доказательством; поток разобран целиком; каждое требование покрыто клеймами поведения; дерево равно клеймам плюс громким оговоркам; ни одного ожидающего приказа; и нет неименованного дрейфа — дрейф именуется подачей, пришедшей после прогона, что первым его увидел.
 
-  law:your-tree Строки и сборка идут от корня дерева с PATH и HOME
-                плюс закрепления зоны (.punchtape/env — один
-                KEY=VALUE в строку, без кавычек, без абсолютных
-                путей; PUNCHTAPE_ROW_TIMEOUT называет целые секунды —
-                дедлайн каждой команды машины, командам он не виден).
-                Сборка идёт первой, при каждом запуске; на
-                доказательствах стоят только ряды. Строки идут по
-                одной, в порядке корпуса. Временные файлы идут в
-                .punchtape/tmp — машина чистит его в конце каждого
-                прогона, пишущий создаёт каталог сам; учёт систем
-                контроля версий вне дерева; всё остающееся в дереве
-                хочет клейма или громкой оговорки.
+  law:your-tree Строки и сборка идут от корня дерева с PATH и HOME плюс закрепления зоны (.punchtape/env — один KEY=VALUE в строку, без кавычек, без абсолютных путей; PUNCHTAPE_ROW_TIMEOUT называет целые секунды — дедлайн каждой команды машины, командам он не виден). Сборка идёт первой, при каждом запуске; на доказательствах стоят только ряды. Строки идут по одной, в порядке корпуса. Временные файлы идут в .punchtape/tmp — машина чистит его в конце каждого прогона, пишущий создаёт каталог сам; учёт систем контроля версий вне дерева; всё остающееся в дереве хочет клейма или громкой оговорки.
 
-  ФАЙЛЫ ЗОНЫ. contract.md template.yaml reference.md | demands.md inbox.yaml
-  universe — пишешь ты | corpus.yaml state.md report.md knowledge.md
-  spec/ holes.md trace.md exclusions-proposal.yaml — машины |
-  journal/ — не редактировать никогда. AGENTS.md рабочего корня несёт
-  помеченный блок машины.
+  ФАЙЛЫ ЗОНЫ. contract.md template.yaml reference.md | demands.md inbox.yaml universe — пишешь ты | corpus.yaml state.md report.md knowledge.md spec/ holes.md trace.md exclusions-proposal.yaml — машины | journal/ — не редактировать никогда. AGENTS.md рабочего корня несёт помеченный блок машины.
+
+  ТВОИ РУКИ. Измеряет машина. Строишь и отчитываешься ты.
+  - Ряд исполняет тот код, который заявляет его поведение. Ряд, печатающий ожидаемый ответ и не трогающий этих строк, ничего не доказывает.
+  - demands.md несёт только слова человека, дословно. Твои в него не входят.
+  - Пометка, оговорка и причина — твои решения, и их читают как твои: помечай строку, только если она правда ничего не приказывает, исключай строку, только если до неё не добирается ни одна проверка, и называй настоящую причину.
+  - journal/ принадлежит машине. Ты никогда не пишешь его, не чинишь и не пересоздаёшь и никогда не пересказываешь строку, которую машина не печатала.
+  - `punchtape --verify` — проверка человека, она перезапускает все ряды. Ты её не вызываешь.
+  - Ряд, который ты не можешь сделать зелёным, уходит человеку как есть. Это честный финиш. Скрытая дыра — нет.
+  Машина не принуждает ни к одной из этих строк. Человек читает их на страницах спецификаций и перепроверяет зону командой `punchtape --verify`.
 
 contract-zh: |
   contract.md 的镜像；以英文原文为准。
 
   punchtape — 契约
 
-  你运行了 punchtape，它打印了本页：此处还没有实例，什么也没有
-  创建。如何开始：把人类的言语逐字、每行一句放入
-  .punchtape/demands.md，然后再次运行 punchtape——那次运行诞生
-  区。
+  你运行了 punchtape，它打印了本页：此处还没有实例，什么也没有创建。如何开始：把人类的言语逐字、每行一句放入 .punchtape/demands.md，然后再次运行 punchtape——那次运行诞生区。
 
-  调用，永远：`punchtape`，无参数。终端只收一行——下一步行动与
-  它要动的文件。其余一切答案是区的文件：reference.md（每扇
-  门——先读）、state.md（现状 + next）、report.md（上次的
-  运行事实）。
+  调用，永远：`punchtape`，无参数。终端只收一行——下一步行动与它要动的文件。其余一切答案是区的文件：reference.md（每扇门——先读）、state.md（现状 + next）、report.md（上次的运行事实）。
 
-  循环：人类的言语随时进入 demands.md；代理逐字追加，机器在下
-  一次提交自行取走。提交意图文档 → 机器运行各行 → 修代码或修
-  行直到全绿 → 提交 `done: true` → 机器记录裁决。state.md 永远
-  说明现在该做什么。
+  循环：人类的言语随时进入 demands.md；代理逐字追加，机器在下一次提交自行取走。提交意图文档 → 机器运行各行 → 修代码或修行直到全绿 → 提交 `done: true` → 机器记录裁决。state.md 永远说明现在该做什么。
 
-  law:demand    人类的言语逐字、每行一句，进入
-                .punchtape/demands.md。编号 D1..Dn 永不改变；过去
-                不可更动——日志持有链，被触碰的过往行即区的
-                损坏。每一条新行都在迎接它的提交中申报：它的
-                结果（answer、execute、describe、work、mark 或
-                ask）与代理的复述。要求是被具体化的要求：它
-                占据的行与这些行的散文展开。树在 answer、
-                execute 与 describe 之下不动：机器在前后为声明的
-                宇宙取摘要，声明的构建之产物是工作，动了的树
-                挡住裁决。
+  law:demand 人类的言语逐字、每行一句，进入 .punchtape/demands.md。编号 D1..Dn 永不改变；过去不可更动——日志持有链，被触碰的过往行即区的损坏。每一条新行都在迎接它的提交中申报：它的结果（answer、execute、describe、work、mark 或 ask）与代理的复述。要求是被具体化的需求：它占据的需求行，以及用散文写明这些行到底要什么。树在 answer、execute 与 describe 之下不动：机器在前后为声明的宇宙取摘要，声明的构建之产物是工作，动了的树挡住裁决。
 
-  law:document  全部工作是一个文档（形状见 template.yaml），按
-                id 合并：要求与行为按各自 id，标记按行，豁免按
-                区间，命令按要求与问题。删除是 remove 列表；每个
-                键必须站立。done 文档恰是 `done: true`；被接受的
-                离开收件箱，被拒的留在原处修。一个文档是有界的——它的字节、
-                它的列表、行为的申报与行、期望的文件；常量页印着上限。
+  law:document 全部工作是一个文档（形状见 template.yaml），按 id 合并：要求与行为按各自 id，标记按行，豁免按区间，命令按需求与问题。删除是 remove 列表；每个键必须站立。done 文档恰是 `done: true`；被接受的离开收件箱，被拒的留在原处修。一个文档是有界的——它的字节、它的列表、行为的申报与行、期望的文件；常量页印着上限。
 
-  law:paths     一切路径相对工作根。绝对路径、「..」与越界写法
-                一律拒绝。
+  law:paths 一切路径相对工作根。绝对路径、「..」与越界写法一律拒绝。
 
-  law:claims    覆盖以文件的行区间申报，绝不用通配；一个区间
-                点名一个行为。宇宙在 .punchtape/universe 中申报
-                ——每行一个相对根的路径，# 为注释，无声明即
-                整棵树；没有任何申报与响亮豁免点名的行挡住
-                裁决；机器起草豁免，理由与其引用由你承担。
+  law:claims 覆盖以文件的行区间申报，绝不用通配；一个区间点名一个行为。宇宙在 .punchtape/universe 中申报——每行一个相对根的路径，# 为注释，无声明即整棵树；没有任何申报与响亮豁免点名的行挡住裁决；机器起草豁免，理由与其引用由你承担。
 
-  law:proof     行为凭一行、其 expect 钉住输出的精确字节来证明；
-                无申报的行为每次运行都重跑其行。一个 run 证明
-                一个行为。被移动的申报行或改变的环境——固定、
-                外壳、机器——使证明失效：机器重新运行，钉必须
-                再次成立。
+  law:proof 行为凭一行、其 expect 钉住输出的精确字节来证明；无申报的行为每次运行都重跑其行。一个 run 证明一个行为。被移动的申报行或改变的环境——固定、外壳、机器——使证明失效：机器重新运行，钉必须再次成立。
 
-  law:candor    被跳过者被响亮标记。替换现行工作的工作携带其
-                授权：下令之行与目标。等待人类的命令挡住裁决；
-                它只凭之后的人类行关闭，由决定性笔记点名；推迟
-                是可见的标记。笔记携带种类与必须解析的引用；
-                豁免携带引用出处的理由，其引用点名需求行或
-                法律。
+  law:candor 被跳过者被响亮标记。替换现行工作的工作携带其授权：下令之行与目标。等待人类的命令挡住裁决；它只凭之后的人类行关闭，由决定性笔记点名；推迟是可见的标记。笔记携带种类与必须解析的引用；豁免携带引用出处的理由，其引用点名需求行或法律。
 
-  law:done      `done: true` 在如下时刻记录裁决：声明的构建为绿；
-                每行全绿且带钉住的证明；流完整分解；每个要求被行为的申报
-                覆盖；树等于申报加响亮豁免；无等待的命令；且
-                无不点名的漂移——漂移由落在首次看见它的那个
-                运行之后的提交来命名。
+  law:done `done: true` 在如下时刻记录裁决：声明的构建为绿；每行全绿且带钉住的证明；流完整分解；每个要求被行为的申报覆盖；树等于申报加响亮豁免；无等待的命令；且无不点名的漂移——漂移由落在首次看见它的那个运行之后的提交来命名。
 
-  law:your-tree 各行与构建从树的根、带 PATH 与 HOME 加区的固定
-                （.punchtape/env——每行一个 KEY=VALUE，无引号，
-                无绝对路径；PUNCHTAPE_ROW_TIMEOUT 以整秒数命名
-                机器所跑每条命令的期限，命令自身看不见它）运行。
-                构建先行，每次启动都跑；站在证明上的只有行。
-                各行一次一条，按语料顺序。临时文件去
-                .punchtape/tmp——每次运行末清理，写入者须先自建
-                目录；版本控制的簿记留在树外；留在树里的一切
-                都想要申报或响亮豁免。
+  law:your-tree 各行与构建从树的根、带 PATH 与 HOME 加区的固定（.punchtape/env——每行一个 KEY=VALUE，无引号，无绝对路径；PUNCHTAPE_ROW_TIMEOUT 以整秒数命名机器所跑每条命令的期限，命令自身看不见它）运行。构建先行，每次启动都跑；站在证明上的只有行。各行一次一条，按语料顺序。临时文件去 .punchtape/tmp——每次运行末清理，写入者须先自建目录；版本控制的簿记留在树外；留在树里的一切都想要申报或响亮豁免。
 
-  区文件。contract.md template.yaml reference.md | demands.md inbox.yaml
-  universe——由你写 | corpus.yaml state.md report.md knowledge.md
-  spec/ holes.md trace.md exclusions-proposal.yaml——机器的 |
-  journal/——永不编辑。工作根的 AGENTS.md 载有机器的标记块。
+  区文件。contract.md template.yaml reference.md | demands.md inbox.yaml universe——由你写 | corpus.yaml state.md report.md knowledge.md spec/ holes.md trace.md exclusions-proposal.yaml——机器的 | journal/——永不编辑。工作根的 AGENTS.md 载有机器的标记块。
+
+  你的双手。测量的是机器。构建和汇报的是你。
+  - 一行必须运行其行为所申报的代码。只打印期望输出而不触碰这些行的一行，什么都证明不了。
+  - demands.md 只承载人类的话，逐字。你的话永不进入其中。
+  - mark、豁免与原因是你的判断，也会被当作你的判断来读：只有当一行确实不下令时才 mark 它，只有当没有任何检查能到达时才豁免它，并写出真实的原因。
+  - journal/ 属于机器。你从不写入、修复或重建它，也从不转述机器没有打印过的行。
+  - `punchtape --verify` 是人类的检查，它会重跑每一行。你从不调用它。
+  - 你无法变绿的一行，原样交给人类。这是诚实的收尾。藏起来的洞不是。
+  机器不强制以上任何一行。人类在 spec 页面上阅读它们，并用 `punchtape --verify` 重新验证这个区。
 
 template: |
-  # The document: copy me, edit, submit as .punchtape/inbox.yaml.
-  # The machine merges by id — unlisted parts stand, a listed behavior
-  # carries its whole head; the human's words enter .punchtape/demands.md,
-  # the machine takes them itself.
+  # The document: copy me, edit, submit as .punchtape/inbox.yaml. The machine merges by id — unlisted parts stand, a listed behavior carries its whole head; the human's words enter .punchtape/demands.md, the machine takes them itself.
   work: what broke, what was fixed, what was decided — the narrative of this submission
   # intents:   # every new demand line declares its outcome here, retold in prose
   #   - {lines: [D6], outcome: execute, prose: the retelling, run: "./tool --version"}
@@ -319,9 +145,9 @@ template: |
       prose: what the user gets and why
       claims: ["src/tool.go:12-48"]   # the behavior's exact lines of code
       # covers: [R1]   # the requirements this behavior proves
-    rows:   # the run is the row's key — the same run replaces its row, unlisted rows stand
-    # a row retires only with its behavior whole: remove the id under its mandate and re-add it in one document
-      - run: "./tool src out"   # one command: a shell line or an argv list
+      rows:   # the run is the row's key — the same run replaces its row, unlisted rows stand
+      # a row retires only with its behavior whole: remove the id under its mandate and re-add it in one document
+        - run: "./tool src out"   # one command: a shell line or an argv list
           expect:                 # rc absent wants 0; out/files pin exact bytes — rc alone pins nothing
             rc: 0
             out: "the exact bytes"   # "contains: " prefixes a substring; the unprefixed pin proves
@@ -330,102 +156,41 @@ template: |
   # - a flow list's element holding ":" takes quotes: [D1, "law:done"] — a bare law:done breaks the decode.
   # - a longer prose continues on the next line, indented deeper than its key.
   # - a multi-line pin stays one line: out: "first\nlast\n".
+
 reference: |
   # punchtape reference — every door of the machine, always under hand.
   # index: call stream document intents registry behaviors replace merge execution universe verdict faces env damage constants combinations
-  call — the zone is the nearest .punchtape at or above the working directory; instructions name the zone's
-  files from the caller's directory. No zone: the contract prints,
-  nothing is created, exit 0. A zone with no journal and no non-empty demands line: "no instance yet", exit 0.
-  The first non-empty line births the zone; parallel runs elect one winner, and every pass stands in
-  one line behind the zone's own lock — kernel-released, death-safe, local filesystems. Any arguments: refused, exit 1;
-  --version answers before any state. A zone born by another machine version: archive it, start fresh, exit 1.
-  stream — the human's words verbatim, one non-empty trimmed line each, numbered D1..Dn in file order. A touched
-  past line, a shrunken file or a removed demands.md: "zone damaged: the demand stream's past changed", exit 1 —
-  the chain recomputes over the bytes every run. Every new line is declared by the submission that meets it,
-  exactly one intent, one outcome. Accepted chains the tail; refused leaves it; no new lines sign a
-  no-new-demands record. A line that carries its outcome is never redeclared.
-  document — exactly one YAML document; anchors, aliases, tags, merge keys, duplicate keys, unknown fields and
-  tabs in indentation: decode refusals naming the line. A scalar holding ": " or a comma takes quotes; a flow
-  element holding ":" takes quotes; a multi-line pin stays one line. A done document is exactly done: true.
-  An accepted submission leaves the inbox; a refused one stays in place to fix.
-  intents — six outcomes. answer carries its text; execute carries its run; the other four carry their registry
-  in the same document: work and describe a requirement whose lines carry the line, mark a not-a-requirement
-  marker on it, ask an open entry with state awaiting on its demand. text rides an answer intent only; run
-  rides an execute intent only.
-  registry — a requirement id is R plus letters, digits and dots, unique in the submission; its lines parse in
-  the D grammar; refines names a standing requirement. A marker (not-a-requirement: lines + reason) never
-  claims a requirement's line — a line is either a demand or not. An exclusion marks a real uncovered range
-  with a citing reason, refs naming demand lines or laws. An order rides a standing line; its state is
-  awaiting or deferred; deferred carries its reason.
-  behaviors — an id is lowercase dash segments joined by "/", unique; name and prose non-empty. Claims are line
-  ranges the tree carries, path:first-last, root-relative; one range names one behavior. Covers name
-  requirements standing after the merge. At least one row; one row pinned: out or files with exact bytes,
-  "contains: " prefixing a substring; rc alone and an empty out pin nothing. One run proves one behavior; a
-  run is unique in its rows; expect names rc, out or files.
-  replace — replacing a standing behavior's head, or removing standing work, carries a mandate: the ordering
-  line and the target, replaced by this same submission. Removing a requirement re-opens its line and demands
-  the same submission re-carry every cover of it. Remove keys — R… ids, behavior ids, D<n> markers-or-orders,
-  "path:first-last" exclusions — every key must stand. An awaiting order closes only over a later human line,
-  given its own outcome, cited by a decision note; deferral is a visible mark forever.
-  merge — unlisted parts stand; comparison happens on canonical bytes, so reformatting changes nothing. A
-  behavior's head replaces whole, its rows merge by run: the same run replaces its row, a new run appends, a
-  row retires only with its behavior whole — remove the id under its mandate and re-add it in one document.
-  Remove-then-re-add in one submission starts fresh. Markers merge by lines, exclusions by range, orders by
-  demand and question.
-  execution — the build runs first on every launch; a red build stops the rows while the submission still
-  lands. A row's proof is its bytes, its behavior's claims digest and the environment hash; any move — pins,
-  PATH or HOME, the machine itself, a claimed line — restales every proof to re-earn. A behavior without
-  claims re-runs its rows every run. The run's own budget is 3600 s unless PUNCHTAPE_RUN_BUDGET names whole seconds — what it cannot
-  fit waits the next run, named by a warning. Every command's deadline is 300 s unless PUNCHTAPE_ROW_TIMEOUT names
-  whole seconds. A missing command carries its PATH recipe in the refusal. Execute intents run between the
-  submission and the rows, stdout journaled whole to 4096 bytes. Whatever a command left alive dies with its
-  process group.
-  universe — no declaration: the whole tree, minus .punchtape and version-control dirs. A range holds only
-  the lines the file really carries. One root-relative path a line; a root carrying no file of the tree is
-  refused. Files outside stand counted, never judged. An uncovered line holds the verdict; the proposal
-  drafts exclusions — reasons and refs are the agent's.
-  Temporary files go to .punchtape/tmp — cleared at each run's end, the writer mkdirs first. A declared
-  build's artifacts are work; anything left in the tree wants a claim or a loud exclusion.
-  verdict — done: true records over a non-empty corpus, every row green and pinned, the stream resolved whole,
-  every requirement covered, the tree equal to claims plus loud exclusions, no order awaiting, no drift
-  unnamed, no tree-lock standing. Blockers speak in one order: build red, tree moved, drift, unpinned, red or
-  stale rows, unresolved lines, uncovered requirements, holes, awaiting. The tree does not move under answer,
-  execute or describe — the bytes back or a work submission lifts the lock. Drift is named by a submission
-  landing after the witness run.
-  faces — state.md: the standing and the one next line. report.md: the last run's facts, refusals named field
-  by field. trace.md: the stream's showcase. knowledge.md: notes and machine-measured lessons. spec/: one page
-  per behavior, retiring with it. holes.md: the whole ledger. exclusions-proposal.yaml: the standing draft.
-  corpus.yaml: the machine's image. journal/: never edit.
-  env — one KEY=VALUE a line, the key [A-Za-z_][A-Za-z0-9_]*; a name pins once; no quotes, no absolute paths —
-  a pin travels with the tree. PUNCHTAPE_ROW_TIMEOUT names whole seconds: the machine's ceiling, never the
-  commands' own. Pins ride the commands' environment and the proofs' hash.
-  damage — zone damaged: the stream's past changed. A foreign version: archive and start fresh. A torn journal
-  tail quarantines while the intact records load. Damaged AGENTS.md markers: the machine refuses to guess. A
-  view write that cannot land fails loudly, never silently.
-  constants — deadline 300 s; the run budget 3600 s unless PUNCHTAPE_RUN_BUDGET names whole seconds — what
-  it cannot fit waits the next run; the document's bounds — 524288 bytes of inbox, 64 entries per registry
-  list, 32 claims and 16 rows per behavior, 8 expected files per row;
-  execution stdout 4096 bytes; mismatches cut at 80, lessons at 100; elisions at 10 (history, hole files,
-  verdict files); tokens 12 hex; epochs epoch-NNNNN rotated per accepted submission; a row's key is its
-  behavior and its place; commands see PATH, HOME and the pins, nothing else.
-  combinations — a red build and an accepted submission: the corpus moves, the rows wait. A tree-lock and a
-  drift stand independent. A work intent lifts a standing lock and arms none. An execute intent runs under
-  the lock. A standing verdict lives over holes; a new one demands none. A refusal is a journaled fact before
-  any face; a quarantined tail precedes everything.
+  call — the zone is the nearest .punchtape at or above the working directory; instructions name the zone's files from the caller's directory. No zone: the contract prints, nothing is created, exit 0. A zone with no journal and no non-empty demands line: "no instance yet", exit 0. The first non-empty line births the zone; parallel runs elect one winner, and every pass stands in one line behind the zone's own lock — kernel-released, death-safe, local filesystems. Any other arguments: refused, exit 1. --version answers before any state. --verify is the human's check: under the same lock the build and every row of the standing corpus run again, the journal's green facts do not count, nothing is written, the inbox is not read, a torn tail is damage; the last line answers proven or not proven and the exit code is 0 only on proven. The temporary folder clears as after a run. A zone born by another machine version: archive it, start fresh, exit 1.
+  stream — the human's words verbatim, one non-empty trimmed line each, numbered D1..Dn in file order. A touched past line, a shrunken file or a removed demands.md: "zone damaged: the demand stream's past changed", exit 1 — the chain recomputes over the bytes every run. Every new line is declared by the submission that meets it, exactly one intent, one outcome. Accepted chains the tail; refused leaves it; no new lines sign a no-new-demands record. A line that carries its outcome is never redeclared.
+  document — exactly one YAML document; anchors, aliases, tags, merge keys, duplicate keys, unknown fields and tabs in indentation: decode refusals naming the line. A scalar holding ": " or a comma takes quotes; a flow element holding ":" takes quotes; a multi-line pin stays one line. A done document is exactly done: true. An accepted submission leaves the inbox; a refused one stays in place to fix.
+  intents — six outcomes. answer carries its text; execute carries its run; the other four carry their registry in the same document: work and describe a requirement whose lines carry the line, mark a not-a-requirement marker on it, ask an open entry with state awaiting on its demand. text rides an answer intent only; run rides an execute intent only.
+  registry — a requirement id is R plus letters, digits and dots, unique in the submission; its lines parse in the D grammar; refines names a standing requirement. A marker (not-a-requirement: lines + reason) never claims a requirement's line — a line is either a demand or not. An exclusion marks a real uncovered range with a citing reason, refs naming demand lines or laws. An order rides a standing line; its state is awaiting or deferred; deferred carries its reason.
+  behaviors — an id is lowercase dash segments joined by "/", unique; name and prose non-empty. Claims are line ranges the tree carries, path:first-last, root-relative; one range names one behavior. Covers name requirements standing after the merge. At least one row; one row pinned: out or files with exact bytes, "contains: " prefixing a substring; rc alone and an empty out pin nothing. One run proves one behavior; a run is unique in its rows; expect names rc, out or files.
+  replace — replacing a standing behavior's head, or removing standing work, carries a mandate: the ordering line and the target, replaced by this same submission. Removing a requirement re-opens its line and demands the same submission re-carry every cover of it. Remove keys — R… ids, behavior ids, D<n> markers-or-orders, "path:first-last" exclusions — every key must stand. An awaiting order closes only over a later human line, given its own outcome, cited by a decision note; deferral is a visible mark forever.
+  merge — unlisted parts stand; comparison happens on canonical bytes, so reformatting changes nothing. A behavior's head replaces whole, its rows merge by run: the same run replaces its row, a new run appends, a row retires only with its behavior whole — remove the id under its mandate and re-add it in one document. Remove-then-re-add in one submission starts fresh. Markers merge by lines, exclusions by range, orders by demand and question.
+  execution — the build runs first on every launch; a red build stops the rows while the submission still lands. A row's proof is its bytes, its behavior's claims digest and the environment hash; any move — pins, PATH or HOME, the machine itself, a claimed line — restales every proof to re-earn. A behavior without claims re-runs its rows every run. The run's own budget is 3600 s unless PUNCHTAPE_RUN_BUDGET names whole seconds — what it cannot fit waits the next run, named by a warning. Every command's deadline is 300 s unless PUNCHTAPE_ROW_TIMEOUT names whole seconds. A missing command carries its PATH recipe in the refusal. Execute intents run between the submission and the rows, stdout journaled whole to 4096 bytes. Whatever a command left alive dies with its process group.
+  universe — no declaration: the whole tree, minus .punchtape and version-control dirs. A range holds only the lines the file really carries. One root-relative path a line; a root carrying no file of the tree is refused. Files outside stand counted, never judged. An uncovered line holds the verdict; the proposal drafts exclusions — reasons and refs are the agent's. Temporary files go to .punchtape/tmp — cleared at each run's end, the writer mkdirs first. A declared build's artifacts are work; anything left in the tree wants a claim or a loud exclusion.
+  verdict — done: true records over a non-empty corpus, every row green and pinned, the stream resolved whole, every requirement covered, the tree equal to claims plus loud exclusions, no order awaiting, no drift unnamed, no tree-lock standing. Blockers speak in one order: build red, tree moved, drift, unpinned, red or stale rows, unresolved lines, uncovered requirements, holes, awaiting. The tree does not move under answer, execute or describe — the bytes back or a work submission lifts the lock. Drift is named by a submission landing after the witness run. The standing line and the verify answer count the words marked not-a-requirement and the share of the tree excluded — the agent's judgments, named where the human reads.
+  faces — state.md: the standing and the one next line. report.md: the last run's facts, refusals named field by field. trace.md: the stream's showcase. knowledge.md: notes and machine-measured lessons. spec/: one page per behavior, retiring with it. holes.md: the whole ledger. exclusions-proposal.yaml: the standing draft. corpus.yaml: the machine's image. journal/: never edit.
+  env — one KEY=VALUE a line, the key [A-Za-z_][A-Za-z0-9_]*; a name pins once; no quotes, no absolute paths — a pin travels with the tree. PUNCHTAPE_ROW_TIMEOUT names whole seconds: the machine's ceiling, never the commands' own. Pins ride the commands' environment and the proofs' hash.
+  damage — zone damaged: the stream's past changed. A foreign version: archive and start fresh. A torn journal tail quarantines while the intact records load. Damaged AGENTS.md markers: the machine refuses to guess. A view write that cannot land fails loudly, never silently.
+  constants — deadline 300 s; the run budget 3600 s unless PUNCHTAPE_RUN_BUDGET names whole seconds — what it cannot fit waits the next run; the document's bounds — 524288 bytes of inbox, 64 entries per registry list, 32 claims and 16 rows per behavior, 8 expected files per row; execution stdout 4096 bytes; mismatches cut at 80, lessons at 100; elisions at 10 (history, hole files, verdict files); tokens 12 hex; epochs epoch-NNNNN rotated per accepted submission; a row's key is its behavior and its place; commands see PATH, HOME and the pins, nothing else.
+  combinations — a red build and an accepted submission: the corpus moves, the rows wait. A tree-lock and a drift stand independent. A work intent lifts a standing lock and arms none. An execute intent runs under the lock. A standing verdict lives over holes; a new one demands none. A refusal is a journaled fact before any face; a quarantined tail precedes everything.
+
 reference-ru: |
   # справочник punchtape — все двери машины, всегда под рукой.
   # оглавление: вызов поток документ исходы реестр поведения замена слияние исполнение вселенная вердикт лица среда повреждения константы комбинации
-  вызов — зона это ближайший .punchtape на уровне рабочего каталога или выше; инструкции называют файлы зоны от каталога вызывающего. Зоны нет: контракт печатается, ничего не создаётся, выход 0. Зона без журнала и без непустой строки требований: «no instance yet», выход 0. Первая непустая строка рождает зону; параллельные запуски избирают одного победителя, и каждый прогон стоит в одной очереди за зонным локом — ядро снимает его, смерть держателя не держит зону; локальные файловые системы. Любые аргументы: отказ, выход 1; --version отвечает до всякого состояния. Зона, рождённая другой версией машины: архивируй и начни заново, выход 1.
+  вызов — зона это ближайший .punchtape на уровне рабочего каталога или выше; инструкции называют файлы зоны от каталога вызывающего. Зоны нет: контракт печатается, ничего не создаётся, выход 0. Зона без журнала и без непустой строки человека: «no instance yet», выход 0. Первая непустая строка рождает зону; параллельные запуски избирают одного победителя, и каждый прогон стоит в одной очереди за зонным локом — ядро снимает его, смерть держателя не держит зону; локальные файловые системы. Любые другие аргументы: отказ, выход 1. --version отвечает до всякого состояния. --verify — проверка человека: под тем же локом сборка и каждый ряд стоящего корпуса исполняются заново, зелёные факты журнала не считаются, ничего не пишется, inbox не читается, оборванный хвост — повреждение; последняя строка отвечает proven или not proven, код выхода 0 только на proven. Временная папка очищается, как в конце прогона. Зона, рождённая другой версией машины: архивируй и начни заново, выход 1.
   поток — слова человека дословно, по одной непустой (триммированной) строке, нумерация D1..Dn по порядку файла. Тронутая прошлая строка, укороченный файл или удалённый demands.md: «zone damaged: the demand stream's past changed», выход 1 — цепочка пересчитывается по байтам каждым прогоном. Каждая новая строка объявляется подачей, которая её встретила: ровно один интент, один исход. Принятая цепляет хвост; отказанная оставляет; без новых строк подписывается no-new-demands. Строка, несущая исход, не переобъявляется никогда.
   документ — ровно один YAML-документ; якоря, алиасы, теги, merge-ключи, дубликаты ключей, неизвестные поля и табы в отступе: декод-отказы с номером строки. Скаляр с «: » или запятой берётся в кавычки; элемент потока с «:» берётся в кавычки; многострочный пин — одной строкой. Документ done — ровно done: true. Принятая подача уносит inbox; отказанная стоит на месте для правки.
   исходы — шесть исходов. answer несёт свой text; execute несёт свой run; остальные четыре несут свой реестр в том же документе: work и describe — требование, чьи строки несут строку, mark — not-a-requirement-маркер на ней, ask — открытый приказ со state awaiting на своей строке. text ездит только на answer; run — только на execute.
-  реестр — id требования: R плюс буквы, цифры и точки, уникален в подаче; строки парсятся в D-грамматике; refines именует стоящее требование. Маркер (not-a-requirement: lines + reason) не занимает строку требования — строка либо требование, либо нет. Оговорка помечает реальную дыру цитирующей причиной, refs именуют строки спроса или законы. Приказ едет на стоящей строке; его state — awaiting или deferred; deferred несёт причину.
+  реестр — id требования: R плюс буквы, цифры и точки, уникален в подаче; строки парсятся в D-грамматике; refines именует стоящее требование. Маркер (not-a-requirement: lines + reason) не занимает строку требования — строка либо несёт слова человека, либо нет. Оговорка помечает реальную дыру цитирующей причиной, refs именуют строки человека или законы. Приказ едет на стоящей строке; его state — awaiting или deferred; deferred несёт причину.
   поведения — id — строчные сегменты с дефисами через «/», уникален; name и prose непусты. Клеймы — диапазоны строк, которые несёт дерево, path:first-last, от корня; один диапазон именует одно поведение. Covers именуют требования, стоящие после слияния. Хотя бы один ряд; хотя бы один ряд с пином: out или files с точными байтами, «contains: » — префикс подстроки; rc сам по себе и пустой out не пинят ничего. Один run доказывает одно поведение; run уникален в своих рядах; expect называет rc, out или files.
   замена — замена головы стоящего поведения или снятие стоячей работы несёт мандат: приказавшая строка и цель, заменённые этой же подачей. Снятие требования переоткрывает его строку и требует той же подачей переподвесить каждый её cover. Ключи remove — R…-id, id поведений, D<n> маркеры-или-приказы, «path:first-last» оговорки — каждый ключ обязан стоять. Ждущий приказ закрывается только поздней строкой человека, получившей свой исход, процитированной заметкой-решением; отложение — видимая метка навсегда.
-  слияние — неподанное стоит; сравнение идёт по каноническим байтам — переформатирование ничего не меняет. Голова поведения заменяется целиком, ряды сливаются по run: тот же run заменяет свой ряд, новый дописывается, ряд уходит только со всем поведением — сними id под мандатом и пересобери одним документом. Снять-и-пере-добавить одной подачей — свежее. Маркеры сливаются по строкам, оговорки — по диапазону, приказы — по требованию и вопросу.
+  слияние — неподанное стоит; сравнение идёт по каноническим байтам — переформатирование ничего не меняет. Голова поведения заменяется целиком, ряды сливаются по run: тот же run заменяет свой ряд, новый дописывается, ряд уходит только со всем поведением — сними id под мандатом и пересобери одним документом. Снять-и-пере-добавить одной подачей — свежее. Маркеры сливаются по строкам, оговорки — по диапазону, приказы — по строке человека и вопросу.
   исполнение — сборка идёт первой при каждом запуске; красная сборка останавливает ряды, а подача всё равно принимается. Пруф ряда — его байты, дайджест клеймов его поведения и хэш среды; любое движение — пины, PATH или HOME, сама машина, заявленная строка — заставляет каждый пруф заработать заново. Поведение без клеймов исполняет свои ряды каждый прогон. Бюджет самого прогона 3600 с, если PUNCHTAPE_RUN_BUDGET не называет целые секунды — что не влезло, ждёт следующего прогона с громким предупреждением. Дедлайн каждой команды 300 с, если PUNCHTAPE_ROW_TIMEOUT не называет целые секунды. Отсутствующая команда несёт свой рецепт PATH в отказе. Execute-инты исполняются между подачей и рядами, stdout журналируется целиком до 4096 байт. Всё, что команда оставила живым, умирает с её процессной группой.
   вселенная — без объявления: всё дерево, минус .punchtape и каталоги контроля версий. Диапазон держит только строки, реально лежащие в файле. Один относительный корню путь в строку; корень, не несущий ни одного файла дерева, отказан. Файлы вне стоят посчитанными, никогда не судимыми. Непокрытая строка держит вердикт; черновик оговорок готовит машина — причины и refs твои. Временные файлы идут в .punchtape/tmp — стирается в конце каждого прогона, пишущий делает mkdir сам. Артефакты заявленной сборки — работа; всё оставшееся в дереве хочет клейма или громкой оговорки.
-  вердикт — done: true записывает над непустым корпусом, все ряды зелёные с пинами, поток разобран целиком, каждое требование покрыто, дерево равно клеймам плюс громким оговоркам, ни одного ждущего приказа, дрейф именован, замок дерева снят. Блокеры говорят в одном порядке: красная сборка, двинутое дерево, дрейф, без пина, красные или устаревшие ряды, неразрешённые строки, непокрытые требования, дыры, ожидание. Дерево не движется под answer, execute и describe — возврат байтов или work-подача снимает замок. Дрейф именуется подачей, приземлившейся после прогона-свидетеля.
+  вердикт — done: true записывает над непустым корпусом, все ряды зелёные с пинами, поток разобран целиком, каждое требование покрыто, дерево равно клеймам плюс громким оговоркам, ни одного ждущего приказа, дрейф именован, замок дерева снят. Блокеры говорят в одном порядке: красная сборка, двинутое дерево, дрейф, без пина, красные или устаревшие ряды, неразрешённые строки, непокрытые требования, дыры, ожидание. Дерево не движется под answer, execute и describe — возврат байтов или work-подача снимает замок. Дрейф именуется подачей, приземлившейся после прогона-свидетеля. Стоящая строка и ответ проверки считают слова, помеченные как не требование, и долю дерева под оговорками — решения агента, названные там, где их читает человек.
   лица — state.md: стоящее и одна строка next. report.md: факты последнего прогона, отказы поимённо по полям. trace.md: витрина потока. knowledge.md: заметки и машинные уроки. spec/: страница на поведение, уходит с ним. holes.md: полный реестр дыр. exclusions-proposal.yaml: стоячий черновик. corpus.yaml: образ машины. journal/: не редактировать никогда.
   среда — один KEY=VALUE в строку, ключ [A-Za-z_][A-Za-z0-9_]*; имя пинится однажды; без кавычек, без абсолютных путей — пин путешествует с деревом. PUNCHTAPE_ROW_TIMEOUT называет целые секунды: потолок машины, никогда не собственность команд. Пины ездят в среде команд и в хэше пруфов.
   повреждения — zone damaged: прошлое потока изменилось. Чужая версия: архивируй и начни заново. Оборванный хвост журнала уходит в карантин, целые записи грузятся. Повреждённые маркеры AGENTS.md: машина отказывается гадать. Запись лица, не сумевшая встать, падает громко, никогда молча.
@@ -435,24 +200,25 @@ reference-ru: |
 reference-zh: |
   # punchtape 参考手册 — 机器的每一扇门，常在手下。
   # 目录：调用 流 文档 结果 注册表 行为 替换 合并 执行 宇宙 裁决 面孔 环境 损伤 常量 组合
-  调用 — 区是工作目录之上最近的 .punchtape；指令以调用者的目录称呼区的文件。无区：打印契约，不创建任何东西，退出 0。有区无日志且无非空需求行："no instance yet"，退出 0。第一个非空行诞生区；并行运行选出唯一胜者，且每一遍运行都排在区自己的锁之后——内核释放，死亡安全，仅限本地文件系统。任何参数：拒绝，退出 1；--version 在任何状态之前回答。由另一版本机器诞生的区：归档并重开，退出 1。
+  调用 — 区是工作目录之上最近的 .punchtape；指令以调用者的目录称呼区的文件。无区：打印契约，不创建任何东西，退出 0。有区无日志且无非空需求行："no instance yet"，退出 0。第一个非空行诞生区；并行运行选出唯一胜者，且每一遍运行都排在区自己的锁之后——内核释放，死亡安全，仅限本地文件系统。任何其他参数：拒绝，退出 1。--version 在任何状态之前回答。--verify 是人类的检查：在同一把锁下，构建与站立语料的每一行重新运行，日志的绿色事实不作数，不写入任何东西，不读取 inbox，撕裂的尾部是损伤；最后一行回答 proven 或 not proven，退出码仅在 proven 时为 0。临时文件夹的清理与一次运行的末尾相同。由另一版本机器诞生的区：归档并重开，退出 1。
   流 — 人类的话逐字，每行一条非空（去空白）行，按文件顺序编号 D1..Dn。被触碰的过往行、缩短的文件或被删除的 demands.md："zone damaged: the demand stream's past changed"，退出 1 — 链每次运行按字节重算。每条新行由迎接它的提交申报：恰一个意图、一个结果。接受则链住尾部；拒绝则留下；无新行则签署 no-new-demands。已带结果的行永不重复申报。
   文档 — 恰一个 YAML 文档；锚点、别名、标签、merge 键、重复键、未知字段与缩进中的制表符：指名行的解码拒绝。含「: 」或逗号的标量加引号；流中含「:」的元素加引号；多行钉保持一行。done 文档恰是 done: true。被接受的提交离开收件箱；被拒的留在原处修。
   结果 — 六种结果。answer 带其 text；execute 带其 run；其余四种在同一文档中带其注册表：work 与 describe — 一条行承载它的要求，mark — 其上的 not-a-requirement 标记，ask — 其行上 state 为 awaiting 的开放命令。text 只乘 answer；run 只乘 execute。
-  注册表 — 要求 id 为 R 加字母、数字与点，提交内唯一；其行按 D 语法解析；refines 指名站立的要求。标记（not-a-requirement：lines + reason）绝不占用要求的行 — 行要么是要求要么不是。豁免以引证原因标记真实未覆盖区间，refs 指名需求行或法律。命令乘在站立的行上；其 state 为 awaiting 或 deferred；deferred 带原因。
+  注册表 — 要求 id 为 R 加字母、数字与点，提交内唯一；其行按 D 语法解析；refines 指名站立的要求。标记（not-a-requirement：lines + reason）绝不占用要求的行 — 行要么是需求要么不是。豁免以引证原因标记真实未覆盖区间，refs 指名需求行或法律。命令乘在站立的行上；其 state 为 awaiting 或 deferred；deferred 带原因。
   行为 — id 为小写连字符段以「/」相连，唯一；name 与 prose 非空。申报是树承载的行区间，path:first-last，相对根；一个区间点名一个行为。covers 指名合并后站立的要求。至少一行；至少一行带钉：out 或 files 以精确字节，「contains: 」前缀子串；仅 rc 与空 out 什么也钉不住。一个 run 证明一个行为；run 在其行内唯一；expect 指名 rc、out 或 files。
   替换 — 替换站立行为的头部或移除站立工作带授权：下令之行与目标，由这同一提交替换。移除要求重开其行，并要求同一提交重新悬挂其每一个 cover。remove 键 — R… id、行为 id、D<n> 标记或命令、「path:first-last」豁免 — 每个键必须站立。等待命令只凭之后的人类行关闭，该行得其结果并由决定性笔记点名；推迟是永远可见的标记。
-  合并 — 未列出者站立；比较按规范字节 — 重排版不改一字。行为头部整体替换，其行按 run 合并：同一 run 替换其行，新 run 追加，行只随整个行为退役 — 在授权下移除 id 并在同一文档重建。同一提交中移除再重加 — 全新。标记按行合并，豁免按区间，命令按要求与问题。
+  合并 — 未列出者站立；比较按规范字节 — 重排版不改一字。行为头部整体替换，其行按 run 合并：同一 run 替换其行，新 run 追加，行只随整个行为退役 — 在授权下移除 id 并在同一文档重建。同一提交中移除再重加 — 全新。标记按行合并，豁免按区间，命令按需求与问题。
   执行 — 构建在每次启动首先运行；红构建停下各行，而提交仍然落地。行的证明是其字节、其行为的申报摘要与环境哈希；任何移动 — 钉、PATH 或 HOME、机器本身、被申报的行 — 使每个证明失效重来。无申报的行为每次运行重跑其行。运行自身的预算为 3600 秒，除非 PUNCHTAPE_RUN_BUDGET 指名整秒——装不下的以响亮警告留给下一遍。每条命令的期限为 300 秒，除非 PUNCHTAPE_ROW_TIMEOUT 指名整秒。缺失的命令在其拒绝中携带 PATH 处方。execute 意图在提交与行之间运行，stdout 整体入志至 4096 字节。命令留下的活物随其进程组死亡。
   宇宙 — 无声明：整棵树，减去 .punchtape 与版本控制目录。一个区间只持有文件真实携带的行。每行一条相对根的路径；不承载树中任何文件的根被拒。之外的文件只被计数，从不受审。未覆盖的行挡住裁决；机器起草豁免 — 原因与 refs 是代理的。临时文件去 .punchtape/tmp — 每次运行末清理，写入者先自建目录。已声明构建的产物是工作；留在树中的一切都想要申报或响亮豁免。
-  裁决 — done: true 记录于非空语料、每行全绿带钉、流完整分解、每个要求被覆盖、树等于申报加响亮豁免、无等待命令、漂移被点名、树锁已解。阻塞者按一个顺序发声：红构建、树动、漂移、无钉、红或失效行、未解之行、未覆盖要求、空洞、等待。树在 answer、execute、describe 之下不动 — 字节回位或 work 提交解除锁。漂移由落在见证运行之后的提交点名。
+  裁决 — done: true 记录于非空语料、每行全绿带钉、流完整分解、每个要求被覆盖、树等于申报加响亮豁免、无等待命令、漂移被点名、树锁已解。阻塞者按一个顺序发声：红构建、树动、漂移、无钉、红或失效行、未解之行、未覆盖要求、空洞、等待。树在 answer、execute、describe 之下不动 — 字节回位或 work 提交解除锁。漂移由落在见证运行之后的提交点名。站立行与 verify 的回答统计被标记为非要求的词与被豁免的树的份额——代理的判断，在人类阅读之处点名。
   面孔 — state.md：现状与唯一下一行。report.md：上次运行的事实，拒绝逐字段指名。trace.md：流的橱窗。knowledge.md：笔记与机器测量的教训。spec/：每行为一页，随其退役。holes.md：完整空洞账。exclusions-proposal.yaml：站立草稿。corpus.yaml：机器的影像。journal/：永不编辑。
   环境 — 每行一条 KEY=VALUE，键 [A-Za-z_][A-Za-z0-9_]*；一钉一名；无引号、无绝对路径 — 钉随树旅行。PUNCHTAPE_ROW_TIMEOUT 指名整秒：机器的天花板，绝非命令自己的。钉乘在命令环境与证明哈希中。
   损伤 — zone damaged：流的过往变了。外来版本：归档重开。撕裂的日志尾部隔离，完好记录照常加载。AGENTS.md 标记损伤：机器拒绝猜测。落不了地的视图写入响亮失败，绝不沉默。
   常量 — 期限 300 秒；运行预算 3600 秒，除非 PUNCHTAPE_RUN_BUDGET 指定整秒——装不下的留给下一遍运行，以警告点名；文档的边界——inbox 524288 字节、每个注册表列表 64 条、每个行为 32 条申报与 16 行、每行 8 个期望文件；执行 stdout 4096 字节；不匹配截于 80，教训截于 100；省略于 10（历史、空洞文件、裁决文件）；令牌 12 hex；纪元 epoch-NNNNN，按被接受提交轮转；行的键是其行为与其位置；命令只见 PATH、HOME 与钉，别无其他。
   组合 — 红构建与被接受提交：语料动，行等。树锁与漂移独立站立。work 意图解除站立之锁且不武装新锁。execute 意图在锁下运行。站立的裁决活在空洞之上；新的要求一个没有。拒绝是任何面孔之前的入志事实；尾部隔离先于一切。
-# The example must pass validation and run green in a fixture — the
-# self-validation of the canon (a canon that lies fails the build).
+
+# The example must pass validation and run green in a fixture — the self-validation of the canon (a canon that lies fails the build).
+
 example: |
   work: the counter's first document — counting done honestly
   intents:
@@ -466,7 +232,6 @@ example: |
     - lines: [D1]
       reason: the title demands nothing
   uncovered-lines:
-    - {range: "AGENTS.md:1-9", reason: the machine's own hook, refs: [D2]}
     - {range: "count:1-2", reason: the row's own tool, refs: [D2]}
   behaviors:
     - id: tool/example
@@ -480,9 +245,9 @@ example: |
           expect:
             rc: 0
             out: "3\n"
-# Every rule the validation enforces, bound to the law the contract
-# prints. The parity gate reads this map: everything enforced is
-# printed, everything printed is enforced.
+
+# Every rule the validation enforces, bound to the law the contract prints. The parity gate reads this map: everything enforced is printed, everything printed is enforced.
+
 law-map:
   - rule: the document decodes against the template's shape — unknown fields are refused
     law: law:document
@@ -544,5 +309,6 @@ law-map:
     law: law:done
   - rule: the verdict waits out a red build
     law: law:done
+
 # The environment rule: the exact names a command sees, nothing else.
 env: [PATH, HOME]
