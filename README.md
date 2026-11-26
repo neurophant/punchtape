@@ -9,11 +9,11 @@
 **Your AI writes the code. punchtape makes it get the entire job
 done — start to finish, with every claim proven.**
 
-![punchtape demo](docs/img/demo-agent.gif)
+<p align="center"><a href="docs/img/demo-agent.gif"><img src="docs/img/demo-agent.gif" width="800" alt="punchtape demo"></a></p>
 
-*Your words are taken down word for word. The machine runs every
-check itself. The agent cannot declare done — it can only make
-done true.*
+*Your words are taken down word for word. The machine runs every check itself. The agent cannot declare done — it can only make done true.*
+
+<br>
 
 punchtape is a small state machine for your computer. Your AI
 assistant runs it while working. The machine runs real checks of
@@ -136,6 +136,20 @@ costs it nothing. Proving the claim has always been your job.
 punchtape takes that job away: your words become the law of the
 task, each claim is measured by running it, and the work cannot
 end until it is genuinely finished.
+
+## The same task, twice
+
+<p align="center"><a href="docs/img/demo-without-punchtape.gif"><img src="docs/img/demo-without-punchtape.gif" width="800" alt="Without punchtape: the agent ships the task, the bug is yours to find"></a></p>
+
+***Without punchtape.** The agent says done. The service answers 500 where the task asked for a 503, so the checking is yours: two rounds.*
+
+<br>
+
+---
+
+<p align="center"><a href="docs/img/demo-with-punchtape.gif"><img src="docs/img/demo-with-punchtape.gif" width="800" alt="With punchtape: the same task, the machine makes the agent prove every line, the bug falls out before submission"></a></p>
+
+***With punchtape.** The same task, written once. The machine makes the agent prove every line of the task, so the bug falls out before submission: one round.*
 
 ## The solution
 

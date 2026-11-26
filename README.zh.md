@@ -9,10 +9,11 @@
 **你的 AI 写代码。punchtape 逼它把整份工作做到底：从头到尾，
 每一句 claim 都有实证。**
 
-![punchtape 演示](docs/img/demo-agent.gif)
+<p align="center"><a href="docs/img/demo-agent.gif"><img src="docs/img/demo-agent.gif" width="800" alt="punchtape 演示"></a></p>
 
-*你的原话一字不改地被记下。机器自己运行每一项检查。agent 无法宣布
-完成——它只能让工作真正完成。*
+*你的原话一字不改地被记下。机器自己运行每一项检查。agent 无法宣布完成——它只能让工作真正完成。*
+
+<br>
 
 punchtape 是你电脑上的一台小型状态机。你的 AI 助手在工作中
 运行它。机器对 AI 的工作执行真实的检查，告诉 AI 该修什么，
@@ -126,6 +127,20 @@ curl -fsSL https://github.com/neurophant/punchtape/releases/latest/download/get-
 向来是你的活。punchtape 把这活拿走：你的原话成为任务的
 法则，每个 claim 靠真实运行来测量，而在工作真正完成之前，
 它不许结束。
+
+## 同一个任务，来两次
+
+<p align="center"><a href="docs/img/demo-without-punchtape.gif"><img src="docs/img/demo-without-punchtape.gif" width="800" alt="没有 punchtape：agent 说做完了，bug 要你自己找"></a></p>
+
+***没有 punchtape**。agent 说做完了。任务要求 503，服务却返回 500，检查成了你的活：两轮。*
+
+<br>
+
+---
+
+<p align="center"><a href="docs/img/demo-with-punchtape.gif"><img src="docs/img/demo-with-punchtape.gif" width="800" alt="有 punchtape：同一个任务，机器要求证明每一行，bug 在提交前暴露"></a></p>
+
+***有 punchtape**。同一个任务，只写一次。机器要求 agent 证明任务的每一行，bug 在提交前就暴露出来：一轮。*
 
 ## 解决方案
 
