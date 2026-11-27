@@ -2,18 +2,13 @@
 [![release](https://img.shields.io/github/v/release/neurophant/punchtape)](https://github.com/neurophant/punchtape/releases/latest)
 [![license](https://img.shields.io/github/license/neurophant/punchtape)](LICENSE)
 [![DOI](https://img.shields.io/badge/DOI-10.2139%2Fssrn.7566638-0D1117)](https://doi.org/10.2139/ssrn.7566638)
+[![Star this repo](https://img.shields.io/badge/If%20it%20helped-Star%20this%20repo-yellow?logo=github)](https://github.com/neurophant/punchtape)
 
 # <img src="docs/img/wordmark.png" width="340" alt="punchtape">
 **English** · [Русский](README.ru.md) · [中文](README.zh.md)
 
 **Your AI writes the code. punchtape makes it get the entire job
 done — start to finish, with every claim proven.**
-
-<p align="center"><a href="docs/img/demo-agent.gif"><img src="docs/img/demo-agent.gif" width="800" alt="punchtape demo"></a></p>
-
-*Your words are taken down word for word. The machine runs every check itself. The agent cannot declare done — it can only make done true.*
-
-<br>
 
 punchtape is a small state machine for your computer. Your AI
 assistant runs it while working. The machine runs real checks of
@@ -33,6 +28,46 @@ external transactional state machine: the arbiter judges the work,
 not the words — and the agent cannot get past its verdicts.
 
 Free. MIT license. Linux and macOS. Works offline. No account.
+
+## The same task, twice
+
+<p align="center"><a href="docs/img/demo-without-punchtape.gif"><img src="docs/img/demo-without-punchtape.gif" width="800" alt="Without punchtape: the agent ships the task, the bug is yours to find"></a></p>
+
+***Without punchtape.** The agent says done. The service answers 500 where the task asked for a 503, so the checking is yours: **two rounds**.*
+
+<br>
+
+---
+
+<p align="center"><a href="docs/img/demo-with-punchtape.gif"><img src="docs/img/demo-with-punchtape.gif" width="800" alt="With punchtape: the same task, the machine makes the agent prove every line, the bug falls out before submission"></a></p>
+
+***With punchtape.** The same task, written once. The machine makes the agent prove every line of the task, so the bug falls out before submission: **one round**.*
+
+## The numbers, measured
+
+Three rounds of field tests (real tasks, one group working with
+the machine, one without, independent blind judges), published as
+a paper (a preprint, not peer-reviewed; the methodology and the
+raw campaign data are open):
+
+> **"Closing the Verification Loop in Generative Development: An
+> External Transactional State Machine and a Field Evaluation of Its
+> Economics and Convergence"**
+> — [SSRN](https://doi.org/10.2139/ssrn.7566638) ·
+> [Preprints.org](https://doi.org/10.20944/preprints202610.0325.v1) ·
+> [Research Square](https://doi.org/10.21203/rs.3.rs-11271483/v1)
+
+| per 25 tasks | without punchtape | with punchtape |
+|---|---|---|
+| times you had to verify and accept the work | 32 | 2 |
+| your verifying time (est.) | 4.4–7.3 h | 0.8–1.3 h |
+| total task cost | 5–19× higher | baseline |
+| tasks accepted on first submission | — | 25 of 25 |
+
+Blind judges checked 1720 points across both groups and found
+nothing missing in either group. All numbers, series by series:
+**[docs/METRICS.md](docs/METRICS.md)**; how the tests were run:
+**[docs/RESEARCH.md](docs/RESEARCH.md)**.
 
 ## Try it
 
@@ -137,20 +172,6 @@ punchtape takes that job away: your words become the law of the
 task, each claim is measured by running it, and the work cannot
 end until it is genuinely finished.
 
-## The same task, twice
-
-<p align="center"><a href="docs/img/demo-without-punchtape.gif"><img src="docs/img/demo-without-punchtape.gif" width="800" alt="Without punchtape: the agent ships the task, the bug is yours to find"></a></p>
-
-***Without punchtape.** The agent says done. The service answers 500 where the task asked for a 503, so the checking is yours: two rounds.*
-
-<br>
-
----
-
-<p align="center"><a href="docs/img/demo-with-punchtape.gif"><img src="docs/img/demo-with-punchtape.gif" width="800" alt="With punchtape: the same task, the machine makes the agent prove every line, the bug falls out before submission"></a></p>
-
-***With punchtape.** The same task, written once. The machine makes the agent prove every line of the task, so the bug falls out before submission: one round.*
-
 ## The solution
 
 - You write your task in normal words. Your assistant puts your
@@ -179,32 +200,6 @@ end until it is genuinely finished.
 
 You never learn commands. The AI runs the machine; you write
 prompts as always.
-
-## The numbers, measured
-
-Three rounds of field tests (real tasks, one group working with
-the machine, one without, independent blind judges), published as
-a paper (a preprint, not peer-reviewed; the methodology and the
-raw campaign data are open):
-
-> **"Closing the Verification Loop in Generative Development: An
-> External Transactional State Machine and a Field Evaluation of Its
-> Economics and Convergence"**
-> — [SSRN](https://doi.org/10.2139/ssrn.7566638) ·
-> [Preprints.org](https://doi.org/10.20944/preprints202610.0325.v1) ·
-> [Research Square](https://doi.org/10.21203/rs.3.rs-11271483/v1)
-
-| per 25 tasks | without punchtape | with punchtape |
-|---|---|---|
-| times you had to verify and accept the work | 32 | 2 |
-| your verifying time (est.) | 4.4–7.3 h | 0.8–1.3 h |
-| total task cost | 5–19× higher | baseline |
-| tasks accepted on first submission | — | 25 of 25 |
-
-Blind judges checked 1720 points across both groups and found
-nothing missing in either group. All numbers, series by series:
-**[docs/METRICS.md](docs/METRICS.md)**; how the tests were run:
-**[docs/RESEARCH.md](docs/RESEARCH.md)**.
 
 ## Demos without installing anything
 
@@ -411,3 +406,7 @@ Turing's machine all at once. A hole, once punched, cannot be
 unpunched.
 Same here: every recorded fact stays as it was. Everything
 changes. **The tape remains.**
+
+## Support the project
+
+If punchtape saved you time, consider giving the repository a **Star** on GitHub.

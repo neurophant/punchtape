@@ -2,18 +2,13 @@
 [![release](https://img.shields.io/github/v/release/neurophant/punchtape)](https://github.com/neurophant/punchtape/releases/latest)
 [![license](https://img.shields.io/github/license/neurophant/punchtape)](LICENSE)
 [![DOI](https://img.shields.io/badge/DOI-10.2139%2Fssrn.7566638-0D1117)](https://doi.org/10.2139/ssrn.7566638)
+[![Star this repo](https://img.shields.io/badge/If%20it%20helped-Star%20this%20repo-yellow?logo=github)](https://github.com/neurophant/punchtape)
 
 # <img src="docs/img/wordmark.png" width="340" alt="punchtape">
 [English](README.md) · [Русский](README.ru.md) · **中文**
 
 **你的 AI 写代码。punchtape 逼它把整份工作做到底：从头到尾，
 每一句 claim 都有实证。**
-
-<p align="center"><a href="docs/img/demo-agent.gif"><img src="docs/img/demo-agent.gif" width="800" alt="punchtape 演示"></a></p>
-
-*你的原话一字不改地被记下。机器自己运行每一项检查。agent 无法宣布完成——它只能让工作真正完成。*
-
-<br>
 
 punchtape 是你电脑上的一台小型状态机。你的 AI 助手在工作中
 运行它。机器对 AI 的工作执行真实的检查，告诉 AI 该修什么，
@@ -30,6 +25,44 @@ agent 体内的插件：它作为外部一方站在你项目旁边。它持有
 何说法；它的裁决 agent 绕不过去。
 
 免费。MIT 许可证。Linux 与 macOS。可离线工作。无账户。
+
+## 同一个任务，来两次
+
+<p align="center"><a href="docs/img/demo-without-punchtape.gif"><img src="docs/img/demo-without-punchtape.gif" width="800" alt="没有 punchtape：agent 说做完了，bug 要你自己找"></a></p>
+
+***没有 punchtape**。agent 说做完了。任务要求 503，服务却返回 500，检查成了你的活：**两轮**。*
+
+<br>
+
+---
+
+<p align="center"><a href="docs/img/demo-with-punchtape.gif"><img src="docs/img/demo-with-punchtape.gif" width="800" alt="有 punchtape：同一个任务，机器要求证明每一行，bug 在提交前暴露"></a></p>
+
+***有 punchtape**。同一个任务，只写一次。机器要求 agent 证明任务的每一行，bug 在提交前就暴露出来：**一轮**。*
+
+## 实测的数字
+
+三轮实地测试（真实任务，一组用机器工作，一组不用，独立
+盲评裁判），已发表为论文（预印本，未经同行评审；方法论与
+campaigns 的原始数据全部公开）：
+
+> **"Closing the Verification Loop in Generative Development: An
+> External Transactional State Machine and a Field Evaluation of Its
+> Economics and Convergence"**
+> — [SSRN](https://doi.org/10.2139/ssrn.7566638) ·
+> [Preprints.org](https://doi.org/10.20944/preprints202610.0325.v1) ·
+> [Research Square](https://doi.org/10.21203/rs.3.rs-11271483/v1)
+
+| 每 25 个任务 | 不用 punchtape | 用 punchtape |
+|---|---|---|
+| 你验收和接受工作的次数 | 32 | 2 |
+| 你的验收时间（估算） | 4.4–7.3 小时 | 0.8–1.3 小时 |
+| 任务总成本 | 贵 5–19× | 基准 |
+| 首次提交即获验收的任务 | — | 25 个中的 25 个 |
+
+盲评裁判在两组共检查了 1720 个点，两组均无缺失。全部数字、
+一个系列接一个系列：**[docs/METRICS.zh.md](docs/METRICS.zh.md)**；
+测试是怎么跑的：**[docs/RESEARCH.md](docs/RESEARCH.md)**（英文）。
 
 ## 试一试
 
@@ -128,20 +161,6 @@ curl -fsSL https://github.com/neurophant/punchtape/releases/latest/download/get-
 法则，每个 claim 靠真实运行来测量，而在工作真正完成之前，
 它不许结束。
 
-## 同一个任务，来两次
-
-<p align="center"><a href="docs/img/demo-without-punchtape.gif"><img src="docs/img/demo-without-punchtape.gif" width="800" alt="没有 punchtape：agent 说做完了，bug 要你自己找"></a></p>
-
-***没有 punchtape**。agent 说做完了。任务要求 503，服务却返回 500，检查成了你的活：两轮。*
-
-<br>
-
----
-
-<p align="center"><a href="docs/img/demo-with-punchtape.gif"><img src="docs/img/demo-with-punchtape.gif" width="800" alt="有 punchtape：同一个任务，机器要求证明每一行，bug 在提交前暴露"></a></p>
-
-***有 punchtape**。同一个任务，只写一次。机器要求 agent 证明任务的每一行，bug 在提交前就暴露出来：一轮。*
-
 ## 解决方案
 
 - 你用平常的话写下任务。助手把你的原话
@@ -163,30 +182,6 @@ curl -fsSL https://github.com/neurophant/punchtape/releases/latest/download/get-
   复制文件夹，全部历史随之而行，字节相同。
 
 你永远不用学命令。AI 运行机器；你照常写提示。
-
-## 实测的数字
-
-三轮实地测试（真实任务，一组用机器工作，一组不用，独立
-盲评裁判），已发表为论文（预印本，未经同行评审；方法论与
-campaigns 的原始数据全部公开）：
-
-> **"Closing the Verification Loop in Generative Development: An
-> External Transactional State Machine and a Field Evaluation of Its
-> Economics and Convergence"**
-> — [SSRN](https://doi.org/10.2139/ssrn.7566638) ·
-> [Preprints.org](https://doi.org/10.20944/preprints202610.0325.v1) ·
-> [Research Square](https://doi.org/10.21203/rs.3.rs-11271483/v1)
-
-| 每 25 个任务 | 不用 punchtape | 用 punchtape |
-|---|---|---|
-| 你验收和接受工作的次数 | 32 | 2 |
-| 你的验收时间（估算） | 4.4–7.3 小时 | 0.8–1.3 小时 |
-| 任务总成本 | 贵 5–19× | 基准 |
-| 首次提交即获验收的任务 | — | 25 个中的 25 个 |
-
-盲评裁判在两组共检查了 1720 个点，两组均无缺失。全部数字、
-一个系列接一个系列：**[docs/METRICS.zh.md](docs/METRICS.zh.md)**；
-测试是怎么跑的：**[docs/RESEARCH.md](docs/RESEARCH.md)**（英文）。
 
 ## 演示：无需安装
 
@@ -363,3 +358,7 @@ harness 运行你助手的会话、活在 agent 的环境里——它就是当�
 穿孔纸带——同时致敬穿孔卡片、纸带与图灵机。一个孔，
 一旦打上，就再也无法抹去。这里也一样：每条记录在案的事实
 都保持原样。一切都在变——**带子还在。**
+
+## 支持项目
+
+如果 punchtape 为你省下了时间，欢迎在 GitHub 上给仓库点一颗**星标**。

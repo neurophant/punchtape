@@ -2,18 +2,13 @@
 [![release](https://img.shields.io/github/v/release/neurophant/punchtape)](https://github.com/neurophant/punchtape/releases/latest)
 [![license](https://img.shields.io/github/license/neurophant/punchtape)](LICENSE)
 [![DOI](https://img.shields.io/badge/DOI-10.2139%2Fssrn.7566638-0D1117)](https://doi.org/10.2139/ssrn.7566638)
+[![Star this repo](https://img.shields.io/badge/If%20it%20helped-Star%20this%20repo-yellow?logo=github)](https://github.com/neurophant/punchtape)
 
 # <img src="docs/img/wordmark.png" width="340" alt="punchtape">
 [English](README.md) · **Русский** · [中文](README.zh.md)
 
 **Ваш ИИ пишет код. punchtape заставляет его доделать всю работу —
 от начала и до конца, с доказательством каждого заявления.**
-
-<p align="center"><a href="docs/img/demo-agent.gif"><img src="docs/img/demo-agent.gif" width="800" alt="демо punchtape"></a></p>
-
-*Ваши слова записываются слово в слово. Машина сама прогоняет каждую проверку. Агент не может объявить работу готовой — он может только сделать её готовой.*
-
-<br>
 
 punchtape — маленькая машина состояний для вашего компьютера. Ваш
 ИИ-ассистент запускает её, пока работает. Машина исполняет реальные
@@ -35,6 +30,45 @@ punchtape — маленькая машина состояний для ваше
 
 Бесплатно. Лицензия MIT. Linux и macOS. Работает офлайн. Без
 аккаунта.
+
+## Одна задача, дважды
+
+<p align="center"><a href="docs/img/demo-without-punchtape.gif"><img src="docs/img/demo-without-punchtape.gif" width="800" alt="Без punchtape: агент сдал работу, баг ищете вы"></a></p>
+
+***Без punchtape.** Агент говорит: готово. Сервис отдаёт 500 там, где задача просила 503, и проверять приходится вам: **два раунда**.*
+
+<br>
+
+---
+
+<p align="center"><a href="docs/img/demo-with-punchtape.gif"><img src="docs/img/demo-with-punchtape.gif" width="800" alt="С punchtape: та же задача, машина требует доказательства, баг всплывает до сдачи"></a></p>
+
+***С punchtape.** Та же задача, написанная один раз. Машина заставляет агента доказать каждую строку задачи, и баг всплывает до сдачи: **один раунд**.*
+
+## Результаты измерений
+
+Три раунда полевых тестов (реальные задачи, одна группа работала с
+машиной, другая без, независимые слепые судьи), опубликованы статьёй
+(препринт, без рецензирования; методология и сырые данные кампаний открыты):
+
+> **"Closing the Verification Loop in Generative Development: An
+> External Transactional State Machine and a Field Evaluation of Its
+> Economics and Convergence"**
+> — [SSRN](https://doi.org/10.2139/ssrn.7566638) ·
+> [Preprints.org](https://doi.org/10.20944/preprints202610.0325.v1) ·
+> [Research Square](https://doi.org/10.21203/rs.3.rs-11271483/v1)
+
+| на 25 задач | без punchtape | с punchtape |
+|---|---|---|
+| сколько раз вам приходилось проверять и принимать работу | 32 | 2 |
+| ваше время проверки (оценка) | 4.4–7.3 ч | 0.8–1.3 ч |
+| полная стоимость задачи | в 5–19× дороже | базовая |
+| задач принято с первой подачи | — | 25 из 25 |
+
+Слепые судьи проверили 1720 пунктов по обеим группам и не нашли
+ни одного пропуска. Все числа, серия за серией:
+**[docs/METRICS.ru.md](docs/METRICS.ru.md)**; как проводились тесты:
+**[docs/RESEARCH.md](docs/RESEARCH.md)**.
 
 ## Попробуйте
 
@@ -140,20 +174,6 @@ curl -fsSL https://github.com/neurophant/punchtape/releases/latest/download/get-
 запуском, и работа не может закончиться, пока она не окончена
 по-настоящему.
 
-## Одна задача, дважды
-
-<p align="center"><a href="docs/img/demo-without-punchtape.gif"><img src="docs/img/demo-without-punchtape.gif" width="800" alt="Без punchtape: агент сдал работу, баг ищете вы"></a></p>
-
-***Без punchtape.** Агент говорит: готово. Сервис отдаёт 500 там, где задача просила 503, и проверять приходится вам: два раунда.*
-
-<br>
-
----
-
-<p align="center"><a href="docs/img/demo-with-punchtape.gif"><img src="docs/img/demo-with-punchtape.gif" width="800" alt="С punchtape: та же задача, машина требует доказательства, баг всплывает до сдачи"></a></p>
-
-***С punchtape.** Та же задача, написанная один раз. Машина заставляет агента доказать каждую строку задачи, и баг всплывает до сдачи: один раунд.*
-
 ## Решение
 
 - Вы пишете задачу обычными словами. Ассистент кладёт ваши слова
@@ -182,31 +202,6 @@ curl -fsSL https://github.com/neurophant/punchtape/releases/latest/download/get-
 
 Вы не учите команды. ИИ запускает машину; вы пишете промпты как
 всегда.
-
-## Результаты измерений
-
-Три раунда полевых тестов (реальные задачи, одна группа работала с
-машиной, другая без, независимые слепые судьи), опубликованы статьёй
-(препринт, без рецензирования; методология и сырые данные кампаний открыты):
-
-> **"Closing the Verification Loop in Generative Development: An
-> External Transactional State Machine and a Field Evaluation of Its
-> Economics and Convergence"**
-> — [SSRN](https://doi.org/10.2139/ssrn.7566638) ·
-> [Preprints.org](https://doi.org/10.20944/preprints202610.0325.v1) ·
-> [Research Square](https://doi.org/10.21203/rs.3.rs-11271483/v1)
-
-| на 25 задач | без punchtape | с punchtape |
-|---|---|---|
-| сколько раз вам приходилось проверять и принимать работу | 32 | 2 |
-| ваше время проверки (оценка) | 4.4–7.3 ч | 0.8–1.3 ч |
-| полная стоимость задачи | в 5–19× дороже | базовая |
-| задач принято с первой подачи | — | 25 из 25 |
-
-Слепые судьи проверили 1720 пунктов по обеим группам и не нашли
-ни одного пропуска. Все числа, серия за серией:
-**[docs/METRICS.ru.md](docs/METRICS.ru.md)**; как проводились тесты:
-**[docs/RESEARCH.md](docs/RESEARCH.md)**.
 
 ## Демо без установки
 
@@ -410,3 +405,7 @@ Punched tape — перфорированная лента: отсылка ср�
 перфоленте и машине Тьюринга. Отверстие, однажды пробитое, уже
 не зарастёт. Здесь так же: каждый записанный факт остаётся таким,
 как был. Всё меняется. **Лента остаётся.**
+
+## Поддержите проект
+
+Если punchtape сэкономил вам время, поставьте репозиторию **звезду** на GitHub.

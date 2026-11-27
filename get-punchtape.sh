@@ -90,3 +90,4 @@ esac
 echo "== installed: $dst/punchtape"
 "$dst/punchtape" || true
 echo "== done: the punchtape command is available. Check: punchtape"
+echo "== if punchtape saves you time, star the repo: https://github.com/neurophant/punchtape"
